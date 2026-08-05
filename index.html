@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#121827" />
+  <meta name="description" content="Emberfall — a tiny 8-bit fantasy RPG playable in your browser." />
+  <meta property="og:title" content="Emberfall — 8-bit Fantasy RPG" />
+  <meta property="og:description" content="Explore Moonmere, battle slimes, collect treasure, and complete the Elder's quest." />
+  <meta property="og:image" content="assets/promo.png" />
+  <title>Emberfall — 8-bit Fantasy RPG</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="game-shell" aria-label="Emberfall browser game">
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">A TINY BROWSER ADVENTURE</p>
+        <h1>EMBERFALL</h1>
+      </div>
+      <div class="header-actions">
+        <button id="soundBtn" class="pixel-button compact" type="button" aria-pressed="true">♪ SOUND</button>
+        <button id="saveBtn" class="pixel-button compact" type="button">SAVE</button>
+        <button id="resetBtn" class="pixel-button compact danger" type="button">RESET</button>
+      </div>
+    </header>
+
+    <section class="play-area">
+      <aside class="panel hud-panel" aria-label="Hero status">
+        <div class="portrait" aria-hidden="true">
+          <span class="portrait-hair"></span><span class="portrait-face"></span><span class="portrait-body"></span>
+        </div>
+        <h2>ROWAN</h2>
+        <p class="class-label">WANDERER</p>
+
+        <div class="stat-row"><span>LV</span><strong id="levelText">1</strong></div>
+        <div class="stat-row"><span>HP</span><strong id="hpText">30 / 30</strong></div>
+        <div class="meter"><i id="hpBar"></i></div>
+        <div class="stat-row"><span>MP</span><strong id="mpText">10 / 10</strong></div>
+        <div class="meter mana"><i id="mpBar"></i></div>
+        <div class="stat-row"><span>EXP</span><strong id="expText">0 / 30</strong></div>
+        <div class="meter exp"><i id="expBar"></i></div>
+
+        <div class="inventory-grid">
+          <div><span>GOLD</span><strong id="goldText">0</strong></div>
+          <div><span>POTIONS</span><strong id="potionText">1</strong></div>
+        </div>
+
+        <div class="quest-box">
+          <p class="mini-title">ACTIVE QUEST</p>
+          <p id="questText">Speak to Elder Mira.</p>
+        </div>
+      </aside>
+
+      <section class="screen-wrap">
+        <canvas id="gameCanvas" width="640" height="480" aria-label="Game world"></canvas>
+        <div class="scanlines" aria-hidden="true"></div>
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+        <section id="titleScreen" class="overlay title-screen">
+          <div class="rune">✦</div>
+          <p class="eyebrow">THE KINGDOM NEEDS A HERO</p>
+          <h2>EMBERFALL</h2>
+          <p class="tagline">Explore Moonmere. Help its people. Defeat the creatures of the wild.</p>
+          <button id="startBtn" class="pixel-button primary" type="button">NEW ADVENTURE</button>
+          <button id="continueBtn" class="pixel-button" type="button">CONTINUE</button>
+          <p class="controls-note">Arrow keys / WASD · Space to interact</p>
+        </section>
+
+        <section id="dialogueBox" class="dialogue hidden" aria-live="polite">
+          <div>
+            <p id="speakerName" class="speaker">ELDER MIRA</p>
+            <p id="dialogueText"></p>
+          </div>
+          <button id="dialogueNext" class="pixel-button compact" type="button">NEXT ▸</button>
+        </section>
+
+        <section id="battleScreen" class="overlay battle hidden" aria-label="Battle screen">
+          <div class="battle-scene">
+            <div class="battle-hero" aria-hidden="true">⚔</div>
+            <div class="enemy-wrap">
+              <div id="enemySprite" class="enemy-sprite slime" aria-hidden="true"><span></span></div>
+              <h3 id="enemyName">MOSS SLIME</h3>
+              <div class="meter enemy"><i id="enemyHpBar"></i></div>
+              <p id="enemyHpText">18 / 18 HP</p>
+            </div>
+          </div>
+          <div class="battle-menu">
+            <p id="battleLog">A wild Moss Slime jiggles into your path!</p>
+            <div class="battle-actions">
+              <button class="pixel-button primary" data-action="attack" type="button">ATTACK</button>
+              <button class="pixel-button" data-action="spell" type="button">EMBER</button>
+              <button class="pixel-button" data-action="potion" type="button">POTION</button>
+              <button class="pixel-button" data-action="run" type="button">RUN</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <aside class="panel log-panel" aria-label="Adventure log">
+        <h2>ADVENTURE LOG</h2>
+        <div id="adventureLog" class="log-list"></div>
+        <div class="legend">
+          <p class="mini-title">MAP LEGEND</p>
+          <p><span class="dot elder"></span>Elder Mira</p>
+          <p><span class="dot chest"></span>Treasure</p>
+          <p><span class="dot enemy-dot"></span>Enemy</p>
+          <p><span class="dot portal"></span>Ancient shrine</p>
+        </div>
+      </aside>
+    </section>
+
+    <section class="mobile-controls" aria-label="Touch controls">
+      <div class="dpad">
+        <button data-move="up" aria-label="Move up">▲</button>
+        <button data-move="left" aria-label="Move left">◀</button>
+        <button data-move="down" aria-label="Move down">▼</button>
+        <button data-move="right" aria-label="Move right">▶</button>
+      </div>
+      <button id="actionBtn" class="action-key" type="button">A<br><small>ACT</small></button>
+    </section>
+
+    <footer>
+      <span>Built with vanilla HTML, CSS & JavaScript.</span>
+      <span>Press <kbd>M</kbd> to mute · Progress saves locally.</span>
+    </footer>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
