@@ -74,6 +74,21 @@ Progression also includes:
 - 26 enemy types
 - A complete ending with campaign statistics
 
+
+## Enhanced cinematic combat
+
+Battles now include a more interactive action system:
+
+- Location-specific animated battle scenes for forests, cities, mines, marshes, deserts, snowfields, sky ruins, the Citadel, and the Crown Core
+- Timed basic attacks with Good, Great, and Perfect hit windows
+- Enemy intent telegraphs for strikes, crushing blows, mana attacks, healing, wards, and boss catastrophes
+- A stagger meter that can break enemy turns and create openings
+- An action-variety combo chain with increasing damage bonuses
+- A momentum gauge that unlocks a unique ultimate Roadburst for every job
+- Animated lunges, impacts, slash effects, flashes, floating damage numbers, healing numbers, and boss introductions
+- C, B, A, and S victory ranks with better gold rewards and possible S-rank item bonuses
+- Number-key battle shortcuts and Space/Enter support for timed strikes
+
 ## Controls
 
 - Move: Arrow keys or WASD
@@ -81,7 +96,8 @@ Progression also includes:
 - Gear and guild record: G
 - Close menu: Escape
 - Mute: M
-- Mobile: On-screen D-pad and action button
+- Battle shortcuts: 1–7 select actions; Space or Enter confirms a timed strike
+- Mobile: On-screen D-pad, action button, and touch-friendly battle controls
 
 ## Run locally
 
@@ -113,3 +129,7 @@ This edition uses save format version 3. Saves from the earlier one-hour build a
 ## License
 
 MIT — modify, remix, and publish your own version.
+
+## Graphic Upgrade Edition
+
+This build adds enhanced pixel-art terrain shading, richer environmental props, biome ambient particles, cinematic vignette lighting, improved battle depth, glowing boss presentation, animated HUD meters, and a more polished retro display treatment. The game remains lightweight and requires no build tools.

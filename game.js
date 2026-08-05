@@ -16,6 +16,7 @@
     start: document.getElementById('startBtn'), continueBtn: document.getElementById('continueBtn'),
     dialogue: document.getElementById('dialogueBox'), speaker: document.getElementById('speakerName'), dialogueText: document.getElementById('dialogueText'), dialogueNext: document.getElementById('dialogueNext'),
     battle: document.getElementById('battleScreen'), battleLog: document.getElementById('battleLog'), enemyName: document.getElementById('enemyName'), enemyHpText: document.getElementById('enemyHpText'), enemyHpBar: document.getElementById('enemyHpBar'), enemySprite: document.getElementById('enemySprite'), enemyStatus: document.getElementById('enemyStatusText'),
+    battleHero: document.getElementById('battleHero'), heroStatus: document.getElementById('heroStatusText'), enemyIntent: document.getElementById('enemyIntent'), comboText: document.getElementById('comboText'), momentumText: document.getElementById('momentumText'), momentumBar: document.getElementById('momentumBar'), staggerBar: document.getElementById('staggerBar'), burstBtn: document.getElementById('burstBtn'), battleFx: document.getElementById('battleFx'), battleFlash: document.getElementById('battleFlash'), timingPanel: document.getElementById('timingPanel'), timingTrack: document.getElementById('timingTrack'), timingCursor: document.getElementById('timingCursor'), timingHit: document.getElementById('timingHitBtn'),
     skill1: document.getElementById('skill1Btn'), skill2: document.getElementById('skill2Btn'),
     gear: document.getElementById('gearScreen'), gearBtn: document.getElementById('gearBtn'), gearClose: document.getElementById('gearCloseBtn'), weaponGrid: document.getElementById('weaponGrid'), jobDetails: document.getElementById('jobDetails'), sideQuestList: document.getElementById('sideQuestList'), loreText: document.getElementById('loreText'),
     shop: document.getElementById('shopScreen'), shopTitle: document.getElementById('shopTitle'), shopCopy: document.getElementById('shopCopy'), shopItems: document.getElementById('shopItems'), shopClose: document.getElementById('shopCloseBtn'),
@@ -346,6 +347,7 @@
     keyItems: { duskCrystals: 0, mireTotems: 0, miners: 0, sunSeals: 0, mirrorShards: 0, frostSigil: false, starKeys: 0, crownCommands: 0, coreSigils: 0 },
     sideQuests: initialSideQuests(),
     logs: [], soundOn: true, inBattle: false, battleEnemy: null, battleLocked: false, guarding: false, dialogueQueue: [], activeEnemyId: null,
+    battleCombo: 0, battleMaxCombo: 0, battleMomentum: 0, battleLastAction: '', battlePerfects: 0, battleDamageTaken: 0, battleTurns: 0, timingActive: false, timingStartedAt: 0, timingDuration: 1150, timingFrame: 0,
     activeShop: null, totalBattles: 0, totalGoldEarned: 0, playSeconds: 0, endingSeen: false
   });
 
@@ -519,7 +521,10 @@
 
   function drawGround(px, py, base, fleck, x, y) {
     ctx.fillStyle = base; ctx.fillRect(px, py, TILE, TILE);
-    ctx.fillStyle = fleck; ctx.fillRect(px + ((x * 7 + y * 3) % 29), py + ((x * 5 + y * 11) % 29), 4, 4);
+    const sx = px + ((x * 7 + y * 3) % 29), sy = py + ((x * 5 + y * 11) % 29);
+    ctx.fillStyle = fleck; ctx.fillRect(sx, sy, 4, 4);
+    ctx.fillStyle = 'rgba(255,255,255,.055)'; ctx.fillRect(px + 2, py + 2, TILE - 4, 2);
+    ctx.fillStyle = 'rgba(0,0,0,.08)'; ctx.fillRect(px, py + TILE - 3, TILE, 3);
   }
 
   function drawTile(x, y, tile) {
@@ -550,8 +555,8 @@
     if (tile === 'L') { ctx.fillStyle='#7f271e';ctx.fillRect(px,py,TILE,TILE);ctx.fillStyle='#f06b32';ctx.fillRect(px+4,py+8,26,5);ctx.fillRect(px+10,py+27,22,4); }
   }
 
-  function drawTree(px, py) { ctx.fillStyle='#5b351e';ctx.fillRect(px+17,py+22,7,16);ctx.fillStyle='#1f6538';ctx.fillRect(px+7,py+10,26,18);ctx.fillStyle='#2f8244';ctx.fillRect(px+11,py+5,18,12);ctx.fillStyle='#59a84f';ctx.fillRect(px+12,py+8,7,6); }
-  function drawRock(px, py, color) { ctx.fillStyle=color;ctx.fillRect(px+7,py+15,27,20);ctx.fillStyle='#a68b6a';ctx.fillRect(px+12,py+9,18,12);ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(px+14,py+11,8,4); }
+  function drawTree(px, py) { ctx.fillStyle='rgba(0,0,0,.2)';ctx.fillRect(px+8,py+32,27,5);ctx.fillStyle='#4a2d1b';ctx.fillRect(px+17,py+21,7,17);ctx.fillStyle='#183f2b';ctx.fillRect(px+5,py+13,30,17);ctx.fillStyle='#246b3b';ctx.fillRect(px+8,py+8,26,17);ctx.fillStyle='#3f8f49';ctx.fillRect(px+12,py+3,18,14);ctx.fillStyle='#73bd61';ctx.fillRect(px+13,py+7,7,5);ctx.fillStyle='rgba(255,255,255,.13)';ctx.fillRect(px+10,py+11,8,3); }
+  function drawRock(px, py, color) { ctx.fillStyle='rgba(0,0,0,.22)';ctx.fillRect(px+5,py+31,31,5);ctx.fillStyle=color;ctx.fillRect(px+7,py+15,27,20);ctx.fillStyle='#967c62';ctx.fillRect(px+12,py+9,18,12);ctx.fillStyle='rgba(255,255,255,.2)';ctx.fillRect(px+14,py+11,8,4);ctx.fillStyle='rgba(0,0,0,.16)';ctx.fillRect(px+22,py+24,10,8); }
   function drawHouse(px, py, biome) {
     const wall = biome === 'snow' ? '#75858a' : ['desertCity','oasis'].includes(biome) ? '#ad8052' : biome === 'city' ? '#69646b' : biome === 'starCity' ? '#65708b' : biome === 'mountainCity' ? '#6f6259' : '#6b3d2b';
     const roof = biome === 'snow' ? '#456c7d' : ['desertCity','oasis'].includes(biome) ? '#d29a4e' : biome === 'city' ? '#4d4555' : biome === 'starCity' ? '#3d4b72' : '#b45f36';
@@ -629,12 +634,26 @@
     }
   }
 
+  function drawAmbient(loc) {
+    const t = Date.now() / 1000;
+    ctx.save();
+    for (let i=0;i<18;i++) {
+      const x=(i*97 + t*(6+(i%3)*3))%canvas.width, y=(i*53 + Math.sin(t+i)*18 + 480)%canvas.height;
+      const snowy=['snow','iceCave','sky'].includes(loc.biome), fiery=['citadel','core'].includes(loc.biome);
+      ctx.globalAlpha=.16+(i%4)*.035; ctx.fillStyle=fiery?'#ff8b48':snowy?'#eefcff':'#d8f0a0';
+      ctx.fillRect(Math.floor(x),Math.floor(y),fiery?3:2,fiery?3:2);
+    }
+    const glow=ctx.createRadialGradient(320,210,20,320,210,330); glow.addColorStop(0,'rgba(255,224,154,.055)'); glow.addColorStop(1,'rgba(5,9,18,.16)'); ctx.fillStyle=glow;ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
+  }
+
   function drawWorld() {
     ctx.clearRect(0,0,canvas.width,canvas.height); const loc=currentLocation();
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)drawTile(x,y,loc.map[y][x]);
     loc.decor.forEach(drawDecor); loc.exits.forEach(drawExit); drawShrine(loc.shrine); loc.nodes.forEach(drawNode); loc.chests.forEach(drawChest); loc.enemies.forEach(drawEnemy);
     loc.npcs.forEach(npc=>drawCharacter(npc.x,npc.y,npc.colors,'down',npc.role==='cael'));
     drawCharacter(state.player.x,state.player.y,currentJob().colors,state.player.facing);
+    drawAmbient(loc);
     const cycle=(currentPlaySeconds()%480)/480; if(cycle>.55){ctx.fillStyle=`rgba(20,28,65,${Math.min(.22,(cycle-.55)*.5)})`;ctx.fillRect(0,0,canvas.width,canvas.height);} drawLocationLabel();
   }
 
@@ -709,7 +728,7 @@
 
   function worldSnapshot(){const result={};Object.entries(locations).forEach(([id,loc])=>{result[id]={enemies:Object.fromEntries(loc.enemies.map(e=>[e.id,!!e.defeated])),chests:Object.fromEntries(loc.chests.map(c=>[c.id,!!c.opened])),nodes:Object.fromEntries(loc.nodes.map(n=>[n.id,!!n.collected]))};});return result;}
   function restoreWorld(snapshot={}){Object.entries(locations).forEach(([id,loc])=>{loc.enemies.forEach(e=>{e.defeated=!!snapshot[id]?.enemies?.[e.id];});loc.chests.forEach(c=>{c.opened=!!snapshot[id]?.chests?.[c.id];});loc.nodes.forEach(n=>{n.collected=!!snapshot[id]?.nodes?.[n.id];});});}
-  function saveGame(silent=false){if(!state.started||!state.player.job)return;const elapsed=currentPlaySeconds();const saveState={...state,playSeconds:elapsed,dialogueQueue:[],inBattle:false,battleEnemy:null,battleLocked:false,activeEnemyId:null,activeShop:null};localStorage.setItem(SAVE_KEY,JSON.stringify({version:3,state:saveState,world:worldSnapshot()}));updateHud();if(!silent){showToast('ADVENTURE SAVED');beep(660);}}
+  function saveGame(silent=false){if(!state.started||!state.player.job)return;const elapsed=currentPlaySeconds();const saveState={...state,playSeconds:elapsed,dialogueQueue:[],inBattle:false,battleEnemy:null,battleLocked:false,activeEnemyId:null,activeShop:null,timingActive:false,timingStartedAt:0,timingFrame:0,battleCombo:0,battleMaxCombo:0,battleMomentum:0,battleLastAction:'',battlePerfects:0,battleDamageTaken:0,battleTurns:0};localStorage.setItem(SAVE_KEY,JSON.stringify({version:3,state:saveState,world:worldSnapshot()}));updateHud();if(!silent){showToast('ADVENTURE SAVED');beep(660);}}
   function loadGame(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;try{const save=JSON.parse(raw);if(save.version!==3)throw new Error('old save');resetWorld();restoreWorld(save.world);const fresh=initialState();state={...fresh,...save.state,player:{...fresh.player,...(save.state?.player||{})},counters:{...fresh.counters,...(save.state?.counters||{})},keyItems:{...fresh.keyItems,...(save.state?.keyItems||{})},sideQuests:{...initialSideQuests(),...(save.state?.sideQuests||{})},started:true,inBattle:false,battleEnemy:null,battleLocked:false,dialogueQueue:[],activeEnemyId:null,activeShop:null};if(!locations[state.location])state.location='moonmere';if(!JOBS[state.player.job])throw new Error('invalid job');sessionStartedAt=Date.now();ui.title.classList.add('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');addLog('Your long road continues.',true);updateHud();drawWorld();chord([440,554,660]);}catch(_){localStorage.removeItem(SAVE_KEY);showToast('SAVE FORMAT WAS OUTDATED');}}
   function resetGame(){if(!confirm('Erase your local Emberfall save and restart the campaign?'))return;localStorage.removeItem(SAVE_KEY);resetWorld();state=initialState();sessionStartedAt=Date.now();ui.title.classList.remove('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');renderLog();updateHud();}
 
@@ -833,48 +852,191 @@
   function openChest(chestId){const chest=currentLocation().chests.find(c=>c.id===chestId);if(!chest)return;if(chest.opened){queueDialogue('Opened Chest',['Only dust and a few heroic fingerprints remain.']);return;}chest.opened=true;grantReward(chest.reward||{},'Treasure found',false);addLog(chest.text,true);queueDialogue('Treasure Chest',[chest.text]);chord([659,784,988]);updateHud();saveGame(true);}
   function grantReward(reward,label='Reward',log=true){const p=state.player;if(reward.gold){p.gold+=reward.gold;state.totalGoldEarned+=reward.gold;}if(reward.potions)p.potions+=reward.potions;if(reward.bombs)p.bombs+=reward.bombs;if(reward.defense)p.defense+=reward.defense;if(reward.exp)gainExp(reward.exp);if(log){const parts=[];if(reward.gold)parts.push(`${reward.gold} gold`);if(reward.potions)parts.push(`${reward.potions} potion${reward.potions===1?'':'s'}`);if(reward.bombs)parts.push(`${reward.bombs} bomb${reward.bombs===1?'':'s'}`);if(reward.exp)parts.push(`${reward.exp} EXP`);addLog(`${label}: ${parts.join(', ')}.`,true);}updateHud();}
 
-  function startBattle(enemy){const base=ENEMY_TYPES[enemy.type];if(!base)return;state.inBattle=true;state.battleLocked=false;state.guarding=false;state.activeEnemyId=enemy.id;const arenaScale=enemy.repeatable?Math.max(0,state.player.level-5):0;const hp=base.hp+arenaScale*18;state.battleEnemy={id:enemy.id,type:enemy.type,name:base.name,hp,maxHp:hp,attack:base.attack+arenaScale*2,exp:base.exp+arenaScale*6,gold:[base.gold[0]+arenaScale*3,base.gold[1]+arenaScale*4],boss:!!base.boss,sprite:base.sprite,repeatable:!!enemy.repeatable,dotTurns:0,dotDamage:0,dotName:'',stunned:false};ui.battle.classList.remove('hidden');ui.battleLog.textContent=base.intro;updateBattleUi();setBattleButtons(false);chord(base.boss?[164,147,131,98]:[196,185,174]);}
-  function setBattleButtons(disabled){document.querySelectorAll('[data-action]').forEach(button=>{button.disabled=disabled;button.style.opacity=disabled?'.55':'1';});}
-  function updateBattleUi(){const enemy=state.battleEnemy;if(!enemy)return;ui.enemyName.textContent=enemy.name.toUpperCase();ui.enemyHpText.textContent=`${Math.max(0,enemy.hp)} / ${enemy.maxHp} HP`;ui.enemyHpBar.style.width=`${Math.max(0,enemy.hp/enemy.maxHp*100)}%`;ui.enemySprite.className=`enemy-sprite ${enemy.sprite}`;ui.enemyStatus.textContent=enemy.dotTurns>0?`${enemy.dotName.toUpperCase()} · ${enemy.dotTurns} TURNS`:'';updateHud();}
+  const JOB_BURSTS = {
+    vanguard: { name:'SEVENFOLD BREAKER', text:'Sevenfold Breaker shatters armor and fills the stagger gauge!' },
+    arcanist: { name:'CROWNFALL NOVA', text:'Crownfall Nova calls a burning star into the battlefield!' },
+    ranger: { name:'SKYFANG VOLLEY', text:'Skyfang Volley rains five enchanted arrows!' },
+    paladin: { name:'DAWN AEGIS', text:'Dawn Aegis strikes, heals, and raises an unbreakable guard!' },
+    rogue: { name:'PHANTOM REQUIEM', text:'Phantom Requiem crosses the enemy before its shadow can move!' },
+    cleric: { name:'SERAPHIC JUDGMENT', text:'Seraphic Judgment burns corruption and restores sacred life!' },
+    spellblade: { name:'ECLIPSE EDGE', text:'Eclipse Edge joins flame and starlight in one impossible cut!' }
+  };
+
+  function setBattleTheme(){
+    [...ui.battle.classList].filter(name=>name.startsWith('biome-')).forEach(name=>ui.battle.classList.remove(name));
+    ui.battle.classList.add(`biome-${currentLocation().biome}`);
+    const colors=currentJob().colors;ui.battleHero.style.setProperty('--hero-hair',colors[0]);ui.battleHero.style.setProperty('--hero-skin',colors[1]);ui.battleHero.style.setProperty('--hero-cloth',colors[2]);ui.battleHero.style.setProperty('--hero-accent',colors[3]);
+  }
+
+  function startBattle(enemy){
+    const base=ENEMY_TYPES[enemy.type];if(!base)return;
+    state.inBattle=true;state.battleLocked=false;state.guarding=false;state.activeEnemyId=enemy.id;
+    state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.timingActive=false;
+    const arenaScale=enemy.repeatable?Math.max(0,state.player.level-5):0;const hp=base.hp+arenaScale*18;
+    state.battleEnemy={id:enemy.id,type:enemy.type,name:base.name,hp,maxHp:hp,attack:base.attack+arenaScale*2,exp:base.exp+arenaScale*6,gold:[base.gold[0]+arenaScale*3,base.gold[1]+arenaScale*4],boss:!!base.boss,sprite:base.sprite,repeatable:!!enemy.repeatable,dotTurns:0,dotDamage:0,dotName:'',stunned:false,stagger:0,ward:0,intent:null};
+    setBattleTheme();chooseEnemyIntent();ui.battle.classList.remove('hidden');ui.timingPanel.classList.add('hidden');ui.battleLog.textContent=base.intro;
+    updateBattleUi();setBattleButtons(false);setTimeout(()=>spawnFx('word',base.boss?'BOSS BATTLE':'ENGAGE!'),100);chord(base.boss?[164,147,131,98]:[196,185,174]);
+  }
+
+  function setBattleButtons(disabled){
+    document.querySelectorAll('[data-action]').forEach(button=>{
+      const burstLocked=button.dataset.action==='burst'&&state.battleMomentum<100;
+      button.disabled=disabled||burstLocked;button.style.opacity=(disabled||burstLocked)?'.55':'1';
+    });
+    ui.burstBtn.classList.toggle('ready',state.battleMomentum>=100&&!disabled);
+  }
+
+  function intentInfo(intent){
+    const map={
+      attack:['STRIKE','A direct attack.',''],
+      heavy:['CRUSHING BLOW','Heavy damage. Guarding is strongly advised.','danger'],
+      drain:['MANA REND','Damage plus MP drain.','danger'],
+      mend:['DARK MENDING','The enemy will recover HP.','support'],
+      brace:['IRON WARD','The enemy will reduce your next damaging action.','support'],
+      ultimate:['CROWN CATASTROPHE','A devastating boss technique. Guard now!','danger']
+    };
+    return map[intent]||map.attack;
+  }
+
+  function chooseEnemyIntent(){
+    const enemy=state.battleEnemy;if(!enemy)return;
+    const roll=Math.random(),low=enemy.hp/enemy.maxHp<.35;
+    if(low&&roll<.16)enemy.intent='mend';
+    else if(enemy.boss&&roll<.30)enemy.intent='ultimate';
+    else if(roll<.50)enemy.intent='heavy';
+    else if(roll<.63)enemy.intent='drain';
+    else if(roll<.74)enemy.intent='brace';
+    else enemy.intent='attack';
+  }
+
+  function updateBattleUi(){
+    const enemy=state.battleEnemy;if(!enemy)return;
+    ui.enemyName.textContent=enemy.name.toUpperCase();ui.enemyHpText.textContent=`${Math.max(0,enemy.hp)} / ${enemy.maxHp} HP`;
+    ui.enemyHpBar.style.width=`${Math.max(0,enemy.hp/enemy.maxHp*100)}%`;const transient=[...ui.enemySprite.classList].filter(name=>['hit-anim','attack-anim','skill-anim'].includes(name));ui.enemySprite.className=`enemy-sprite ${enemy.sprite}${enemy.stunned?' staggered':''}`;transient.forEach(name=>ui.enemySprite.classList.add(name));
+    const statuses=[];if(enemy.dotTurns>0)statuses.push(`${enemy.dotName.toUpperCase()} · ${enemy.dotTurns} TURNS`);if(enemy.ward>0)statuses.push('IRON WARD');if(enemy.stunned)statuses.push('STAGGERED');
+    ui.enemyStatus.textContent=statuses.join(' · ');ui.staggerBar.style.width=`${Math.min(100,enemy.stagger||0)}%`;
+    const intent=intentInfo(enemy.intent);ui.enemyIntent.innerHTML=`<strong>INTENT: ${intent[0]}</strong><br>${intent[1]}`;ui.enemyIntent.className=`enemy-intent ${intent[2]}`;
+    ui.comboText.textContent=`x${state.battleCombo}`;ui.momentumText.textContent=`${Math.floor(state.battleMomentum)}%`;ui.momentumBar.style.width=`${Math.min(100,state.battleMomentum)}%`;
+    const p=state.player,hero=[];if(state.guarding)hero.push('GUARD');if(p.attackBuffTurns>0)hero.push(`POWER ${p.attackBuffTurns}`);if(p.evasionTurns>0)hero.push(`EVADE ${p.evasionTurns}`);ui.heroStatus.textContent=hero.join(' · ');
+    ui.burstBtn.textContent=state.player.job?JOB_BURSTS[state.player.job].name:'ROADBURST';setBattleButtons(state.battleLocked&&!state.timingActive);updateHud();
+  }
+
   function effectiveAttack(){const base=totalAttack()+state.player.level*2;return state.player.attackBuffTurns>0?Math.floor(base*1.28):base;}
   function spendMp(cost){if(state.player.mp<cost){ui.battleLog.textContent=`Not enough MP. Need ${cost}.`;beep(90);return false;}state.player.mp-=cost;return true;}
-  function damageEnemy(amount,text){const enemy=state.battleEnemy;const damage=Math.max(1,Math.floor(amount));enemy.hp-=damage;ui.battleLog.textContent=text.replace('{damage}',damage);return damage;}
+
+  function animateClass(element,className,duration=460){element.classList.remove(className);void element.offsetWidth;element.classList.add(className);setTimeout(()=>element.classList.remove(className),duration);}
+  function flashBattle(red=false){ui.battleFlash.className=`battle-flash${red?' red':''}`;void ui.battleFlash.offsetWidth;ui.battleFlash.classList.add('flash');setTimeout(()=>ui.battleFlash.className='battle-flash',320);}
+  function spawnFx(kind,text='',target='enemy'){
+    const fx=document.createElement('span');
+    if(kind==='slash')fx.className='fx-slash';else if(kind==='burst')fx.className='fx-burst';else if(kind==='word'){fx.className='fx-word';fx.textContent=text;}else{fx.className=`fx-number${kind==='heal'?' heal':''}${target==='hero'&&kind!=='heal'?' hero-damage':''}`;fx.textContent=text;fx.style.left=target==='hero'?'22%':'72%';fx.style.top=target==='hero'?'37%':'29%';}
+    ui.battleFx.appendChild(fx);setTimeout(()=>fx.remove(),950);
+  }
+
+  function advanceCombo(action,bonus=0){
+    const varied=state.battleLastAction&&state.battleLastAction!==action;
+    state.battleCombo=varied?Math.min(9,state.battleCombo+1):Math.max(1,state.battleCombo-(state.battleLastAction===action?1:0));
+    state.battleLastAction=action;state.battleMaxCombo=Math.max(state.battleMaxCombo,state.battleCombo);state.battleMomentum=Math.min(100,state.battleMomentum+8+state.battleCombo*2+bonus);
+  }
+
+  function applyEnemyDamage(amount,text,options={}){
+    const enemy=state.battleEnemy;let damage=Math.max(1,Math.floor(amount));
+    const chainBonus=1+Math.min(.24,state.battleCombo*.03);damage=Math.floor(damage*chainBonus);
+    if(enemy.ward>0){damage=Math.max(1,Math.floor(damage*(1-enemy.ward)));enemy.ward=0;text=`Iron Ward softens the hit. ${text}`;}
+    enemy.hp-=damage;enemy.stagger=Math.min(100,(enemy.stagger||0)+(options.stagger||8)+Math.floor(damage/enemy.maxHp*32));
+    ui.battleLog.textContent=text.replace('{damage}',damage);animateClass(ui.enemySprite,'hit-anim');animateClass(ui.battleHero,options.skill?'skill-anim':'attack-anim');spawnFx('number',`-${damage}`,'enemy');
+    if(options.slash!==false)spawnFx('slash');if(options.flash)flashBattle();
+    if(enemy.stagger>=100&&enemy.hp>0){enemy.stagger=0;enemy.stunned=true;state.battleMomentum=Math.min(100,state.battleMomentum+15);setTimeout(()=>spawnFx('word','STAGGER!'),120);ui.battleLog.textContent+=` ${enemy.name} is staggered!`;chord([196,147,98]);}
+    return damage;
+  }
+
+  function damageEnemy(amount,text){return applyEnemyDamage(amount,text,{skill:true,stagger:12,flash:true});}
 
   function useJobSkill(slot){const p=state.player,enemy=state.battleEnemy,jobId=p.job,skill=currentJob().skills[slot-1];if(!spendMp(skill.cost))return false;const atk=effectiveAttack();let damage=0;
-    if(jobId==='vanguard'&&slot===1){damage=damageEnemy(atk*1.65+randomBetween(2,7),'Power Strike crashes for {damage} damage!');}
+    if(jobId==='vanguard'&&slot===1){damage=applyEnemyDamage(atk*1.65+randomBetween(2,7),'Power Strike crashes for {damage} damage!',{skill:true,stagger:24,flash:true});}
     if(jobId==='vanguard'&&slot===2){damage=damageEnemy(atk*1.05+randomBetween(3,8),'War Cry hits for {damage}; your Attack rises!');p.attackBuffTurns=3;}
     if(jobId==='arcanist'&&slot===1){damage=damageEnemy(15+p.level*4+equippedWeapon().power*1.2+randomBetween(2,8),'Arc Bolt deals {damage} magic damage!');}
-    if(jobId==='arcanist'&&slot===2){damage=damageEnemy(29+p.level*6+equippedWeapon().power*1.5+randomBetween(4,12),'Starfall erupts for {damage} damage and ignites the enemy!');enemy.dotTurns=3;enemy.dotDamage=7+p.level;enemy.dotName='burn';}
-    if(jobId==='ranger'&&slot===1){const hit1=Math.max(1,Math.floor(atk*.72)+randomBetween(1,5)),hit2=Math.max(1,Math.floor(atk*.72)+randomBetween(1,5));enemy.hp-=hit1+hit2;damage=hit1+hit2;ui.battleLog.textContent=`Twin Shot lands twice for ${damage} total damage!`;}
+    if(jobId==='arcanist'&&slot===2){damage=applyEnemyDamage(29+p.level*6+equippedWeapon().power*1.5+randomBetween(4,12),'Starfall erupts for {damage} damage and ignites the enemy!',{skill:true,stagger:18,flash:true});enemy.dotTurns=3;enemy.dotDamage=7+p.level;enemy.dotName='burn';}
+    if(jobId==='ranger'&&slot===1){const hit1=Math.max(1,Math.floor(atk*.72)+randomBetween(1,5)),hit2=Math.max(1,Math.floor(atk*.72)+randomBetween(1,5));damage=applyEnemyDamage(hit1+hit2,'Twin Shot lands twice for {damage} total damage!',{skill:true,stagger:16});}
     if(jobId==='ranger'&&slot===2){damage=damageEnemy(atk*1.12+randomBetween(2,7),'Venom Arrow deals {damage} damage and poisons the enemy!');enemy.dotTurns=4;enemy.dotDamage=5+Math.floor(p.level*.8);enemy.dotName='poison';}
-    if(jobId==='paladin'&&slot===1){damage=damageEnemy(atk*1.38+p.level*2+randomBetween(2,8),'Radiant Smite pierces for {damage} holy damage!');}
-    if(jobId==='paladin'&&slot===2){const healed=Math.min(Math.floor(p.maxHp*.38)+p.level*2,p.maxHp-p.hp);p.hp+=healed;state.guarding=true;ui.battleLog.textContent=`Sanctuary restores ${healed} HP and raises a holy guard.`;}
-    if(jobId==='rogue'&&slot===1){const crit=Math.random()<.48;damage=damageEnemy(atk*(crit?2.25:1.18)+randomBetween(2,8),crit?'Perfect Backstab! {damage} critical damage!':'Backstab deals {damage} damage.');}
+    if(jobId==='paladin'&&slot===1){damage=applyEnemyDamage(atk*1.38+p.level*2+randomBetween(2,8),'Radiant Smite pierces for {damage} holy damage!',{skill:true,stagger:20,flash:true});}
+    if(jobId==='paladin'&&slot===2){const healed=Math.min(Math.floor(p.maxHp*.38)+p.level*2,p.maxHp-p.hp);p.hp+=healed;state.guarding=true;ui.battleLog.textContent=`Sanctuary restores ${healed} HP and raises a holy guard.`;spawnFx('heal',`+${healed}`,'hero');animateClass(ui.battleHero,'guard-anim');}
+    if(jobId==='rogue'&&slot===1){const crit=Math.random()<.48;damage=applyEnemyDamage(atk*(crit?2.25:1.18)+randomBetween(2,8),crit?'Perfect Backstab! {damage} critical damage!':'Backstab deals {damage} damage.',{skill:true,stagger:crit?25:13,flash:crit});if(crit)spawnFx('word','CRITICAL!');}
     if(jobId==='rogue'&&slot===2){damage=damageEnemy(atk*.95+randomBetween(2,6),'Smoke Veil cuts for {damage}; you fade from sight!');p.evasionTurns=2;}
     if(jobId==='cleric'&&slot===1){damage=damageEnemy(14+p.level*4+equippedWeapon().power+randomBetween(2,7),'Light Spear burns corruption for {damage} damage!');p.mp=Math.min(p.maxMp,p.mp+3);}
-    if(jobId==='cleric'&&slot===2){const healed=Math.min(Math.floor(p.maxHp*.52)+p.level*3,p.maxHp-p.hp);p.hp+=healed;ui.battleLog.textContent=`Greater Heal restores ${healed} HP.`;}
+    if(jobId==='cleric'&&slot===2){const healed=Math.min(Math.floor(p.maxHp*.52)+p.level*3,p.maxHp-p.hp);p.hp+=healed;ui.battleLog.textContent=`Greater Heal restores ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');animateClass(ui.battleHero,'skill-anim');}
     if(jobId==='spellblade'&&slot===1){damage=damageEnemy(atk*1.18+p.level*3+randomBetween(3,9),'Flame Arc deals {damage} enchanted damage!');enemy.dotTurns=2;enemy.dotDamage=5+p.level;enemy.dotName='burn';}
     if(jobId==='spellblade'&&slot===2){damage=damageEnemy(atk*1.52+randomBetween(3,9),'Mana Edge strikes for {damage} and returns power!');p.mp=Math.min(p.maxMp,p.mp+5);}
     chord([392,523,784]);return true;
   }
 
-  function battleAction(action){if(!state.inBattle||!state.battleEnemy||state.battleLocked)return;const p=state.player,enemy=state.battleEnemy;let acted=false;state.guarding=false;
-    if(action==='attack'){const crit=Math.random()<.12+(p.job==='rogue'?.08:0);const raw=effectiveAttack()+randomBetween(1,7);const total=crit?Math.floor(raw*1.75):raw;enemy.hp-=total;ui.battleLog.textContent=crit?`Critical strike! You deal ${total} damage.`:`You strike ${enemy.name} for ${total} damage.`;beep(crit?180:130,.08,'sawtooth',.04);acted=true;}
-    if(action==='skill1')acted=useJobSkill(1);if(action==='skill2')acted=useJobSkill(2);
-    if(action==='guard'){state.guarding=true;p.mp=Math.min(p.maxMp,p.mp+3);ui.battleLog.textContent='You brace for impact and recover 3 MP.';beep(260,.08,'square',.03);acted=true;}
-    if(action==='potion'){if(p.potions<1){ui.battleLog.textContent='Your potion pouch is empty.';beep(90);return;}if(p.hp>=p.maxHp){ui.battleLog.textContent='Your HP is already full.';beep(90);return;}p.potions-=1;const healed=Math.min(30+p.level*3,p.maxHp-p.hp);p.hp+=healed;ui.battleLog.textContent=`You recover ${healed} HP.`;chord([523,659]);acted=true;}
-    if(action==='bomb'){if(p.bombs<1){ui.battleLog.textContent='You have no Crown Bombs.';beep(90);return;}p.bombs-=1;const damage=34+p.level*5+randomBetween(0,10);enemy.hp-=damage;ui.battleLog.textContent=`The Crown Bomb explodes for ${damage} piercing damage!`;chord([110,165,82]);acted=true;}
-    updateBattleUi();if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,430);return;}if(acted){state.battleLocked=true;setBattleButtons(true);setTimeout(enemyTurn,560);}
+  function startTimingAttack(){
+    if(state.timingActive)return;state.timingActive=true;state.battleLocked=true;state.timingStartedAt=performance.now();state.timingDuration=1050;
+    ui.timingPanel.classList.remove('hidden');ui.battleLog.textContent='Watch the moving blade. Strike near the center of the golden zone!';setBattleButtons(true);
+    const loop=now=>{if(!state.timingActive)return;const elapsed=now-state.timingStartedAt;const progress=Math.min(1,elapsed/state.timingDuration);const ping=progress<=.5?progress*2:(1-progress)*2;state.timingPosition=ping;ui.timingCursor.style.left=`calc(${Math.max(0,Math.min(1,ping))*100}% - 4px)`;if(elapsed>=state.timingDuration){confirmTimingAttack(true);return;}state.timingFrame=requestAnimationFrame(loop);};
+    state.timingFrame=requestAnimationFrame(loop);
   }
 
-  function enemyTurn(){if(!state.inBattle||!state.battleEnemy)return;const enemy=state.battleEnemy,p=state.player;
-    if(enemy.dotTurns>0){enemy.hp-=enemy.dotDamage;enemy.dotTurns-=1;ui.battleLog.textContent=`${enemy.dotName} deals ${enemy.dotDamage} damage to ${enemy.name}.`;updateBattleUi();if(enemy.hp<=0){setTimeout(victory,420);return;}}
-    if(enemy.stunned){enemy.stunned=false;ui.battleLog.textContent=`${enemy.name} is stunned and loses the turn!`;state.battleLocked=false;setBattleButtons(false);return;}
-    if(p.evasionTurns>0&&Math.random()<.55){p.evasionTurns-=1;ui.battleLog.textContent=`You evade ${enemy.name}'s attack!`;beep(520,.07,'square',.025);if(p.attackBuffTurns>0)p.attackBuffTurns-=1;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
-    const special=enemy.boss&&Math.random()<.3;let raw=enemy.attack+randomBetween(0,6)+(special?Math.ceil(enemy.attack*.45):0);if(state.guarding)raw=Math.ceil(raw*.43);const damage=Math.max(1,raw-p.defense-Math.floor(p.level/3));p.hp-=damage;ui.battleLog.textContent=special?`${enemy.name} unleashes crown-force for ${damage} damage!`:`${enemy.name} attacks for ${damage} damage.`;beep(special?62:80,special?.18:.12,'square',.04);state.guarding=false;if(p.attackBuffTurns>0)p.attackBuffTurns-=1;if(p.evasionTurns>0)p.evasionTurns-=1;updateBattleUi();if(p.hp<=0)setTimeout(defeat,520);else{state.battleLocked=false;setBattleButtons(false);}
+  function confirmTimingAttack(auto=false){
+    if(!state.timingActive)return;cancelAnimationFrame(state.timingFrame);state.timingActive=false;ui.timingPanel.classList.add('hidden');
+    const pos=Number(state.timingPosition||0),distance=Math.abs(pos-.5);let quality='LATE',mult=.82,bonus=4,stagger=7;
+    if(!auto&&distance<=.045){quality='PERFECT',mult=1.72,bonus=26,stagger=28;state.battlePerfects+=1;state.player.mp=Math.min(state.player.maxMp,state.player.mp+2);}
+    else if(!auto&&distance<=.11){quality='GREAT',mult=1.35,bonus=16,stagger=18;}
+    else if(!auto&&distance<=.21){quality='GOOD',mult=1.05,bonus=10,stagger=12;}
+    const p=state.player,crit=Math.random()<.10+(p.job==='rogue'?.10:0)+(quality==='PERFECT'?.15:0);let raw=(effectiveAttack()+randomBetween(1,7))*mult;if(crit)raw*=1.65;
+    advanceCombo('attack',bonus);applyEnemyDamage(raw,`${quality}${crit?' CRITICAL':''}! You deal {damage} damage.`,{stagger,flash:quality==='PERFECT'||crit});if(quality==='PERFECT')spawnFx('word','PERFECT!');else if(crit)spawnFx('word','CRITICAL!');
+    beep(quality==='PERFECT'?220:crit?180:130,.09,'sawtooth',.04);finishPlayerTurn();
   }
 
-  function victory(){const loc=currentLocation(),enemy=state.battleEnemy;if(!enemy)return;const enemyRecord=!enemy.repeatable?loc.enemies.find(e=>e.id===state.activeEnemyId):null;if(enemyRecord)enemyRecord.defeated=true;const gold=randomBetween(enemy.gold[0],enemy.gold[1]);state.player.gold+=gold;state.totalGoldEarned+=gold;state.totalBattles+=1;gainExp(enemy.exp);addLog(`Defeated ${enemy.name}. Gained ${gold} gold and ${enemy.exp} EXP.`);processVictory(enemy.type,enemy.repeatable);ui.battleLog.textContent=`${enemy.name} is defeated!`;chord(enemy.boss?[392,523,659,784,1047]:[523,659,784]);setTimeout(()=>{endBattle();if(state.questStage===FINAL_STAGE&&!state.endingSeen)finishStory();},enemy.boss?1100:680);}
+  function useBurst(){
+    if(state.battleMomentum<100)return false;const p=state.player,enemy=state.battleEnemy,atk=effectiveAttack(),burst=JOB_BURSTS[p.job];state.battleMomentum=0;state.battleCombo=Math.min(9,state.battleCombo+2);
+    spawnFx('burst');spawnFx('word',burst.name);flashBattle();animateClass(ui.battleHero,'skill-anim',700);chord([196,262,392,523,784]);
+    if(p.job==='vanguard'){applyEnemyDamage(atk*2.8+randomBetween(10,22),`${burst.text} {damage} damage!`,{skill:true,stagger:100,flash:true});}
+    if(p.job==='arcanist'){applyEnemyDamage(54+p.level*9+equippedWeapon().power*2,`${burst.text} {damage} damage!`,{skill:true,stagger:35,flash:true});enemy.dotTurns=4;enemy.dotDamage=10+p.level*2;enemy.dotName='starfire';}
+    if(p.job==='ranger'){applyEnemyDamage(atk*2.45+randomBetween(15,28),`${burst.text} {damage} total damage!`,{skill:true,stagger:45,flash:true});enemy.dotTurns=4;enemy.dotDamage=7+p.level;enemy.dotName='venom';}
+    if(p.job==='paladin'){applyEnemyDamage(atk*2.15+p.level*4,`${burst.text} {damage} holy damage!`,{skill:true,stagger:45,flash:true});const heal=Math.min(Math.floor(p.maxHp*.42),p.maxHp-p.hp);p.hp+=heal;state.guarding=true;spawnFx('heal',`+${heal}`,'hero');}
+    if(p.job==='rogue'){applyEnemyDamage(atk*3.2+randomBetween(12,26),`${burst.text} {damage} critical damage!`,{skill:true,stagger:42,flash:true});p.evasionTurns=3;}
+    if(p.job==='cleric'){applyEnemyDamage(46+p.level*8+equippedWeapon().power*2,`${burst.text} {damage} radiant damage!`,{skill:true,stagger:42,flash:true});const heal=Math.min(Math.floor(p.maxHp*.6),p.maxHp-p.hp);p.hp+=heal;spawnFx('heal',`+${heal}`,'hero');}
+    if(p.job==='spellblade'){applyEnemyDamage(atk*2.75+p.level*5,`${burst.text} {damage} eclipse damage!`,{skill:true,stagger:50,flash:true});p.mp=p.maxMp;}
+    return true;
+  }
+
+  function finishPlayerTurn(){
+    const enemy=state.battleEnemy;state.battleTurns+=1;updateBattleUi();if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,560);return;}
+    state.battleLocked=true;setBattleButtons(true);setTimeout(enemyTurn,760);
+  }
+
+  function battleAction(action){
+    if(!state.inBattle||!state.battleEnemy||state.battleLocked||state.timingActive)return;const p=state.player;let acted=false;state.guarding=false;
+    if(action==='attack'){startTimingAttack();return;}
+    if(action==='skill1'){acted=useJobSkill(1);if(acted)advanceCombo('skill1',8);}
+    if(action==='skill2'){acted=useJobSkill(2);if(acted)advanceCombo('skill2',12);}
+    if(action==='guard'){state.guarding=true;p.mp=Math.min(p.maxMp,p.mp+4);advanceCombo('guard',5);ui.battleLog.textContent='You read the enemy intent, brace for impact, and recover 4 MP.';beep(260,.08,'square',.03);animateClass(ui.battleHero,'guard-anim');acted=true;}
+    if(action==='potion'){if(p.potions<1){ui.battleLog.textContent='Your potion pouch is empty.';beep(90);return;}if(p.hp>=p.maxHp){ui.battleLog.textContent='Your HP is already full.';beep(90);return;}p.potions-=1;const healed=Math.min(30+p.level*3,p.maxHp-p.hp);p.hp+=healed;advanceCombo('potion',2);ui.battleLog.textContent=`You recover ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');chord([523,659]);acted=true;}
+    if(action==='bomb'){if(p.bombs<1){ui.battleLog.textContent='You have no Crown Bombs.';beep(90);return;}p.bombs-=1;advanceCombo('bomb',15);const damage=34+p.level*5+randomBetween(0,10);applyEnemyDamage(damage,'The Crown Bomb explodes for {damage} piercing damage!',{stagger:32,flash:true,slash:false});spawnFx('burst');chord([110,165,82]);acted=true;}
+    if(action==='burst')acted=useBurst();
+    if(acted)finishPlayerTurn();
+  }
+
+  function enemyTurn(){
+    if(!state.inBattle||!state.battleEnemy)return;const enemy=state.battleEnemy,p=state.player;
+    if(enemy.dotTurns>0){enemy.hp-=enemy.dotDamage;enemy.dotTurns-=1;ui.battleLog.textContent=`${enemy.dotName} deals ${enemy.dotDamage} damage to ${enemy.name}.`;spawnFx('number',`-${enemy.dotDamage}`,'enemy');updateBattleUi();if(enemy.hp<=0){setTimeout(victory,520);return;}}
+    if(enemy.stunned){enemy.stunned=false;ui.battleLog.textContent=`${enemy.name} is staggered and loses the turn!`;spawnFx('word','OPENING!');chooseEnemyIntent();state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
+    const intent=enemy.intent||'attack';
+    if(intent==='mend'){const heal=Math.max(8,Math.floor(enemy.maxHp*.14));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);ui.battleLog.textContent=`${enemy.name} gathers dark energy and restores ${heal} HP.`;spawnFx('heal',`+${heal}`,'enemy');animateClass(ui.enemySprite,'skill-anim');}
+    else if(intent==='brace'){enemy.ward=.5;ui.battleLog.textContent=`${enemy.name} raises an Iron Ward. Its next damage taken is reduced.`;spawnFx('word','WARD');}
+    else {
+      let multiplier=1,label='attacks';if(intent==='heavy'){multiplier=1.52;label='uses Crushing Blow';}if(intent==='drain'){multiplier=.82;label='tears at your mana';}if(intent==='ultimate'){multiplier=1.92;label='unleashes Crown Catastrophe';}
+      if(p.evasionTurns>0&&Math.random()<.55){p.evasionTurns-=1;ui.battleLog.textContent=`You read the motion and evade ${enemy.name}'s ${intentInfo(intent)[0].toLowerCase()}!`;animateClass(ui.battleHero,'attack-anim');spawnFx('word','EVADE!');beep(520,.07,'square',.025);chooseEnemyIntent();state.guarding=false;if(p.attackBuffTurns>0)p.attackBuffTurns-=1;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
+      let raw=(enemy.attack+randomBetween(0,6))*multiplier;if(state.guarding)raw*=intent==='ultimate'?.38:.43;const damage=Math.max(1,Math.floor(raw)-p.defense-Math.floor(p.level/3));p.hp-=damage;state.battleDamageTaken+=damage;
+      if(intent==='drain'){const drained=Math.min(p.mp,5+Math.floor(p.level/5));p.mp-=drained;ui.battleLog.textContent=`${enemy.name} ${label} for ${damage} damage and drains ${drained} MP!`;}
+      else ui.battleLog.textContent=`${enemy.name} ${label} for ${damage} damage${state.guarding?' through your guard':''}!`;
+      animateClass(ui.enemySprite,'attack-anim');setTimeout(()=>animateClass(ui.battleHero,'hit-anim'),180);spawnFx('number',`-${damage}`,'hero');flashBattle(true);beep(intent==='ultimate'?52:intent==='heavy'?67:80,intent==='ultimate'?.2:.12,'square',.04);
+    }
+    state.guarding=false;if(p.attackBuffTurns>0)p.attackBuffTurns-=1;if(p.evasionTurns>0&&intent!=='mend'&&intent!=='brace')p.evasionTurns-=1;
+    chooseEnemyIntent();updateBattleUi();if(p.hp<=0)setTimeout(defeat,650);else{state.battleLocked=false;setBattleButtons(false);}
+  }
+
+  function victory(){const loc=currentLocation(),enemy=state.battleEnemy;if(!enemy)return;const enemyRecord=!enemy.repeatable?loc.enemies.find(e=>e.id===state.activeEnemyId):null;if(enemyRecord)enemyRecord.defeated=true;let rank='C',multiplier=1;if(state.battleDamageTaken===0&&state.battlePerfects>=1&&state.battleMaxCombo>=4){rank='S';multiplier=1.5;}else if(state.battlePerfects>=1||state.battleMaxCombo>=5){rank='A';multiplier=1.28;}else if(state.battleMaxCombo>=3||state.battleDamageTaken<state.player.maxHp*.25){rank='B';multiplier=1.12;}const baseGold=randomBetween(enemy.gold[0],enemy.gold[1]),gold=Math.floor(baseGold*multiplier);state.player.gold+=gold;state.totalGoldEarned+=gold;state.totalBattles+=1;gainExp(enemy.exp);if(rank==='S'&&Math.random()<.45){state.player.bombs+=1;addLog('S-rank bonus: one Crown Bomb.',true);}addLog(`Defeated ${enemy.name} with rank ${rank}. Gained ${gold} gold and ${enemy.exp} EXP.`);processVictory(enemy.type,enemy.repeatable);ui.battleLog.textContent=`VICTORY — RANK ${rank}! ${gold} gold · ${enemy.exp} EXP`;spawnFx('word',`RANK ${rank}`);chord(enemy.boss?[392,523,659,784,1047]:[523,659,784]);setTimeout(()=>{endBattle();if(state.questStage===FINAL_STAGE&&!state.endingSeen)finishStory();},enemy.boss?1350:950);}
 
   function processVictory(type,repeatable=false){
     if(type==='mossSlime'){if(state.questStage===1)state.counters.moss+=1;if(Math.random()<.35)state.counters.herbs+=1;}
@@ -914,16 +1076,16 @@
   }
 
   function defeat(){const p=state.player;p.hp=p.maxHp;p.mp=p.maxMp;const loss=Math.min(p.gold,Math.max(10,Math.floor(p.gold*.1)));p.gold-=loss;const loc=currentLocation(),respawn=loc.shrine||loc.start;p.x=respawn.x;p.y=respawn.y;ui.battleLog.textContent=`The Seven Roads pull you back from defeat. You lose ${loss} gold.`;addLog(`You awaken in ${loc.name}. ${loss} gold was lost.`);setTimeout(endBattle,1000);}
-  function endBattle(){state.inBattle=false;state.battleEnemy=null;state.activeEnemyId=null;state.battleLocked=false;state.guarding=false;state.player.attackBuffTurns=0;state.player.evasionTurns=0;ui.battle.classList.add('hidden');setBattleButtons(false);updateHud();saveGame(true);}
+  function endBattle(){cancelAnimationFrame(state.timingFrame);state.timingActive=false;state.inBattle=false;state.battleEnemy=null;state.activeEnemyId=null;state.battleLocked=false;state.guarding=false;state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.player.attackBuffTurns=0;state.player.evasionTurns=0;ui.timingPanel.classList.add('hidden');ui.battleFx.innerHTML='';ui.battle.classList.add('hidden');setBattleButtons(false);updateHud();saveGame(true);}
   function gainExp(amount){const p=state.player;p.exp+=amount;while(p.exp>=p.nextExp){p.exp-=p.nextExp;p.level+=1;p.nextExp=Math.floor(p.nextExp*1.29);p.maxHp+=currentJob().hp>=45?8:6;p.hp=p.maxHp;p.maxMp+=currentJob().mp>=22?4:3;p.mp=p.maxMp;p.baseAttack+=1;if(p.level%3===0)p.defense+=1;addLog(`Level up! Rowan reached level ${p.level}.`,true);showToast(`LEVEL ${p.level}!`);chord([523,659,784,1047]);}updateHud();}
 
   function finishStory(){state.endingSeen=true;state.playSeconds=currentPlaySeconds();sessionStartedAt=Date.now();ui.endingText.textContent='Dusk remembers, Sun reveals, Frost restrains, and Star chooses. Together they close the Ember Crown—not under a ruler, but under the shared will of every village and city you saved.';const claimed=Object.values(state.sideQuests).filter(q=>q.status==='claimed').length;ui.endingStats.innerHTML=`<div><span>PLAY TIME</span><strong>${formatTime(state.playSeconds)}</strong></div><div><span>JOB</span><strong>${escapeHtml(currentJob().name)}</strong></div><div><span>LEVEL</span><strong>${state.player.level}</strong></div><div><span>VICTORIES</span><strong>${state.totalBattles}</strong></div><div><span>WEAPONS</span><strong>${state.player.weapons.length}</strong></div><div><span>GUILD QUESTS</span><strong>${claimed}/6</strong></div><div><span>LORE</span><strong>${state.counters.lore}/${TOTAL_LORE}</strong></div><div><span>AREAS</span><strong>18</strong></div><div><span>STORY</span><strong>100%</strong></div>`;ui.ending.classList.remove('hidden');addLog('The Ember Crown is sealed by the will of the Seven Roads.',true);chord([392,523,659,784,1047,1319]);saveGame(true);}
   function toggleSound(){state.soundOn=!state.soundOn;ui.sound.textContent=state.soundOn?'♪ SOUND':'× MUTED';ui.sound.setAttribute('aria-pressed',String(state.soundOn));if(state.soundOn)beep(660);}
 
-  document.addEventListener('keydown',event=>{const key=event.key.toLowerCase();const handled=['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' ','enter','m','g','escape'].includes(key);if(handled)event.preventDefault();if(key==='escape'){if(!ui.shop.classList.contains('hidden'))closeShop();else if(!ui.gear.classList.contains('hidden'))closeGear();return;}if(key==='g'){if(ui.gear.classList.contains('hidden'))openGear();else closeGear();return;}if(key==='arrowup'||key==='w')move(0,-1);if(key==='arrowdown'||key==='s')move(0,1);if(key==='arrowleft'||key==='a')move(-1,0);if(key==='arrowright'||key==='d')move(1,0);if(key===' '||key==='enter')interact();if(key==='m')toggleSound();});
+  document.addEventListener('keydown',event=>{const key=event.key.toLowerCase();const handled=['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' ','enter','m','g','escape','1','2','3','4','5','6','7'].includes(key);if(handled)event.preventDefault();if(state.timingActive&&(key===' '||key==='enter')){confirmTimingAttack(false);return;}if(state.inBattle&&!state.battleLocked){const battleKeys={'1':'attack','2':'skill1','3':'skill2','4':'guard','5':'potion','6':'bomb','7':'burst',' ':'attack','enter':'attack'};if(battleKeys[key]){battleAction(battleKeys[key]);return;}}if(key==='escape'){if(!ui.shop.classList.contains('hidden'))closeShop();else if(!ui.gear.classList.contains('hidden'))closeGear();return;}if(key==='g'){if(ui.gear.classList.contains('hidden'))openGear();else closeGear();return;}if(key==='arrowup'||key==='w')move(0,-1);if(key==='arrowdown'||key==='s')move(0,1);if(key==='arrowleft'||key==='a')move(-1,0);if(key==='arrowright'||key==='d')move(1,0);if(key===' '||key==='enter')interact();if(key==='m')toggleSound();});
   document.querySelectorAll('[data-move]').forEach(button=>button.addEventListener('pointerdown',()=>{const directions={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};move(...directions[button.dataset.move]);}));
   document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>battleAction(button.dataset.action)));
-  ui.start.addEventListener('click',startNewGame);ui.continueBtn.addEventListener('click',loadGame);ui.dialogueNext.addEventListener('click',nextDialogue);ui.action.addEventListener('click',interact);ui.sound.addEventListener('click',toggleSound);ui.save.addEventListener('click',()=>saveGame(false));ui.reset.addEventListener('click',resetGame);ui.gearBtn.addEventListener('click',openGear);ui.gearClose.addEventListener('click',closeGear);ui.shopClose.addEventListener('click',closeShop);ui.explore.addEventListener('click',()=>{ui.ending.classList.add('hidden');drawWorld();});
+  ui.start.addEventListener('click',startNewGame);ui.continueBtn.addEventListener('click',loadGame);ui.dialogueNext.addEventListener('click',nextDialogue);ui.action.addEventListener('click',interact);ui.sound.addEventListener('click',toggleSound);ui.save.addEventListener('click',()=>saveGame(false));ui.reset.addEventListener('click',resetGame);ui.gearBtn.addEventListener('click',openGear);ui.gearClose.addEventListener('click',closeGear);ui.shopClose.addEventListener('click',closeShop);ui.timingHit.addEventListener('click',()=>confirmTimingAttack(false));ui.explore.addEventListener('click',()=>{ui.ending.classList.add('hidden');drawWorld();});
   window.addEventListener('beforeunload',()=>{if(state.started&&state.player.job)saveGame(true);});
 
   resetWorld();renderJobSelection();renderLog();updateHud();animate();

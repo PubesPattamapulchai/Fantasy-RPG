@@ -4,9 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#121827" />
-  <meta name="description" content="Emberfall: Crown of Seven Roads — a three-hour 8-bit fantasy RPG campaign playable in your browser." />
+  <meta name="description" content="Emberfall: Crown of Seven Roads — a three-hour 8-bit fantasy RPG with timed cinematic combat, seven jobs, and eighteen connected maps." />
   <meta property="og:title" content="Emberfall: Crown of Seven Roads" />
-  <meta property="og:description" content="Choose a job, cross detailed villages and cities, collect weapons, complete guild bounties, and finish a full browser RPG campaign." />
+  <meta property="og:description" content="Choose a job, master timed attacks and Roadburst ultimates, cross detailed villages and cities, and finish a full browser RPG campaign." />
   <meta property="og:image" content="assets/promo.png" />
   <title>Emberfall: Crown of Seven Roads</title>
   <link rel="stylesheet" href="styles.css" />
@@ -75,7 +75,7 @@
           <div class="rune">✦</div>
           <p class="eyebrow">A KINGDOM-SIZED PIXEL ADVENTURE</p>
           <h2>EMBERFALL</h2>
-          <p class="tagline">Choose one of seven jobs and journey through villages, cities, forests, mines, temples, frozen caverns, sky ruins, and the Ashen Citadel in a complete three-hour fantasy campaign.</p>
+          <p class="tagline">Choose one of seven jobs, master timed attacks and unique Roadburst ultimates, then journey through villages, cities, forests, mines, temples, frozen caverns, sky ruins, and the Ashen Citadel in a complete three-hour fantasy campaign.</p>
           <button id="startBtn" class="pixel-button primary" type="button">NEW ADVENTURE</button>
           <button id="continueBtn" class="pixel-button" type="button">CONTINUE</button>
           <p class="controls-note">Arrow keys / WASD · Space or Enter to interact · G for gear · M to mute</p>
@@ -99,26 +99,52 @@
         </section>
 
         <section id="battleScreen" class="overlay battle hidden" aria-label="Battle screen">
+          <div class="battle-sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <div id="battleFlash" class="battle-flash" aria-hidden="true"></div>
+          <div id="battleFx" class="battle-fx" aria-hidden="true"></div>
           <div class="battle-scene">
-            <div class="battle-hero" aria-hidden="true">⚔</div>
-            <div class="enemy-wrap">
+            <div class="fighter-column hero-column">
+              <div id="heroStatusText" class="fighter-status"></div>
+              <div id="battleHero" class="battle-hero" aria-hidden="true">
+                <span class="hero-head"></span><span class="hero-body"></span><span class="hero-weapon"></span><span class="hero-aura"></span>
+              </div>
+              <p class="fighter-name">ROWAN</p>
+            </div>
+            <div class="battle-center">
+              <div id="enemyIntent" class="enemy-intent">INTENT: WATCHING...</div>
+              <div class="versus-rune">✦</div>
+              <div class="battle-readouts">
+                <div><span>CHAIN</span><strong id="comboText">x0</strong></div>
+                <div><span>MOMENTUM</span><strong id="momentumText">0%</strong></div>
+              </div>
+              <div class="momentum-meter"><i id="momentumBar"></i></div>
+            </div>
+            <div class="fighter-column enemy-wrap">
               <div id="enemySprite" class="enemy-sprite slime" aria-hidden="true"><span></span></div>
               <h3 id="enemyName">MOSS SLIME</h3>
               <div class="meter enemy"><i id="enemyHpBar"></i></div>
               <p id="enemyHpText">20 / 20 HP</p>
+              <div class="stagger-meter"><i id="staggerBar"></i></div>
               <p id="enemyStatusText" class="enemy-status"></p>
             </div>
           </div>
+          <div id="timingPanel" class="timing-panel hidden" aria-live="polite">
+            <p><strong>TIMED STRIKE</strong> — stop the blade inside the golden zone!</p>
+            <div id="timingTrack" class="timing-track"><span class="timing-zone"></span><i id="timingCursor"></i></div>
+            <button id="timingHitBtn" class="pixel-button primary compact" type="button">STRIKE!</button>
+          </div>
           <div class="battle-menu">
             <p id="battleLog">A creature blocks your path!</p>
-            <div class="battle-actions six">
-              <button class="pixel-button primary" data-action="attack" type="button">ATTACK</button>
+            <div class="battle-actions seven">
+              <button class="pixel-button primary" data-action="attack" type="button">TIMED ATTACK</button>
               <button id="skill1Btn" class="pixel-button" data-action="skill1" type="button">SKILL I</button>
               <button id="skill2Btn" class="pixel-button" data-action="skill2" type="button">SKILL II</button>
               <button class="pixel-button" data-action="guard" type="button">GUARD</button>
               <button class="pixel-button" data-action="potion" type="button">POTION</button>
               <button class="pixel-button" data-action="bomb" type="button">BOMB</button>
+              <button id="burstBtn" class="pixel-button burst-button" data-action="burst" type="button" disabled>ROADBURST</button>
             </div>
+            <p class="battle-tip">Keyboard: 1 Attack · 2/3 Skills · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · Space confirms timing</p>
           </div>
         </section>
 
@@ -191,7 +217,7 @@
     </section>
 
     <footer>
-      <span>18 maps · 7 settlements · 7 jobs · 24 weapons · 9 bosses.</span>
+      <span>18 maps · 7 settlements · 7 jobs · 29 weapons · 9 bosses.</span>
       <span>Play time: <strong id="playTimeText">00:00</strong> · Progress saves locally.</span>
     </footer>
   </main>
