@@ -4,21 +4,22 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#121827" />
-  <meta name="description" content="Emberfall — a tiny 8-bit fantasy RPG playable in your browser." />
-  <meta property="og:title" content="Emberfall — 8-bit Fantasy RPG" />
-  <meta property="og:description" content="Explore Moonmere, battle slimes, collect treasure, and complete the Elder's quest." />
+  <meta name="description" content="Emberfall: Crown of Seven Roads — a three-hour 8-bit fantasy RPG campaign playable in your browser." />
+  <meta property="og:title" content="Emberfall: Crown of Seven Roads" />
+  <meta property="og:description" content="Choose a job, cross detailed villages and cities, collect weapons, complete guild bounties, and finish a full browser RPG campaign." />
   <meta property="og:image" content="assets/promo.png" />
-  <title>Emberfall — 8-bit Fantasy RPG</title>
+  <title>Emberfall: Crown of Seven Roads</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <main class="game-shell" aria-label="Emberfall browser game">
+  <main class="game-shell" aria-label="Emberfall browser RPG">
     <header class="masthead">
       <div>
-        <p class="eyebrow">A TINY BROWSER ADVENTURE</p>
+        <p class="eyebrow">CROWN OF SEVEN ROADS</p>
         <h1>EMBERFALL</h1>
       </div>
       <div class="header-actions">
+        <button id="gearBtn" class="pixel-button compact" type="button">GEAR</button>
         <button id="soundBtn" class="pixel-button compact" type="button" aria-pressed="true">♪ SOUND</button>
         <button id="saveBtn" class="pixel-button compact" type="button">SAVE</button>
         <button id="resetBtn" class="pixel-button compact danger" type="button">RESET</button>
@@ -27,44 +28,66 @@
 
     <section class="play-area">
       <aside class="panel hud-panel" aria-label="Hero status">
-        <div class="portrait" aria-hidden="true">
+        <div id="portrait" class="portrait" aria-hidden="true">
           <span class="portrait-hair"></span><span class="portrait-face"></span><span class="portrait-body"></span>
         </div>
         <h2>ROWAN</h2>
-        <p class="class-label">WANDERER</p>
+        <p id="jobText" class="class-label">WAYFARER</p>
+        <p id="weaponText" class="weapon-label">Traveler's Blade</p>
 
         <div class="stat-row"><span>LV</span><strong id="levelText">1</strong></div>
-        <div class="stat-row"><span>HP</span><strong id="hpText">30 / 30</strong></div>
+        <div class="stat-row"><span>HP</span><strong id="hpText">40 / 40</strong></div>
         <div class="meter"><i id="hpBar"></i></div>
-        <div class="stat-row"><span>MP</span><strong id="mpText">10 / 10</strong></div>
+        <div class="stat-row"><span>MP</span><strong id="mpText">14 / 14</strong></div>
         <div class="meter mana"><i id="mpBar"></i></div>
-        <div class="stat-row"><span>EXP</span><strong id="expText">0 / 30</strong></div>
+        <div class="stat-row"><span>EXP</span><strong id="expText">0 / 38</strong></div>
         <div class="meter exp"><i id="expBar"></i></div>
 
         <div class="inventory-grid">
           <div><span>GOLD</span><strong id="goldText">0</strong></div>
-          <div><span>POTIONS</span><strong id="potionText">1</strong></div>
+          <div><span>POTIONS</span><strong id="potionText">3</strong></div>
+          <div><span>ATTACK</span><strong id="attackText">7</strong></div>
+          <div><span>DEFENSE</span><strong id="defenseText">2</strong></div>
+        </div>
+
+        <div class="material-grid">
+          <span>HERB <strong id="herbText">0</strong></span>
+          <span>ORE <strong id="oreText">0</strong></span>
+          <span>CRYSTAL <strong id="crystalText">0</strong></span>
+          <span>SHELL <strong id="shellText">0</strong></span>
         </div>
 
         <div class="quest-box">
-          <p class="mini-title">ACTIVE QUEST</p>
-          <p id="questText">Speak to Elder Mira.</p>
+          <p id="chapterText" class="mini-title">PROLOGUE · THE RED STAR</p>
+          <p id="questText">Speak to Elder Mira in Moonmere.</p>
+          <div class="campaign-meter" aria-label="Campaign progress"><i id="campaignBar"></i></div>
+          <p id="progressText" class="progress-text">Story 0%</p>
         </div>
       </aside>
 
       <section class="screen-wrap">
         <canvas id="gameCanvas" width="640" height="480" aria-label="Game world"></canvas>
         <div class="scanlines" aria-hidden="true"></div>
+        <div id="locationBadge" class="location-badge" aria-live="polite">MOONMERE VILLAGE</div>
         <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
         <section id="titleScreen" class="overlay title-screen">
           <div class="rune">✦</div>
-          <p class="eyebrow">THE KINGDOM NEEDS A HERO</p>
+          <p class="eyebrow">A KINGDOM-SIZED PIXEL ADVENTURE</p>
           <h2>EMBERFALL</h2>
-          <p class="tagline">Explore Moonmere. Help its people. Defeat the creatures of the wild.</p>
+          <p class="tagline">Choose one of seven jobs and journey through villages, cities, forests, mines, temples, frozen caverns, sky ruins, and the Ashen Citadel in a complete three-hour fantasy campaign.</p>
           <button id="startBtn" class="pixel-button primary" type="button">NEW ADVENTURE</button>
           <button id="continueBtn" class="pixel-button" type="button">CONTINUE</button>
-          <p class="controls-note">Arrow keys / WASD · Space to interact</p>
+          <p class="controls-note">Arrow keys / WASD · Space or Enter to interact · G for gear · M to mute</p>
+        </section>
+
+        <section id="jobScreen" class="overlay menu-overlay hidden" aria-label="Choose a job">
+          <div class="menu-window wide">
+            <p class="eyebrow">CHOOSE YOUR PATH</p>
+            <h2>SEVEN HEROIC JOBS</h2>
+            <p class="menu-copy">Every job has unique stats, skills, and weapon choices. Your job is permanent for this adventure.</p>
+            <div id="jobGrid" class="job-grid"></div>
+          </div>
         </section>
 
         <section id="dialogueBox" class="dialogue hidden" aria-live="polite">
@@ -82,30 +105,77 @@
               <div id="enemySprite" class="enemy-sprite slime" aria-hidden="true"><span></span></div>
               <h3 id="enemyName">MOSS SLIME</h3>
               <div class="meter enemy"><i id="enemyHpBar"></i></div>
-              <p id="enemyHpText">18 / 18 HP</p>
+              <p id="enemyHpText">20 / 20 HP</p>
+              <p id="enemyStatusText" class="enemy-status"></p>
             </div>
           </div>
           <div class="battle-menu">
-            <p id="battleLog">A wild Moss Slime jiggles into your path!</p>
-            <div class="battle-actions">
+            <p id="battleLog">A creature blocks your path!</p>
+            <div class="battle-actions six">
               <button class="pixel-button primary" data-action="attack" type="button">ATTACK</button>
-              <button class="pixel-button" data-action="spell" type="button">EMBER</button>
+              <button id="skill1Btn" class="pixel-button" data-action="skill1" type="button">SKILL I</button>
+              <button id="skill2Btn" class="pixel-button" data-action="skill2" type="button">SKILL II</button>
+              <button class="pixel-button" data-action="guard" type="button">GUARD</button>
               <button class="pixel-button" data-action="potion" type="button">POTION</button>
-              <button class="pixel-button" data-action="run" type="button">RUN</button>
+              <button class="pixel-button" data-action="bomb" type="button">BOMB</button>
             </div>
           </div>
+        </section>
+
+        <section id="gearScreen" class="overlay menu-overlay hidden" aria-label="Gear and adventure records">
+          <div class="menu-window wide">
+            <div class="menu-header"><div><p class="eyebrow">HERO RECORD</p><h2>GEAR & GUILD</h2></div><button id="gearCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div>
+            <div class="gear-layout">
+              <section>
+                <h3>OWNED WEAPONS</h3>
+                <div id="weaponGrid" class="weapon-grid"></div>
+              </section>
+              <section>
+                <h3>JOB SKILLS</h3>
+                <div id="jobDetails" class="record-card"></div>
+                <h3>GUILD BOUNTIES</h3>
+                <div id="sideQuestList" class="record-list"></div>
+                <h3>LORE</h3>
+                <p class="record-card"><strong id="loreText">0 / 10</strong> ancient tablets discovered.</p>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section id="shopScreen" class="overlay menu-overlay hidden" aria-label="Shop">
+          <div class="menu-window">
+            <div class="menu-header"><div><p class="eyebrow">MERCHANT</p><h2 id="shopTitle">WEAPON SHOP</h2></div><button id="shopCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div>
+            <p id="shopCopy" class="menu-copy"></p>
+            <div id="shopItems" class="shop-list"></div>
+          </div>
+        </section>
+
+        <section id="endingScreen" class="overlay ending-screen hidden" aria-label="Ending screen">
+          <div class="rune">✦</div>
+          <p class="eyebrow">THE SEVEN ROADS BURN BRIGHT</p>
+          <h2>DAWN RETURNS</h2>
+          <p id="endingText" class="tagline"></p>
+          <div id="endingStats" class="ending-stats"></div>
+          <button id="exploreBtn" class="pixel-button primary" type="button">CONTINUE EXPLORING</button>
         </section>
       </section>
 
       <aside class="panel log-panel" aria-label="Adventure log">
         <h2>ADVENTURE LOG</h2>
+        <div class="location-card">
+          <span>LOCATION</span>
+          <strong id="locationText">Moonmere Village</strong>
+          <small id="locationSubtext">A lakeside village beneath old stars.</small>
+        </div>
         <div id="adventureLog" class="log-list"></div>
         <div class="legend">
           <p class="mini-title">MAP LEGEND</p>
-          <p><span class="dot elder"></span>Elder Mira</p>
-          <p><span class="dot chest"></span>Treasure</p>
-          <p><span class="dot enemy-dot"></span>Enemy</p>
-          <p><span class="dot portal"></span>Ancient shrine</p>
+          <p><span class="dot npc"></span>Story character</p>
+          <p><span class="dot chest"></span>Treasure or relic</p>
+          <p><span class="dot enemy-dot"></span>Enemy or boss</p>
+          <p><span class="dot node"></span>Gathering node</p>
+          <p><span class="dot portal"></span>Road or passage</p>
+          <p><span class="dot shrine"></span>Healing shrine</p>
         </div>
       </aside>
     </section>
@@ -121,8 +191,8 @@
     </section>
 
     <footer>
-      <span>Built with vanilla HTML, CSS & JavaScript.</span>
-      <span>Press <kbd>M</kbd> to mute · Progress saves locally.</span>
+      <span>18 maps · 7 settlements · 7 jobs · 24 weapons · 9 bosses.</span>
+      <span>Play time: <strong id="playTimeText">00:00</strong> · Progress saves locally.</span>
     </footer>
   </main>
 
