@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Campaign Master Edition",
+  "name": "Emberfall: Eclipse Roads Edition",
   "short_name": "Emberfall",
-  "description": "An original tabletop-fantasy pixel RPG with initiative order, class reactions, creature damage affinities, multi-phase bosses, rare relic loot, companions, branching checks, camps, tactical positioning, and offline play.",
+  "description": "An original cinematic dark-fantasy mobile RPG with tactical party combat, active dodging, interactive battlefields, weapon affixes, d20-style checks, multi-phase bosses, companions, and offline play.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -13,7 +13,7 @@
   ],
   "orientation": "any",
   "background_color": "#070b13",
-  "theme_color": "#211a13",
+  "theme_color": "#17110e",
   "categories": [
     "games",
     "entertainment"

@@ -1,6 +1,6 @@
-# Emberfall: Campaign Master Edition
+# Emberfall: Eclipse Roads Edition
 
-A large, dependency-free pixel fantasy RPG built with vanilla HTML, CSS, and JavaScript. Campaign Master Edition deepens the original tabletop feel with initiative order, class reactions, creature affinities, multi-phase bosses, rechargeable companion commands, rare relic loot, and a richer battle-map presentation. It runs entirely in the browser and is ready for GitHub Pages.
+A large, dependency-free dark-fantasy RPG built with vanilla HTML, CSS, and JavaScript. Eclipse Roads Edition combines the existing tabletop campaign systems with a faster cinematic action-RPG layer: stamina dodging, interactive battlefields, weapon affixes, enemy telegraphs, multi-phase bosses, companion commands, damage affinities, and stronger visual effects. It runs entirely in the browser and is ready for GitHub Pages.
 
 ![Emberfall concept artwork](assets/promo.png)
 
@@ -75,7 +75,7 @@ Progression also includes:
 - A complete ending with campaign statistics
 
 
-## Enhanced cinematic combat
+## Eclipse Roads combat
 
 Battles now include a more interactive action system:
 
@@ -88,6 +88,11 @@ Battles now include a more interactive action system:
 - Animated lunges, impacts, slash effects, flashes, floating damage numbers, healing numbers, and boss introductions
 - C, B, A, and S victory ranks with better gold rewards and possible S-rank item bonuses
 - Number-key battle shortcuts and Space/Enter support for timed strikes
+- A 100-point Stamina resource with an active Dodge action and Dexterity-based evasion check
+- Biome-specific interactive battlefield objects such as powder casks, prism pylons, ore carts, storm conductors, and healing springs
+- High-rank victories can awaken up to three magic/rare/epic affixes on the equipped weapon
+- Affixes can improve damage, critical chance, Armor Class, attack rolls, skill power, Momentum, stagger, or life recovery
+- Stronger camera shake, boss phase transitions, arena perspective, atmospheric lighting, and dark-fantasy UI treatment
 
 ## Controls
 
@@ -96,7 +101,7 @@ Battles now include a more interactive action system:
 - Gear and guild record: G
 - Close menu: Escape
 - Mute: M
-- Battle shortcuts: 1–7 select actions; Space or Enter confirms a timed strike
+- Battle shortcuts: 1–9 select core actions; `0` Dodge; `E` use the battlefield; Space or Enter confirms a timed strike
 - Mobile: On-screen D-pad, action button, and touch-friendly battle controls
 
 ## Run locally
@@ -124,7 +129,7 @@ The included workflow deploys the static game automatically. The public address 
 
 ## Save compatibility
 
-This edition uses save format version 3. Saves from the earlier one-hour build are intentionally not imported because the world, job system, weapons, and quest structure changed substantially.
+This edition writes save format version 5 and automatically migrates compatible version 3/4 Campaign Master and Codex saves. New Stamina and weapon-affix fields are filled in automatically when an older compatible save is loaded.
 
 ## License
 

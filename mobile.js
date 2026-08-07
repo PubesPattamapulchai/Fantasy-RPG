@@ -21,13 +21,15 @@
     const level = $('levelText')?.textContent || '1';
     const hp = $('hpText')?.textContent?.replaceAll(' ', '') || '40/40';
     const mp = $('mpText')?.textContent?.replaceAll(' ', '') || '14/14';
+    const stamina = $('staminaText')?.textContent?.replaceAll(' ', '') || '100/100';
     $('mobileJobText').textContent = `${job} · LV ${level}`;
     $('mobileHpText').textContent = hp;
     $('mobileMpText').textContent = mp;
+    if ($('mobileStaminaText')) $('mobileStaminaText').textContent = stamina;
     $('mobileGoldText').textContent = $('goldText')?.textContent || '0';
   };
 
-  const observed = ['jobText', 'levelText', 'hpText', 'mpText', 'goldText'];
+  const observed = ['jobText', 'levelText', 'hpText', 'mpText', 'staminaText', 'goldText'];
   const observer = new MutationObserver(syncStatus);
   observed.forEach(id => {
     const node = $(id);

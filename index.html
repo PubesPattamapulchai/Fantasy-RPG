@@ -9,11 +9,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Emberfall" />
   <meta name="format-detection" content="telephone=no" />
-  <meta name="description" content="Emberfall: Campaign Master Edition — an original three-hour tabletop-fantasy pixel RPG with initiative order, class reactions, damage affinities, boss phases, rare relic loot, companions, tactical positioning, branching checks, camps, and cinematic combat." />
+  <meta name="description" content="Emberfall: Eclipse Roads Edition — an original cinematic dark-fantasy mobile RPG with tactical party combat, d20-style checks, active dodging, interactive battlefields, weapon affixes, boss phases, companions, and a three-hour campaign." />
   <meta property="og:title" content="Emberfall: Crown of Seven Roads" />
   <meta property="og:description" content="Build a hero and companion party, roll checks, read enemy intent, exploit weaknesses, ready class reactions, survive multi-phase bosses, and uncover rare relics across a long fantasy campaign." />
   <meta property="og:image" content="assets/promo.png" />
-  <title>Emberfall: Campaign Master Edition — Mobile</title>
+  <title>Emberfall: Eclipse Roads Edition — Mobile</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icon-192.png" sizes="192x192" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
@@ -52,6 +52,8 @@
         <div class="meter"><i id="hpBar"></i></div>
         <div class="stat-row"><span>MP</span><strong id="mpText">14 / 14</strong></div>
         <div class="meter mana"><i id="mpBar"></i></div>
+        <div class="stat-row"><span>STAMINA</span><strong id="staminaText">100 / 100</strong></div>
+        <div class="meter stamina"><i id="staminaBar"></i></div>
         <div class="stat-row"><span>EXP</span><strong id="expText">0 / 38</strong></div>
         <div class="meter exp"><i id="expBar"></i></div>
 
@@ -87,6 +89,7 @@
           <span id="mobileJobText">WAYFARER · LV 1</span>
           <span>HP <b id="mobileHpText">40/40</b></span>
           <span>MP <b id="mobileMpText">14/14</b></span>
+          <span>STA <b id="mobileStaminaText">100/100</b></span>
           <span>G <b id="mobileGoldText">0</b></span>
         </div>
         <div id="rotateHint" class="rotate-hint" role="status">↻ Landscape gives the best battle view</div>
@@ -94,9 +97,9 @@
 
         <section id="titleScreen" class="overlay title-screen">
           <div class="rune">✦</div>
-          <p class="eyebrow">A DEEPER TABLETOP-FANTASY PIXEL CAMPAIGN</p>
+          <p class="eyebrow">A CINEMATIC DARK-FANTASY CAMPAIGN</p>
           <h2>EMBERFALL</h2>
-          <p class="tagline">Build a heroic job-and-companion party, roll d20-style checks, exploit creature weaknesses, ready class reactions, survive multi-phase bosses, discover rare relics, and explore a three-hour campaign of villages, guilds, ruins, caverns, temples, sky roads, and dangerous choices.</p>
+          <p class="tagline">Lead a hero-and-companion party through a three-hour dark-fantasy campaign. Read enemy telegraphs, dodge lethal attacks, exploit elemental weaknesses, use the battlefield itself, hunt rare weapon affixes, and survive multi-phase bosses across villages, ruins, temples, frozen roads, and the burning Crown Core.</p>
           <button id="startBtn" class="pixel-button primary" type="button">NEW ADVENTURE</button>
           <button id="continueBtn" class="pixel-button" type="button">CONTINUE</button>
           <p class="controls-note desktop-note">Arrow keys / WASD · Space/Enter interact · G gear · C character sheet · M mute</p>
@@ -143,6 +146,7 @@
               <div class="versus-rune">✦</div>
               <div class="tabletop-combat-hud"><div id="battleD20" class="d20-token"><span>20</span></div><div class="roll-readout"><small id="rollLabel">INITIATIVE</small><strong id="rollText">—</strong></div><div class="armor-readout"><small>ARMOR CLASS</small><strong id="armorClassText">10</strong></div></div>
               <div class="combat-rules-row"><span id="battlePhaseText" class="phase-badge">PHASE I</span><span id="enemyAffinityText" class="affinity-chip">AFFINITY · UNKNOWN</span></div>
+              <div id="environmentCard" class="environment-card"><small>BATTLEFIELD</small><strong>READING TERRAIN...</strong><span>Interactive terrain can change a fight.</span></div>
               <div id="companionBattleChip" class="companion-battle-chip">SOLO ADVENTURER</div>
               <div class="battle-readouts"><div><span>CHAIN</span><strong id="comboText">x0</strong></div><div><span>MOMENTUM</span><strong id="momentumText">0%</strong></div></div>
               <div class="momentum-meter"><i id="momentumBar"></i></div><div id="stanceText" class="stance-chip">STANCE · BALANCED</div>
@@ -168,6 +172,7 @@
               <button id="skill1Btn" class="pixel-button" data-action="skill1" type="button">SKILL I</button>
               <button id="skill2Btn" class="pixel-button" data-action="skill2" type="button">SKILL II</button>
               <button class="pixel-button" data-action="guard" type="button">GUARD</button>
+              <button id="dodgeBtn" class="pixel-button dodge-button" data-action="dodge" type="button">DODGE · 35 STA</button>
               <button class="pixel-button" data-action="potion" type="button">POTION</button>
               <button class="pixel-button" data-action="bomb" type="button">BOMB</button>
               <button id="burstBtn" class="pixel-button burst-button" data-action="burst" type="button" disabled>ROADBURST</button>
@@ -176,7 +181,8 @@
               <button id="companionAssistBtn" class="pixel-button companion-assist-button" data-action="companion" type="button">COMPANION</button>
               <button id="reactionBtn" class="pixel-button reaction-button" data-action="reaction" type="button">CLASS REACTION</button>
               <button id="positionBtn" class="pixel-button position-button" data-action="position" type="button">POSITION · MID</button>
-            </div><p class="battle-tip">1 Attack · 2/3 Skills · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · 8 Tactic · 9 Inspiration · Companion, Reaction, and Position are touch/click actions</p>
+              <button id="environmentBtn" class="pixel-button environment-button" data-action="environment" type="button">USE ENVIRONMENT</button>
+            </div><p class="battle-tip">1 Attack · 2/3 Skills · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · 8 Tactic · 9 Inspiration · Dodge, Environment, Companion, Reaction, and Position are tactical actions</p>
           </div>
         </section>
 
@@ -211,7 +217,7 @@
         </section>
 
 
-        <section id="sheetScreen" class="overlay menu-overlay hidden" aria-label="Character sheet"><div class="menu-window wide parchment-window character-sheet"><div class="menu-header"><div><p class="eyebrow">ADVENTURER RECORD</p><h2>ROWAN'S CHARACTER SHEET</h2></div><button id="sheetCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="sheet-grid"><section><div class="sheet-summary"><span id="sheetJob">WAYFARER</span><strong id="sheetLevel">LEVEL 1</strong><small id="sheetCompanion">No companion</small></div><h3>ABILITY SCORES</h3><div id="abilityGrid" class="ability-grid"></div><div class="derived-grid"><div><span>ARMOR CLASS</span><strong id="sheetAC">10</strong></div><div><span>ATTACK BONUS</span><strong id="sheetAttackBonus">+0</strong></div><div><span>INSPIRATION</span><strong id="sheetInspiration">1</strong></div><div><span>CHECKS WON</span><strong id="sheetChecks">0</strong></div><div><span>ARMOR</span><strong id="sheetArmor">Road Leathers</strong></div><div><span>RELIC</span><strong id="sheetRelic">None</strong></div><div><span>RENOWN</span><strong id="sheetRenown">0</strong></div><div><span>RATIONS</span><strong id="sheetRations">3</strong></div></div></section><section><h3>COMPANION</h3><div id="companionDetails" class="record-card companion-details"></div><h3>TABLETOP COMBAT</h3><div class="record-card rules-card"><strong>Balanced</strong> has no modifier.<br><strong>Bold</strong> deals more damage but lowers AC.<br><strong>Warded</strong> raises AC but lowers damage.<br><strong>Cunning</strong> improves critical chance.<br><br>Natural 20s are critical hits. Natural 1s miss. Timed strikes still improve damage and stagger.</div><h3>CLASS FEATURE</h3><div id="featureDetails" class="record-card feature-card"></div><h3>CAMPAIGN BATTLE RECORD</h3><div id="combatRecord" class="record-card combat-record"></div></section></div></div></section>
+        <section id="sheetScreen" class="overlay menu-overlay hidden" aria-label="Character sheet"><div class="menu-window wide parchment-window character-sheet"><div class="menu-header"><div><p class="eyebrow">ADVENTURER RECORD</p><h2>ROWAN'S CHARACTER SHEET</h2></div><button id="sheetCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="sheet-grid"><section><div class="sheet-summary"><span id="sheetJob">WAYFARER</span><strong id="sheetLevel">LEVEL 1</strong><small id="sheetCompanion">No companion</small></div><h3>ABILITY SCORES</h3><div id="abilityGrid" class="ability-grid"></div><div class="derived-grid"><div><span>ARMOR CLASS</span><strong id="sheetAC">10</strong></div><div><span>ATTACK BONUS</span><strong id="sheetAttackBonus">+0</strong></div><div><span>INSPIRATION</span><strong id="sheetInspiration">1</strong></div><div><span>CHECKS WON</span><strong id="sheetChecks">0</strong></div><div><span>ARMOR</span><strong id="sheetArmor">Road Leathers</strong></div><div><span>RELIC</span><strong id="sheetRelic">None</strong></div><div><span>RENOWN</span><strong id="sheetRenown">0</strong></div><div><span>RATIONS</span><strong id="sheetRations">3</strong></div></div></section><section><h3>COMPANION</h3><div id="companionDetails" class="record-card companion-details"></div><h3>TABLETOP COMBAT</h3><div class="record-card rules-card"><strong>Balanced</strong> has no modifier.<br><strong>Bold</strong> deals more damage but lowers AC.<br><strong>Warded</strong> raises AC but lowers damage.<br><strong>Cunning</strong> improves critical chance.<br><br>Natural 20s are critical hits. Natural 1s miss. Timed strikes still improve damage and stagger.</div><h3>CLASS FEATURE</h3><div id="featureDetails" class="record-card feature-card"></div><h3>WEAPON AFFIXES</h3><div id="affixDetails" class="record-card affix-details">Rare victories can awaken modifiers on your equipped weapon.</div><h3>CAMPAIGN BATTLE RECORD</h3><div id="combatRecord" class="record-card combat-record"></div></section></div></div></section>
         <section id="eventScreen" class="overlay menu-overlay hidden event-overlay" aria-label="Adventure ability check"><div class="menu-window parchment-window event-window"><p class="eyebrow">ROAD ENCOUNTER · CHOOSE YOUR APPROACH</p><h2 id="eventTitle">A QUESTION OF FATE</h2><p id="eventText" class="event-copy"></p><div id="eventChoices" class="event-choice-grid"></div><div class="event-check-row"><div id="eventD20" class="d20-token large"><span>20</span></div><div><span id="eventAbility">SELECT AN APPROACH</span><strong id="eventRoll">—</strong></div></div><p id="eventResult" class="event-result"></p><div class="event-actions"><button id="eventAttemptBtn" class="pixel-button primary" type="button" disabled>ROLL THE DIE</button><button id="eventInspireBtn" class="pixel-button hidden" type="button">USE INSPIRATION</button><button id="eventLeaveBtn" class="pixel-button" type="button">WALK AWAY</button></div></div></section>
 
 
@@ -270,7 +276,7 @@
     </section>
 
     <footer>
-      <span>18 maps · 7 jobs · 4 companions · initiative · reactions · affinities · boss phases · rare relic loot · branching checks · camps · 29 weapons.</span>
+      <span>18 maps · 7 jobs · 4 companions · active dodge · interactive battlefields · weapon affixes · initiative · reactions · affinities · boss phases · rare loot · 29 weapons.</span>
       <span>Play time: <strong id="playTimeText">00:00</strong> · Progress saves locally.</span>
     </footer>
   </main>

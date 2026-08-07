@@ -1,4 +1,4 @@
-const CACHE = 'emberfall-campaign-master-v1';
+const CACHE = 'emberfall-eclipse-roads-v1';
 const CORE = [
   './',
   './index.html',
