@@ -1,0 +1,35 @@
+{
+  "name": "Emberfall: Campaign Master Edition",
+  "short_name": "Emberfall",
+  "description": "An original tabletop-fantasy pixel RPG with initiative order, class reactions, creature damage affinities, multi-phase bosses, rare relic loot, companions, branching checks, camps, tactical positioning, and offline play.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "fullscreen",
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#070b13",
+  "theme_color": "#211a13",
+  "categories": [
+    "games",
+    "entertainment"
+  ],
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

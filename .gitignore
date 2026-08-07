@@ -1,0 +1,78 @@
+# Emberfall RPG - Git safety / clean repository rules
+
+# Windows executables and installers (not required by this browser game)
+*.exe
+*.msi
+*.msix
+*.msp
+*.com
+*.scr
+*.dll
+*.sys
+*.cpl
+
+# Windows command / scripting files (not required by this static web game)
+*.bat
+*.cmd
+*.ps1
+*.psm1
+*.vbs
+*.vbe
+*.jscript
+*.wsf
+*.wsh
+
+# Explicitly block the filename seen in the antivirus warning
+update_task.exe
+**/update_task.exe
+
+# Package-manager / dependency folders
+node_modules/
+.pnpm-store/
+.yarn/
+
+# Build, cache and temporary output
+build/
+dist/
+.cache/
+.tmp/
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+
+# Logs and crash dumps
+*.log
+*.dmp
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Local archives — do not commit packaged releases back into the repo
+*.zip
+*.7z
+*.rar
