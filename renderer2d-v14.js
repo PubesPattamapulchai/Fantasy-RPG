@@ -132,8 +132,11 @@
   function burst(target,color,count=24){const x=state.w*(target==='hero'?.28:.72),y=state.h*.50;for(let i=0;i<count;i++){const a=Math.random()*TAU,v=80+Math.random()*180;state.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-30,life:.25+Math.random()*.45,max:.7,size:1+Math.random()*4,color});}}
   function drawParticles(dt){state.particles=state.particles.filter(p=>{p.life-=dt;if(p.life<=0)return false;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=160*dt;ctx.save();ctx.globalCompositeOperation='screen';ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.shadowBlur=10;ctx.shadowColor=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,TAU);ctx.fill();ctx.restore();return true;});}
   function actionDuration(type){return type==='execute'||type==='burst'?650:type==='dodge'?460:380;}
-  window.addEventListener('emberfall:action',e=>{const type=e.detail?.action||'attack';state.heroAction={type,at:performance.now(),duration:actionDuration(type)};burst('enemy',type==='parry'?'#82d9ff':type==='burst'?'#ff8a51':'#f1bd7f',type==='burst'?40:20);state.shake=Math.max(state.shake,type==='execute'||type==='burst'?10:4);});
-  window.addEventListener('emberfall:enemyaction',e=>{const type=e.detail?.intent||'attack';state.enemyAction={type,at:performance.now(),duration:type==='ultimate'?720:430};burst('hero',type==='hex'?'#b678ff':type==='ultimate'?'#ff4b56':'#efb47c',type==='ultimate'?38:18);state.shake=Math.max(state.shake,type==='ultimate'?11:5);});
+  // Shake itself is not set here - game.js's shakeBattle() is the single trigger for both
+  // the DOM battle-scene shake and this canvas shake (via Emberfall2D.shake below), so a hit
+  // shakes the screen once with one tuned magnitude instead of two independent guesses.
+  window.addEventListener('emberfall:action',e=>{const type=e.detail?.action||'attack';state.heroAction={type,at:performance.now(),duration:actionDuration(type)};burst('enemy',type==='parry'?'#82d9ff':type==='burst'?'#ff8a51':'#f1bd7f',type==='burst'?40:20);});
+  window.addEventListener('emberfall:enemyaction',e=>{const type=e.detail?.intent||'attack';state.enemyAction={type,at:performance.now(),duration:type==='ultimate'?720:430};burst('hero',type==='hex'?'#b678ff':type==='ultimate'?'#ff4b56':'#efb47c',type==='ultimate'?38:18);});
   window.addEventListener('emberfall:fx',e=>{const t=String(e.detail?.text||e.detail?.kind||'').toLowerCase();const target=t.includes('heal')?'hero':'enemy',color=t.includes('fire')?'#ff6c3f':t.includes('poison')?'#75d36c':t.includes('frost')?'#78dcff':t.includes('arcane')?'#ab7cff':t.includes('radiant')?'#ffe083':'#f0bd81';burst(target,color,t.includes('critical')||t.includes('execution')?36:18);});
 
   let last=performance.now();

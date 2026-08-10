@@ -85,25 +85,32 @@
   });
 
   // Swipe across the world to move one tile. Diagonal swipes choose the strongest axis.
-  const canvas = $('gameCanvas');
-  let swipeStart = null;
-  if (canvas) {
-    canvas.addEventListener('pointerdown', event => {
-      if (!coarse) return;
-      swipeStart = { x: event.clientX, y: event.clientY, time: performance.now() };
-    }, { passive: true });
-    canvas.addEventListener('pointerup', event => {
-      if (!swipeStart || !coarse) return;
-      const dx = event.clientX - swipeStart.x;
-      const dy = event.clientY - swipeStart.y;
-      const distance = Math.hypot(dx, dy);
-      const elapsed = performance.now() - swipeStart.time;
-      swipeStart = null;
-      if (distance < 28 || elapsed > 650) return;
-      vibrate(6);
-      if (Math.abs(dx) > Math.abs(dy)) dispatchKey(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
-      else dispatchKey(dy > 0 ? 'ArrowDown' : 'ArrowUp');
-    }, { passive: true });
+  // The active render surface is #modern2dCanvas, created by renderer2d-v14.js after this
+  // script runs, so poll for window.Emberfall2D.canvas the same way actionrpg2d.js does
+  // for tap-to-path (#gameCanvas is the hidden legacy fallback and never receives pointer
+  // events during normal play).
+  if (coarse) {
+    let swipeStart = null;
+    const bindSwipe = () => {
+      const canvas = window.Emberfall2D?.canvas;
+      if (!canvas) { setTimeout(bindSwipe, 80); return; }
+      canvas.addEventListener('pointerdown', event => {
+        swipeStart = { x: event.clientX, y: event.clientY, time: performance.now() };
+      }, { passive: true });
+      canvas.addEventListener('pointerup', event => {
+        if (!swipeStart) return;
+        const dx = event.clientX - swipeStart.x;
+        const dy = event.clientY - swipeStart.y;
+        const distance = Math.hypot(dx, dy);
+        const elapsed = performance.now() - swipeStart.time;
+        swipeStart = null;
+        if (distance < 28 || elapsed > 650) return;
+        vibrate(6);
+        if (Math.abs(dx) > Math.abs(dy)) dispatchKey(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+        else dispatchKey(dy > 0 ? 'ArrowDown' : 'ArrowUp');
+      }, { passive: true });
+    };
+    bindSwipe();
   }
 
   // Mobile shortcuts use the existing tested game buttons.

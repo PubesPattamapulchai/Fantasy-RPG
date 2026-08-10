@@ -20,17 +20,19 @@
 
   window.addEventListener('emberfall:action',e=>{
     const a=e.detail?.action||'attack';
-    if(a==='execute'){pulse('execution',260);shake(13);floatText('EXECUTION','enemy','critical');}
-    else if(a==='parry'){pulse('parry',120);shake(4);}
-    else if(a==='burst'){pulse('ultimate',220);shake(11);floatText('ROADBURST','enemy','critical');}
-    else if(a==='dodge'){pulse('dodge',110);}
-    else if(a==='attack'||a==='weaponTechnique'){shake(4);}
+    // No floatText here for execute/burst: game.js's own spawnFx('word', ...) already
+    // shows the (job-flavored) callout for these actions at the moment they resolve.
+    // Shake itself is driven solely by game.js's shakeBattle() - see renderer2d-v14.js.
+    if(a==='execute')pulse('execution',260);
+    else if(a==='parry')pulse('parry',120);
+    else if(a==='burst')pulse('ultimate',220);
+    else if(a==='dodge')pulse('dodge',110);
   });
 
   window.addEventListener('emberfall:enemyaction',e=>{
     const a=e.detail?.intent||'attack';
-    if(a==='ultimate'){pulse('danger',240);shake(12);}
-    else if(a==='heavy'||a==='sweep'){pulse('danger-soft',140);shake(7);}
+    if(a==='ultimate'){pulse('danger',240);}
+    else if(a==='heavy'||a==='sweep'){pulse('danger-soft',140);}
   });
 
   window.addEventListener('emberfall:fx',e=>{
@@ -44,8 +46,11 @@
     const key=s.battleEnemy?.id||s.battleEnemy?.name;
     if(lastBattle!==key){lastBattle=key;lastEnemyHp=s.battleEnemy?.hp??null;lastHeroHp=s.player?.hp??null;lastBossPhase=s.battleEnemy?.phase??1;}
     const eh=s.battleEnemy?.hp??0,hh=s.player?.hp??0;
-    if(lastEnemyHp!==null&&eh<lastEnemyHp){const d=Math.max(1,lastEnemyHp-eh);floatText(`-${Math.round(d)}`,'enemy',d>=Math.max(12,(s.battleEnemy?.maxHp||100)*.12)?'critical':'damage');if(prefs.blood)window.Emberfall2D?.spawnFx?.('enemy','blood','#ba3246');}
-    if(lastHeroHp!==null&&hh<lastHeroHp){const d=Math.max(1,lastHeroHp-hh);floatText(`-${Math.round(d)}`,'hero','damage');if(prefs.blood)window.Emberfall2D?.spawnFx?.('hero','blood','#ba3246');}
+    // Floating damage numbers are spawned directly by game.js's spawnFx() at the moment
+    // damage is applied (single source of truth) - this loop only adds the blood-particle
+    // reaction and boss-phase banner below, so a hit isn't shown twice with different timing.
+    if(lastEnemyHp!==null&&eh<lastEnemyHp&&prefs.blood)window.Emberfall2D?.spawnFx?.('enemy','blood','#ba3246');
+    if(lastHeroHp!==null&&hh<lastHeroHp&&prefs.blood)window.Emberfall2D?.spawnFx?.('hero','blood','#ba3246');
     const phase=s.battleEnemy?.phase??1;if(s.battleEnemy?.boss&&phase!==lastBossPhase){lastBossPhase=phase;bossBanner.querySelector('strong').textContent=`${s.battleEnemy.name||'BOSS'} · PHASE ${phase}`;bossBanner.classList.remove('hidden');pulse('boss-phase',400);shake(14);setTimeout(()=>bossBanner.classList.add('hidden'),1550);}
     lastEnemyHp=eh;lastHeroHp=hh;requestAnimationFrame(inspect);
   }

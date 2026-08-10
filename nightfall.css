@@ -2,7 +2,7 @@
 :root{--nf-gold:#d6ad68;--nf-blue:#6aa4c8;--nf-ward:#72c7dc;--nf-blood:#b84a43;--nf-ink:#07090d}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:999;background:radial-gradient(circle at 50% 42%,transparent 52%,rgba(0,0,0,.18) 100%);mix-blend-mode:multiply}
 .screen-wrap{box-shadow:0 26px 80px rgba(0,0,0,.48),inset 0 0 0 1px rgba(228,190,118,.12)}
-#gameCanvas{filter:saturate(1.08) contrast(1.055) brightness(.98);box-shadow:inset 0 0 70px rgba(0,0,0,.28)}
+#gameCanvas{box-shadow:inset 0 0 70px rgba(0,0,0,.28)}
 .meter.barrier{background:#101c22;border-color:#345662}.meter.barrier i{background:linear-gradient(90deg,#2f7e98,#82d6e4 62%,#d6fbff);box-shadow:0 0 16px rgba(91,207,226,.42)}
 .ward-stat span{color:#82cfe0}.ward-stat strong{color:#c8f7ff}
 .nightfall-lens{position:absolute;inset:0;pointer-events:none;z-index:3;background:linear-gradient(115deg,rgba(255,211,138,.035),transparent 28%,transparent 72%,rgba(86,125,173,.04)),radial-gradient(circle at 52% 36%,transparent 42%,rgba(0,0,0,.18) 100%);mix-blend-mode:screen}

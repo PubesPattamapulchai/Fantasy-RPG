@@ -129,7 +129,7 @@ The included workflow deploys the static game automatically. The public address 
 
 ## Save compatibility
 
-This edition writes save format version 5 and automatically migrates compatible version 3/4 Campaign Master and Codex saves. New Stamina and weapon-affix fields are filled in automatically when an older compatible save is loaded.
+This edition writes save format version 10 and automatically migrates compatible version 3-9 saves from earlier editions (Campaign Master, Codex, Ascendant, and later). Newer fields (Stamina, weapon affixes, talents, runestones, skill sigils, and so on) are filled in automatically when an older compatible save is loaded.
 
 ## License
 

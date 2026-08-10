@@ -1,6 +1,5 @@
 /* Emberfall Blackstar 2D v14 — painterly world + readable modern ARPG HUD */
 .blackstar-v14 #modern2dCanvas{z-index:2!important;display:block!important;opacity:1!important;filter:saturate(1.12) contrast(1.06) brightness(1.04);background:#111721;cursor:crosshair}
-.blackstar-v14 #gameCanvas{opacity:0;pointer-events:none}
 .blackstar-v14 .screen-wrap{background:#111721!important;box-shadow:0 26px 74px rgba(0,0,0,.58),inset 0 0 0 1px rgba(240,205,142,.04)!important}
 .blackstar-v14 .location-badge{background:linear-gradient(180deg,rgba(12,14,18,.82),rgba(7,8,11,.9))!important;border-color:rgba(235,197,125,.34)!important;box-shadow:0 8px 24px rgba(0,0,0,.44),0 0 24px rgba(231,188,108,.08)!important}
 .blackstar-v14 .dialogue{left:18px!important;right:18px!important;bottom:16px!important;background:linear-gradient(180deg,rgba(12,14,19,.78),rgba(7,8,12,.95))!important;border-color:rgba(233,197,130,.22)!important;box-shadow:0 20px 44px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.04)!important}

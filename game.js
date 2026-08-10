@@ -692,14 +692,14 @@
   function classFeature(){return CLASS_FEATURES[state.player.job]||{name:'Wayfarer',desc:'Walk the road and learn by surviving it.'};}
   function classReaction(){return CLASS_REACTIONS[state.player.job]||{name:'ROAD WARD',desc:'Reduce one incoming hit.'};}
   function readyReaction(){if(state.reactionUsed){ui.battleLog.textContent='Your class reaction has already been spent this battle.';beep(90);return false;}state.reactionUsed=true;state.reactionReadied=true;ui.battleLog.textContent=`${classReaction().name} is readied. ${classReaction().desc}`;spawnFx('word','REACTION READY');beep(420,.08,'square',.025);updateBattleUi();return true;}
-  function resolveReaction(raw){if(!state.reactionReadied)return{raw,evaded:false,note:''};state.reactionReadied=false;const p=state.player,e=state.battleEnemy,rBonus=equippedRelic()?.reaction||0;let note=classReaction().name,evaded=false;
-    if(p.job==='vanguard'){raw*=Math.max(.42,.62-rBonus);const counter=Math.max(1,Math.floor(effectiveAttack()*.38));e.hp-=counter;e.stagger=Math.min(100,(e.stagger||0)+14);spawnFx('number',`-${counter}`,'enemy');note+=` reduces the blow and counters for ${counter}.`;}
+  function resolveReaction(raw){if(!state.reactionReadied)return{raw,evaded:false,note:''};state.reactionReadied=false;const p=state.player,rBonus=equippedRelic()?.reaction||0;let note=classReaction().name,evaded=false;
+    if(p.job==='vanguard'){raw*=Math.max(.42,.62-rBonus);const counter=Math.max(1,Math.floor(effectiveAttack()*.38)),dealt=applyPassiveDamage(counter,'','physical',14);note+=` reduces the blow and counters for ${dealt}.`;}
     if(p.job==='arcanist'){raw*=Math.max(.35,.52-rBonus);p.mp=Math.min(p.maxMp,p.mp+4);note+=' folds the attack into a rune and restores 4 MP.';}
     if(p.job==='ranger'){if(Math.random()<.56+rBonus){raw=0;evaded=true;state.battleMomentum=Math.min(100,state.battleMomentum+18);note+=' carries you completely clear of the strike.';}else{raw*=Math.max(.52,.72-rBonus);note+=' turns a clean hit into a glancing one.';}}
     if(p.job==='paladin'){raw*=Math.max(.38,.55-rBonus);const heal=Math.min(Math.ceil(p.maxHp*.10),p.maxHp-p.hp);p.hp+=heal;if(heal)spawnFx('heal',`+${heal}`,'hero');note+=` absorbs the blow and restores ${heal} HP.`;}
     if(p.job==='rogue'){if(Math.random()<.62+rBonus){raw=0;evaded=true;state.advantageNext=true;note+=' leaves only a shadow behind. Your next attack has advantage.';}else{raw*=Math.max(.48,.68-rBonus);note+=' spoils the enemy’s angle.';}}
     if(p.job==='cleric'){raw*=Math.max(.42,.58-rBonus);const heal=Math.min(Math.ceil(p.maxHp*.14),p.maxHp-p.hp);p.hp+=heal;if(heal)spawnFx('heal',`+${heal}`,'hero');note+=` answers with dawnlight and restores ${heal} HP.`;}
-    if(p.job==='spellblade'){raw*=Math.max(.38,.55-rBonus);const counter=Math.max(1,Math.floor(effectiveAttack()*.32+p.level));e.hp-=counter;spawnFx('number',`-${counter}`,'enemy');note+=` bends the force aside and returns ${counter} arcane damage.`;}
+    if(p.job==='spellblade'){raw*=Math.max(.38,.55-rBonus);const counter=Math.max(1,Math.floor(effectiveAttack()*.32+p.level)),dealt=applyPassiveDamage(counter,'','arcane');note+=` bends the force aside and returns ${dealt} arcane damage.`;}
     spawnFx('word','REACTION!');return{raw,evaded,note};
   }
   function checkBossPhase(enemy){if(!enemy?.boss||enemy.hp<=0)return;const ratio=enemy.hp/enemy.maxHp;const next=ratio<=.33?3:ratio<=.66?2:1;if(next<=enemy.phase)return;const jumps=next-enemy.phase;enemy.phase=next;state.battlePhase=next;enemy.attack+=2*jumps;enemy.armor+=jumps;enemy.intent='ultimate';state.battleMomentum=Math.min(100,state.battleMomentum+12);ui.battle.classList.remove('phase-1','phase-2','phase-3');ui.battle.classList.add(`phase-${next}`);spawnFx('word',`BOSS PHASE ${next}`);shakeBattle(11);flashBattle(true);chord([110,98,82,73]);ui.battleLog.textContent+=` ${enemy.name} enters PHASE ${next}: its attack pattern changes!`; }
@@ -1406,7 +1406,9 @@
     if(c==='pip'){const d=(effectiveAttack()*1.18+randomBetween(5,12))*bond*damageMult;applyEnemyDamage(d,'Pip appears from the flank for {damage} damage!',{skill:true,prepared:false,stagger:24,flash:true,type:'physical'});state.advantageNext=true;}
     if(c==='mara'){const healing=(1+(runestone().healing||0))*supportMult;const heal=Math.min(Math.ceil((p.maxHp*.34+p.level*2)*bond*healing),p.maxHp-p.hp);p.hp+=heal;spawnFx('heal',`+${heal}`,'hero');ui.battleLog.textContent=`Mara's Healing Hymn restores ${heal} HP. ${bondRank()} trust steadies the party.`;state.guarding=true;}
     if(tactic==='guardian')gainBarrier(p.maxHp*(surge?.28:.16),surge?'COVENANT WARD':'PARTY WARD');if(surge){state.advantageNext=true;p.stamina=Math.min(p.maxStamina,p.stamina+18);}
-    spawnFx('word',`${surge?'COVENANT SURGE · ':''}${companionAssistName().toUpperCase()} · ${partyTactic().name}`);chord([330,440,660]);updateBattleUi();return true;
+    spawnFx('word',`${surge?'COVENANT SURGE · ':''}${companionAssistName().toUpperCase()} · ${partyTactic().name}`);chord([330,440,660]);updateBattleUi();
+    if(e.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,430);}
+    return true;
   }
   function cyclePartyTactic(){if(!state.companion)return false;const order=['assault','guardian','support'];state.companionTactic=order[(order.indexOf(state.companionTactic)+1)%order.length];ui.battleLog.textContent=`Party doctrine changed to ${partyTactic().name}. ${partyTactic().desc}`;spawnFx('word',`PARTY · ${partyTactic().name}`);updateBattleUi();return true;}
 
@@ -1563,6 +1565,23 @@
   }
 
   function damageEnemy(amount,text,type='physical'){return applyEnemyDamage(amount,text,{skill:true,stagger:12,flash:true,type});}
+  // For damage that isn't a direct player action (surface ticks, DOTs, class-reaction counters):
+  // applies the same affinity/ward mitigation and boss-phase check as applyEnemyDamage without
+  // the player-action-only side effects (combo chain, hero attack animation, echo sigil, etc.)
+  // that don't make sense for passive/environmental damage. Pass text='' to let the caller
+  // compose its own log line with the returned (post-mitigation) damage.
+  function applyPassiveDamage(amount,text,type='physical',stagger=0){
+    const enemy=state.battleEnemy;if(!enemy)return 0;
+    const affinity=affinityMultiplier(enemy,type);
+    let damage=Math.max(1,Math.floor(amount*affinity*(1+runeDamageBonus(type))));
+    if(enemy.ward>0){damage=Math.max(1,Math.floor(damage*(1-enemy.ward)));enemy.ward=0;text=text?`Iron Ward softens the blow. ${text}`:text;}
+    enemy.hp-=damage;
+    if(stagger)enemy.stagger=Math.min(100,(enemy.stagger||0)+stagger);
+    if(text){if(affinity>1)text=`WEAKNESS! ${text}`;else if(affinity<1)text=`RESISTED. ${text}`;ui.battleLog.textContent=text.replace('{damage}',damage);}
+    spawnFx('number',`-${damage}`,'enemy');
+    checkBossPhase(enemy);
+    return damage;
+  }
 
   function useJobSkill(slot){const p=state.player,enemy=state.battleEnemy,jobId=p.job,skill=currentJob().skills[slot-1];if(!spendMp(skill.cost))return false;const atk=effectiveAttack();let damage=0;
     if(jobId==='vanguard'&&slot===1){damage=applyEnemyDamage(atk*1.65+randomBetween(2,7),'Power Strike crashes for {damage} damage!',{skill:true,stagger:24,flash:true,type:'physical'});}
@@ -1616,8 +1635,8 @@
   function createBattleSurface(type,turns=3){if(!BATTLE_SURFACES[type])return;state.battleSurface={type,turns:turns+(sigilIs('catalyst')?1:0)};spawnFx('word',BATTLE_SURFACES[type].name);updateBattleUi();}
   function tickBattleSurface(){
     const s=state.battleSurface,e=state.battleEnemy,p=state.player;if(!s||!e)return;
-    if(s.type==='fire'){const d=5+Math.floor(p.level*.8);e.hp-=d;spawnFx('number',`-${d}`,'enemy');ui.battleLog.textContent=`Burning ground scorches ${e.name} for ${d}.`;}
-    if(s.type==='poison'){const d=4+Math.floor(p.level*.65);e.hp-=d;spawnFx('number',`-${d}`,'enemy');ui.battleLog.textContent=`Miasma poisons ${e.name} for ${d}.`;}
+    if(s.type==='fire'){const d=5+Math.floor(p.level*.8),dealt=applyPassiveDamage(d,'','fire');ui.battleLog.textContent=`Burning ground scorches ${e.name} for ${dealt}.`;}
+    if(s.type==='poison'){const d=4+Math.floor(p.level*.65),dealt=applyPassiveDamage(d,'','poison');ui.battleLog.textContent=`Miasma poisons ${e.name} for ${dealt}.`;}
     if(s.type==='arcane'){p.mp=Math.min(p.maxMp,p.mp+2);spawnFx('heal','+2 MP','hero');}
     if(s.type==='radiant'){const h=Math.min(Math.max(2,Math.floor(p.maxHp*.035)),p.maxHp-p.hp);p.hp+=h;if(h)spawnFx('heal',`+${h}`,'hero');}
     if(s.type==='physical'){e.stagger=Math.min(100,(e.stagger||0)+7);}
@@ -1674,7 +1693,7 @@
     shakeBattle(7);return true;
   }
   function useDodge(){const p=state.player,cost=dodgeCost();if((p.stamina||0)<cost)return false;p.stamina-=cost;state.dodgePrimed=true;state.battleRange=state.battleRange==='close'?'mid':'far';advanceCombo('dodge',10);ui.battleLog.textContent=`You break away to ${state.battleRange.toUpperCase()} range and prepare to evade the next attack.`;spawnFx('word','DODGE READY');animateClass(ui.battleHero,'dodge-anim',520);return true;}
-  function shakeBattle(power=5){if(!ui.battle)return;ui.battle.style.setProperty('--shake',`${power}px`);ui.battle.classList.remove('camera-shake');void ui.battle.offsetWidth;ui.battle.classList.add('camera-shake');setTimeout(()=>ui.battle.classList.remove('camera-shake'),420);}
+  function shakeBattle(power=5){window.Emberfall2D?.shake?.(power);if(!ui.battle)return;ui.battle.style.setProperty('--shake',`${power}px`);ui.battle.classList.remove('camera-shake');void ui.battle.offsetWidth;ui.battle.classList.add('camera-shake');setTimeout(()=>ui.battle.classList.remove('camera-shake'),420);}
 
   function finishPlayerTurn(){
     const enemy=state.battleEnemy;state.battleTurns+=1;updateBattleUi();if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,430);return;}
@@ -1710,7 +1729,7 @@
     if(state.companionCooldown>0)state.companionCooldown-=1;if(state.weaponTechniqueCooldown>0)state.weaponTechniqueCooldown-=1;if(state.parryCooldown>0)state.parryCooldown-=1;
     if(hasTalent('channeler'))p.mp=Math.min(p.maxMp,p.mp+1);tickBattleSurface();if(enemy.hp<=0){updateBattleUi();setTimeout(victory,420);return;}
     const traits=enemyTraits(enemy),regen=traits.reduce((sum,t)=>sum+(t.regen||0),0);if(regen){const heal=Math.max(3,Math.floor(enemy.maxHp*regen));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);spawnFx('heal',`+${heal}`,'enemy');}
-    if(enemy.dotTurns>0){enemy.hp-=enemy.dotDamage;enemy.dotTurns-=1;ui.battleLog.textContent=`${enemy.dotName} deals ${enemy.dotDamage} damage to ${enemy.name}.`;spawnFx('number',`-${enemy.dotDamage}`,'enemy');updateBattleUi();if(enemy.hp<=0){setTimeout(victory,520);return;}}
+    if(enemy.dotTurns>0){const dotType=({burn:'fire',starfire:'fire',poison:'poison',venom:'poison'})[enemy.dotName]||'physical';enemy.dotTurns-=1;const dealt=applyPassiveDamage(enemy.dotDamage,'',dotType);ui.battleLog.textContent=`${enemy.dotName} deals ${dealt} damage to ${enemy.name}.`;updateBattleUi();if(enemy.hp<=0){setTimeout(victory,520);return;}}
     if(enemy.stunned){enemy.stunned=false;ui.battleLog.textContent=`${enemy.name} is staggered and loses the turn!`;spawnFx('word','OPENING!');chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+18+(hasTalent('ironPulse')?6:0));state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
     const intent=enemy.intent||'attack';window.dispatchEvent(new CustomEvent('emberfall:enemyaction',{detail:{intent,name:enemy.name}}));
     if(intent==='mend'){const heal=Math.max(8,Math.floor(enemy.maxHp*.14));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);ui.battleLog.textContent=`${enemy.name} gathers dark energy and restores ${heal} HP.`;spawnFx('heal',`+${heal}`,'enemy');animateClass(ui.enemySprite,'skill-anim');}

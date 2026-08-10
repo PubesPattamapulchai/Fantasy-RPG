@@ -15,6 +15,7 @@
 body{background:radial-gradient(circle at 18% 0%,rgba(76,87,116,.20),transparent 31rem),radial-gradient(circle at 90% 4%,rgba(105,54,40,.18),transparent 34rem),linear-gradient(180deg,#080a0e,#0d0e13 48%,#08090c);color:#eeeae2}
 .game-shell{max-width:1500px;padding:14px;gap:12px}
 .screen-wrap{position:relative;isolation:isolate;overflow:hidden;background:#090b0f;border-radius:20px!important;border:1px solid rgba(224,194,140,.18)!important;box-shadow:0 28px 78px rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.025)!important}
+/* opacity/pointer-events intentionally NOT !important: renderer2d-v14.js's crash fallback sets them inline to reveal this legacy canvas. */
 #gameCanvas{position:relative;z-index:0;opacity:0;pointer-events:none;filter:none!important}
 #modern2dCanvas{position:absolute;inset:0;z-index:1;width:100%;height:100%;display:block;image-rendering:auto;filter:saturate(1.05) contrast(1.035);touch-action:manipulation;cursor:crosshair}
 .modern2d-active .scanlines{opacity:.025!important;mix-blend-mode:soft-light}
