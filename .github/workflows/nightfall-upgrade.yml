@@ -24,9 +24,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .nightfall/nightfall-*.b64 > /tmp/nightfall.patch.gz.b64
+          cat .nightfall/payload-*.b64 > /tmp/nightfall.patch.gz.b64
+          test "$(wc -c < /tmp/nightfall.patch.gz.b64)" -eq 35616
+          echo 'ec3fb6ec7bcc5d4b8a39da37ef8d1f68ab711f425ece8e855640c06f9bc094c4  /tmp/nightfall.patch.gz.b64' | sha256sum -c -
           base64 -d /tmp/nightfall.patch.gz.b64 > /tmp/nightfall.patch.gz
+          gzip -t /tmp/nightfall.patch.gz
           gzip -dc /tmp/nightfall.patch.gz > /tmp/nightfall.patch
+          test "$(wc -c < /tmp/nightfall.patch)" -eq 115213
+          echo '1ebbed2bbbc54bd97b088856e3d2d49c8bf376725062cf05f353edadbfcca7a5  /tmp/nightfall.patch' | sha256sum -c -
           git apply --check /tmp/nightfall.patch
           git apply /tmp/nightfall.patch
 
