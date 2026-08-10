@@ -48,7 +48,7 @@ jobs:
           html = Path('index.html').read_text(encoding='utf-8')
           js = Path('game.js').read_text(encoding='utf-8')
           json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
-          required = ['intentTimeline','wardBar','skillSigilGrid','companionDoctrineGrid','lootReveal','nightfall.css']
+          required = ['intentTimeline','barrierText','skillSigilGrid','partyTacticBtn','lootReveal','nightfall.css']
           missing = [x for x in required if x not in html and x not in js]
           if missing:
               raise SystemExit('Missing Nightfall hooks: ' + ', '.join(missing))
