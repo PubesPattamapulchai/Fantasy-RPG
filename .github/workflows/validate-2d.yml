@@ -1,0 +1,66 @@
+name: Validate Emberfall 2D
+
+on:
+  push:
+    paths:
+      - '*.html'
+      - '*.js'
+      - '*.css'
+      - '*.webmanifest'
+      - '.github/workflows/validate-2d.yml'
+  pull_request:
+    paths:
+      - '*.html'
+      - '*.js'
+      - '*.css'
+      - '*.webmanifest'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JavaScript syntax
+        run: |
+          node --check game.js
+          node --check mobile.js
+          node --check reforged-ui.js
+          node --check renderer2d.js
+          node --check combat-fx2d.js
+          node --check actionrpg2d.js
+          node --check service-worker.js
+
+      - name: Manifest and 2D wiring
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          html=Path('index.html').read_text().lower()
+          sw=Path('service-worker.js').read_text().lower()
+          json.loads(Path('manifest.webmanifest').read_text())
+          required=['modern2d.css','renderer2d.js','combat-fx2d.js','actionrpg2d.js']
+          for token in required:
+              assert token in html, f'missing {token} from index.html'
+          for token in required:
+              assert token in sw or token == 'modern2d.css', f'missing {token} from service worker'
+          forbidden=['three@','three.min.js','modern3d.js','modern3d.css','actionrpg-plus.js','actionrpg-plus.css','cinematic3dcanvas','webglrenderer']
+          for token in forbidden:
+              assert token not in html, f'3D runtime reference returned: {token}'
+              assert token not in sw, f'3D cache reference returned: {token}'
+          assert 'emberfall-blackstar-2d-v12' in sw
+          print('Modern 2D runtime validation OK')
+          PY
+
+      - name: Executable safety scan
+        run: |
+          bad=$(find . -type f \( -iname '*.exe' -o -iname '*.dll' -o -iname '*.msi' -o -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' \) -print)
+          if [ -n "$bad" ]; then
+            echo "$bad"
+            exit 1
+          fi
+          echo 'No prohibited executable payloads found'
