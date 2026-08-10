@@ -1,4 +1,4 @@
-const CACHE = 'emberfall-blackstar-2d-v12';
+const CACHE = 'emberfall-blackstar-2d-v13';
 const CORE = [
   './',
   './index.html',
@@ -7,9 +7,11 @@ const CORE = [
   './nightfall.css',
   './reforged.css',
   './modern2d.css',
+  './cinematic2d-v13.css',
   './renderer2d.js',
   './combat-fx2d.js',
   './actionrpg2d.js',
+  './cinematic2d-v13.js',
   './reforged-ui.js',
   './game.js',
   './mobile.js',

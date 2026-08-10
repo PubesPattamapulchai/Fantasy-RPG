@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Blackstar 2D Reforged",
+  "name": "Emberfall: Blackstar 2D Ascendant",
   "short_name": "Emberfall",
-  "description": "A cinematic modern 2D dark-fantasy action RPG with layered environments, fluid combat, tactical party systems, Hunt Chains, World Tiers, Nemesis enemies, buildcraft, boss phases, and offline play.",
+  "description": "A cinematic high-detail 2D dark-fantasy action RPG with Flow Surges, elemental reactions, reactive tactical combat, layered lighting, boss phases, party systems, deep loot, accessibility options, and offline play.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
