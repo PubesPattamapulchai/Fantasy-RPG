@@ -1,14 +1,15 @@
-const CACHE = 'emberfall-actionrpg-v11';
+const CACHE = 'emberfall-blackstar-2d-v12';
 const CORE = [
   './',
   './index.html',
   './styles.css',
+  './veilforged.css',
   './nightfall.css',
   './reforged.css',
-  './modern3d.css',
-  './modern3d.js',
-  './actionrpg-plus.css',
-  './actionrpg-plus.js',
+  './modern2d.css',
+  './renderer2d.js',
+  './combat-fx2d.js',
+  './actionrpg2d.js',
   './reforged-ui.js',
   './game.js',
   './mobile.js',
