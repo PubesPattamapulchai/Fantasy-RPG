@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Blackstar Ascendant 3D Edition",
+  "name": "Emberfall: Blackstar 2D Reforged",
   "short_name": "Emberfall",
-  "description": "An original cinematic dark-fantasy party RPG with Hunt Chains, optional tactical guidance, Covenant Surges, World Tiers, Nemesis enemies, buildcraft, accessible UI options, boss phases, and offline play.",
+  "description": "A cinematic modern 2D dark-fantasy action RPG with layered environments, fluid combat, tactical party systems, Hunt Chains, World Tiers, Nemesis enemies, buildcraft, boss phases, and offline play.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -12,8 +12,8 @@
     "minimal-ui"
   ],
   "orientation": "any",
-  "background_color": "#050609",
-  "theme_color": "#090b10",
+  "background_color": "#07090d",
+  "theme_color": "#0b0d12",
   "categories": [
     "games",
     "entertainment"
