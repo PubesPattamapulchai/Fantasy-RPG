@@ -1,0 +1,82 @@
+name: Apply Blackstar Reforged Upgrade
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.blackstar/**'
+      - '.github/workflows/blackstar-upgrade.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reassemble verified upgrade
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .blackstar/upgrade-*.b64 > /tmp/blackstar-upgrade.b64
+          test "$(wc -c < /tmp/blackstar-upgrade.b64)" -eq 24856
+          echo '14c211bd20da5412f680705111590797bcf03ecc3637df89895cc2a50b1a177d  /tmp/blackstar-upgrade.b64' | sha256sum -c -
+          base64 -d /tmp/blackstar-upgrade.b64 > /tmp/blackstar-upgrade.py
+          test "$(wc -c < /tmp/blackstar-upgrade.py)" -eq 18642
+          echo 'fe09caebb78417cdccffe3ff7c7f1c9fcc852b3e8c6c1907168971e0ea78f470  /tmp/blackstar-upgrade.py' | sha256sum -c -
+          python3 -m py_compile /tmp/blackstar-upgrade.py
+          python3 /tmp/blackstar-upgrade.py
+
+      - name: Validate Blackstar browser game
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check game.js
+          node --check mobile.js
+          node --check service-worker.js
+          node --check reforged-ui.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          html=Path('index.html').read_text(encoding='utf-8')
+          js=Path('game.js').read_text(encoding='utf-8')
+          ui=Path('reforged-ui.js').read_text(encoding='utf-8')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          css=Path('reforged.css').read_text(encoding='utf-8')
+          manifest=json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
+          required_html=['Blackstar Reforged','reforged.css','reforged-ui.js']
+          required_js=['huntStreak','recommendedAction','TACTICAL READ','COVENANT SURGE','version:9']
+          required_ui=['settingsScreen','reducedMotion','largeText','highContrast','compactHud','actionInspector','combatCoach']
+          missing=[x for x in required_html if x not in html]+[x for x in required_js if x not in js]+[x for x in required_ui if x not in ui]
+          if missing: raise SystemExit('Missing Blackstar hooks: '+', '.join(missing))
+          if html.index('reforged-ui.js') > html.index('game.js'): raise SystemExit('Friendly UI controller must load before game.js')
+          if 'reforged.css' not in sw or 'reforged-ui.js' not in sw or 'blackstar' not in sw: raise SystemExit('PWA cache was not refreshed')
+          if 'Blackstar Reforged' not in manifest.get('name',''): raise SystemExit('Manifest name not updated')
+          if '.battle-actions .recommended' not in css: raise SystemExit('Reforged visual layer incomplete')
+          blocked={'.exe','.dll','.msi','.msix','.bat','.cmd','.ps1','.vbs','.com','.scr'}
+          bad=[str(p) for p in Path('.').rglob('*') if p.is_file() and p.suffix.lower() in blocked and '.git' not in p.parts]
+          if bad: raise SystemExit('Blocked executable/script files: '+', '.join(bad))
+          print('Blackstar Reforged validation OK')
+          PY
+
+      - name: Remove one-time staging files
+        shell: bash
+        run: |
+          rm -rf .blackstar
+          rm -f .github/workflows/blackstar-upgrade.yml
+
+      - name: Commit upgraded game
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upgrade game to Blackstar Reforged Edition"
+          git push origin main
