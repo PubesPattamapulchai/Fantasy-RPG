@@ -1,0 +1,83 @@
+name: Apply Blackstar 2D v14 Final
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-blackstar-v14-final.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply v14 and persist game patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import runpy
+          result=runpy.run_path('tools/apply-blackstar-v14.py')
+          Path('game.js').write_text(result['s'],encoding='utf-8')
+          print('Persisted patched game.js')
+          PY
+
+      - name: Validate JavaScript
+        run: |
+          node --check game.js
+          node --check renderer2d-v14.js
+          node --check combat-fx2d.js
+          node --check actionrpg2d.js
+          node --check cinematic2d-v13.js
+          node --check mobile.js
+          node --check service-worker.js
+
+      - name: Validate complete v14 build
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          h=Path('index.html').read_text(encoding='utf-8')
+          g=Path('game.js').read_text(encoding='utf-8')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          r=Path('renderer2d-v14.js').read_text(encoding='utf-8')
+          v=Path('.github/workflows/validate-2d.yml').read_text(encoding='utf-8')
+          json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
+          required={
+            'renderer runtime':'renderer2d-v14.js' in h,
+            'v14 UI':'cinematic2d-v14.css' in h,
+            'v14 cache':'emberfall-blackstar-2d-v14' in sw,
+            'renderer cached':'renderer2d-v14.js' in sw,
+            'interrupt mechanic':'INTERRUPTED!' in g and 'interruptNeed' in g,
+            'dodge counter':'counter-opening' in g and 'state.advantageNext=true' in g,
+            'faster turns':'setTimeout(enemyTurn,390)' in g,
+            'fallback renderer':'legacy.style.opacity' in r,
+            'permanent validator v14':'renderer2d-v14.js' in v and 'emberfall-blackstar-2d-v14' in v,
+          }
+          for name,ok in required.items():
+              print(f'{name}:', 'OK' if ok else 'FAIL')
+              assert ok,name
+          runtime=(h+'\n'+sw+'\n'+r).lower()
+          for token in ['three.min.js','modern3d.js','modern3d.css','emberfall3d','webglrenderer']:
+              assert token not in runtime,token
+          print('Blackstar 2D v14 complete validation OK')
+          PY
+
+      - name: Executable safety scan
+        run: |
+          bad=$(find . -type f \( -iname '*.exe' -o -iname '*.dll' -o -iname '*.msi' -o -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' \) -print)
+          test -z "$bad" || { echo "$bad"; exit 1; }
+
+      - name: Commit Blackstar v14
+        run: |
+          rm -f tools/apply-blackstar-v14.py .github/workflows/apply-blackstar-v14.yml .github/workflows/apply-blackstar-v14-retry.yml .github/workflows/apply-blackstar-v14-final.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix blank world renderer and upgrade Emberfall 2D combat to v14'
+          git push
