@@ -1,0 +1,45 @@
+name: Apply Modern Action RPG Evolution
+on:
+  push:
+    paths:
+      - '.github/workflows/actionrpg-evolution.yml'
+      - '.staging/actionrpg-api.txt'
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Wire interaction bridge
+        run: |
+          python3 -c "from pathlib import Path;p=Path('modern3d.js');s=p.read_text(encoding='utf-8');a=Path('.staging/actionrpg-api.txt').read_text(encoding='utf-8');m='  const waitForOptions=()=>';s=s if 'window.Emberfall3D = {' in s else s.replace(m,a+'\n'+m,1);p.write_text(s,encoding='utf-8')"
+      - name: Wire new presentation assets
+        run: |
+          python3 -c "from pathlib import Path;p=Path('index.html');s=p.read_text(encoding='utf-8');s=s if 'actionrpg-plus.css' in s else s.replace('  <link rel=\"stylesheet\" href=\"modern3d.css\" />','  <link rel=\"stylesheet\" href=\"modern3d.css\" />\n  <link rel=\"stylesheet\" href=\"actionrpg-plus.css\" />',1);s=s if 'actionrpg-plus.js' in s else s.replace('  <script src=\"modern3d.js\"></script>','  <script src=\"modern3d.js\"></script>\n  <script src=\"actionrpg-plus.js\"></script>',1);s=s.replace('18 maps · cinematic WebGL 3D · dynamic lighting/shadows · smooth camera · reactive enemies · particle combat · 7 jobs · 4 companions · Hunt Chains · Covenant Surges · World Tiers · deep loot · 29 weapons.','18 maps · cinematic WebGL 3D · click-to-move pathfinding · buffered combat inputs · dynamic telegraphs · dense environments/weather · reactive enemies · 7 jobs · 4 companions · Hunt Chains · deep loot · 29 weapons.');p.write_text(s,encoding='utf-8')"
+          python3 -c "from pathlib import Path;p=Path('service-worker.js');s=p.read_text(encoding='utf-8').replace('emberfall-ascendant-3d-v10','emberfall-actionrpg-v11');s=s if \"'./actionrpg-plus.js'\" in s else s.replace(\"  './modern3d.js',\",\"  './modern3d.js',\\n  './actionrpg-plus.css',\\n  './actionrpg-plus.js',\",1);p.write_text(s,encoding='utf-8')"
+      - name: Validate upgraded browser game
+        run: |
+          node --check game.js
+          node --check mobile.js
+          node --check reforged-ui.js
+          node --check modern3d.js
+          node --check actionrpg-plus.js
+          grep -q 'window.Emberfall3D' modern3d.js
+          grep -q 'screenToGround' modern3d.js
+          grep -q 'actionrpg-plus.css' index.html
+          grep -q 'actionrpg-plus.js' index.html
+          grep -q 'emberfall-actionrpg-v11' service-worker.js
+          if find . -type f \( -iname '*.exe' -o -iname '*.dll' -o -iname '*.msi' -o -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' \) | grep -q .; then
+            echo 'Unsafe executable/script file found'; exit 1
+          fi
+      - name: Commit action RPG evolution
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -f .staging/actionrpg-api.txt .github/workflows/actionrpg-evolution.yml
+          git add index.html modern3d.js actionrpg-plus.js actionrpg-plus.css service-worker.js
+          git commit -m 'Upgrade Emberfall movement combat feel and 3D encounter presentation'
+          git push origin main
