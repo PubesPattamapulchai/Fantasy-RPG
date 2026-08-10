@@ -30,9 +30,10 @@ jobs:
           node --check game.js
           node --check mobile.js
           node --check reforged-ui.js
-          node --check renderer2d.js
+          node --check renderer2d-v14.js
           node --check combat-fx2d.js
           node --check actionrpg2d.js
+          node --check cinematic2d-v13.js
           node --check service-worker.js
 
       - name: Manifest and 2D wiring
@@ -42,18 +43,24 @@ jobs:
           from pathlib import Path
           html=Path('index.html').read_text().lower()
           sw=Path('service-worker.js').read_text().lower()
+          renderer=Path('renderer2d-v14.js').read_text().lower()
+          game=Path('game.js').read_text()
           json.loads(Path('manifest.webmanifest').read_text())
-          required=['modern2d.css','renderer2d.js','combat-fx2d.js','actionrpg2d.js']
+          required=['modern2d.css','cinematic2d-v14.css','renderer2d-v14.js','combat-fx2d.js','actionrpg2d.js','cinematic2d-v13.js']
           for token in required:
               assert token in html, f'missing {token} from index.html'
-          for token in required:
-              assert token in sw or token == 'modern2d.css', f'missing {token} from service worker'
-          forbidden=['three@','three.min.js','modern3d.js','modern3d.css','actionrpg-plus.js','actionrpg-plus.css','cinematic3dcanvas','webglrenderer']
+          for token in ['renderer2d-v14.js','cinematic2d-v14.css','combat-fx2d.js','actionrpg2d.js','cinematic2d-v13.js']:
+              assert token in sw, f'missing {token} from service worker'
+          forbidden=['three@','three.min.js','modern3d.js','modern3d.css','actionrpg-plus.js','actionrpg-plus.css','cinematic3dcanvas','webglrenderer','emberfall3d']
+          runtime=html+'\n'+sw+'\n'+renderer
           for token in forbidden:
-              assert token not in html, f'3D runtime reference returned: {token}'
-              assert token not in sw, f'3D cache reference returned: {token}'
-          assert 'emberfall-blackstar-2d-v12' in sw
-          print('Modern 2D runtime validation OK')
+              assert token not in runtime, f'3D runtime reference returned: {token}'
+          assert 'emberfall-blackstar-2d-v14' in sw
+          assert 'INTERRUPTED!' in game
+          assert 'counter-opening' in game
+          assert 'setTimeout(enemyTurn,390)' in game
+          assert 'legacy.style.opacity' in renderer
+          print('Blackstar 2D v14 runtime validation OK')
           PY
 
       - name: Executable safety scan
