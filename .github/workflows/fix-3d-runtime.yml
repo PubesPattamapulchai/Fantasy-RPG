@@ -1,0 +1,34 @@
+name: Fix 3D Runtime Compatibility
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-3d-runtime.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pin compatible Three.js global runtime
+        run: |
+          sed -i 's/three@0.160.0/three@0.159.0/g' index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='Emberfall: Blackstar Ascendant 3D Edition — an original cinematic dark-fantasy RPG with tactical party combat, intent timelines, barriers, companion doctrines, skill sigils, world tiers, nemesis enemies, executions, timed parries, buildcraft, rare loot, and a three-hour campaign.'
+          new='Emberfall: Blackstar Ascendant 3D Edition — an original cinematic WebGL fantasy action RPG with dynamic 3D environments, smooth camera movement, reactive tactical combat, modern lighting, particles, party systems, deep loot, and a three-hour campaign.'
+          s=s.replace(old,new)
+          p.write_text(s,encoding='utf-8')
+          PY
+          node --check modern3d.js
+          grep -q 'three@0.159.0' index.html
+      - name: Commit fix
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -f .github/workflows/fix-3d-runtime.yml
+          git add index.html modern3d.js
+          git commit -m 'Pin compatible Three.js runtime for cinematic 3D mode'
+          git push origin main
