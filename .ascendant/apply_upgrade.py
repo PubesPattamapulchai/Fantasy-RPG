@@ -1,0 +1,114 @@
+from pathlib import Path
+
+
+def replace_once(text, old, new, label):
+    if old not in text:
+        raise SystemExit(f'Missing anchor: {label}')
+    return text.replace(old, new, 1)
+
+
+index = Path('index.html').read_text(encoding='utf-8')
+index = index.replace('Emberfall: Blackstar Reforged Edition', 'Emberfall: Blackstar Ascendant 3D Edition')
+index = index.replace('BLACKSTAR REFORGED · CINEMATIC DARK-FANTASY CAMPAIGN', 'BLACKSTAR ASCENDANT 3D · CINEMATIC ACTION-RPG CAMPAIGN')
+index = index.replace('Emberfall: Blackstar Reforged Edition — an original cinematic dark-fantasy RPG with tactical party combat, intent timelines, barriers, companion doctrines, skill sigils, world tiers, nemesis enemies, executions, timed parries, buildcraft, rare loot, and a three-hour campaign.', 'Emberfall: Blackstar Ascendant 3D Edition — an original cinematic WebGL fantasy action RPG with dynamic 3D environments, smooth camera movement, reactive tactical combat, modern lighting, particles, party systems, deep loot, and a three-hour campaign.')
+if 'modern3d.css' not in index:
+    index = replace_once(index, '  <link rel="stylesheet" href="reforged.css" />', '  <link rel="stylesheet" href="reforged.css" />\n  <link rel="stylesheet" href="modern3d.css" />', 'modern CSS link')
+if 'modern3d.js' not in index:
+    index = replace_once(index, '  <script src="mobile.js"></script>', '  <script src="mobile.js"></script>\n  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" crossorigin="anonymous"></script>\n  <script src="modern3d.js"></script>', 'modern renderer scripts')
+old_footer = '18 maps · 7 jobs · 4 companions · Hunt Chains · smart tactical guidance · Covenant Surges · World Tiers · Ward · doctrines · Skill Sigils · parry/dodge · executions · Nemesis loot · 29 weapons.'
+new_footer = '18 maps · cinematic WebGL 3D · dynamic lighting/shadows · smooth camera · reactive enemies · particle combat · 7 jobs · 4 companions · Hunt Chains · Covenant Surges · World Tiers · deep loot · 29 weapons.'
+index = index.replace(old_footer, new_footer)
+Path('index.html').write_text(index, encoding='utf-8')
+
+js = Path('game.js').read_text(encoding='utf-8')
+if 'window.EmberfallBridge' not in js:
+    bridge = r'''
+  // Public read-only presentation bridge used by the optional cinematic WebGL renderer.
+  window.EmberfallBridge = {
+    snapshot: () => {
+      const loc = currentLocation();
+      const enemy = state.battleEnemy;
+      return {
+        started: !!state.started,
+        location: state.location,
+        locationData: {
+          name: loc.name, short: loc.short, subtitle: loc.subtitle, biome: loc.biome,
+          map: [...loc.map],
+          decor: (loc.decor || []).map(d => ({ ...d })),
+          npcs: (loc.npcs || []).map(n => ({ id:n.id, x:n.x, y:n.y, name:n.name, role:n.role, colors:[...(n.colors||[])] })),
+          enemies: (loc.enemies || []).filter(isEnemyVisible).map(e => ({ id:e.id, x:e.x, y:e.y, type:e.type, defeated:!!e.defeated })),
+          exits: (loc.exits || []).map(e => ({ x:e.x, y:e.y, label:e.label, target:e.target })),
+          shrine: loc.shrine ? { ...loc.shrine } : null
+        },
+        heroColors: [...(currentJob().colors || [])],
+        player: { x:state.player.x, y:state.player.y, facing:state.player.facing, hp:state.player.hp, maxHp:state.player.maxHp, mp:state.player.mp, maxMp:state.player.maxMp, stamina:state.player.stamina, maxStamina:state.player.maxStamina, barrier:state.player.barrier, level:state.player.level },
+        inBattle: !!state.inBattle,
+        companion: state.companion,
+        companionBond: state.companionBond || 0,
+        battleRange: state.battleRange,
+        battleStance: state.battleStance,
+        battleMomentum: state.battleMomentum,
+        battleSurface: state.battleSurface ? { ...state.battleSurface } : null,
+        battleEnemy: enemy ? { id:enemy.id, type:enemy.type, name:enemy.name, hp:enemy.hp, maxHp:enemy.maxHp, attack:enemy.attack, boss:!!enemy.boss, sprite:enemy.sprite, stagger:enemy.stagger, stunned:!!enemy.stunned, broken:!!enemy.broken, intent:enemy.intent, nextIntent:enemy.nextIntent, phase:enemy.phase, elite:enemy.elite, elite2:enemy.elite2 } : null,
+        battleLog: ui.battleLog?.textContent || '',
+        questStage: state.questStage
+      };
+    }
+  };
+
+'''
+    marker = '  function isBlocked(x, y) {'
+    pos = js.index(marker)
+    js = js[:pos] + bridge + js[pos:]
+
+if "window.dispatchEvent(new CustomEvent('emberfall:fx'" not in js:
+    js = replace_once(js, "  function spawnFx(kind,text='',target='enemy'){\n", "  function spawnFx(kind,text='',target='enemy'){\n    window.dispatchEvent(new CustomEvent('emberfall:fx',{detail:{kind,text,target}}));\n", 'FX event bridge')
+if "window.dispatchEvent(new CustomEvent('emberfall:action'" not in js:
+    js = replace_once(js, "  function battleAction(action){\n", "  function battleAction(action){\n    window.dispatchEvent(new CustomEvent('emberfall:action',{detail:{action}}));\n", 'action event bridge')
+if "window.dispatchEvent(new CustomEvent('emberfall:enemyaction'" not in js:
+    js = replace_once(js, "    const intent=enemy.intent||'attack';", "    const intent=enemy.intent||'attack';window.dispatchEvent(new CustomEvent('emberfall:enemyaction',{detail:{intent,name:enemy.name}}));", 'enemy action event bridge')
+
+start = js.index('  function rollEnemyIntent(enemy){')
+end = js.index('  function chooseEnemyIntent()', start)
+adaptive_ai = r'''  function rollEnemyIntent(enemy){
+    const roll=Math.random(),hp=enemy.hp/enemy.maxHp,p=state.player,heroHp=p.hp/p.maxHp,range=state.battleRange;
+    // Enemies now react to player state instead of choosing from a flat random table.
+    if(hp<.27&&roll<.18)return'mend';
+    if(enemy.boss&&enemy.phase>=2&&state.battleMomentum>=70&&roll<.46)return'ultimate';
+    if(enemy.boss&&heroHp<.35&&roll<.40)return'ultimate';
+    if((p.barrier||0)>0&&roll<.22)return'drain';
+    if(state.guarding&&roll<.25)return'hex';
+    if(state.parryPrimed&&roll<.24)return'brace';
+    if(range==='close'&&roll<.35)return'sweep';
+    if(range==='far'&&roll<.30)return'heavy';
+    if(heroHp<.32&&roll<.34)return'heavy';
+    if(enemy.boss&&roll<.24)return'ultimate';
+    if(roll<.40)return'heavy';
+    if(roll<.54)return'sweep';
+    if(roll<.65)return'hex';
+    if(roll<.75)return'drain';
+    if(roll<.84)return'brace';
+    return'attack';
+  }
+'''
+js = js[:start] + adaptive_ai + js[end:]
+js = js.replace('if(now-lastMove<80)return;', 'if(now-lastMove<55)return;', 1)
+js = js.replace('state.timingDuration=1050;', 'state.timingDuration=900;', 1)
+js = js.replace('setTimeout(enemyTurn,760);', 'setTimeout(enemyTurn,560);', 1)
+js = js.replace('setTimeout(enemyTurn,1050);', 'setTimeout(enemyTurn,820);', 1)
+Path('game.js').write_text(js, encoding='utf-8')
+
+sw = Path('service-worker.js').read_text(encoding='utf-8')
+sw = sw.replace("const CACHE = 'emberfall-blackstar-v9';", "const CACHE = 'emberfall-ascendant-3d-v10';")
+sw = sw.replace("const CACHE = 'emberfall-nightfall-v8';", "const CACHE = 'emberfall-ascendant-3d-v10';")
+if "'./modern3d.css'" not in sw:
+    if "'./reforged.css'" in sw:
+        sw = sw.replace("  './reforged.css',", "  './reforged.css',\n  './modern3d.css',\n  './modern3d.js',")
+    else:
+        sw = sw.replace("  './nightfall.css',", "  './nightfall.css',\n  './reforged.css',\n  './modern3d.css',\n  './modern3d.js',")
+Path('service-worker.js').write_text(sw, encoding='utf-8')
+
+manifest = Path('manifest.webmanifest').read_text(encoding='utf-8')
+manifest = manifest.replace('Emberfall: Blackstar Reforged Edition', 'Emberfall: Blackstar Ascendant 3D Edition')
+manifest = manifest.replace('An original cinematic dark-fantasy RPG with friendly tactical guidance, Hunt Chains, Covenant Surges, enemy intent timelines, Ward barriers, companion doctrines, Skill Sigils, World Tiers, Nemesis enemies, timed parries, executions, buildcraft, rare loot, and offline play.', 'An original cinematic WebGL fantasy action RPG with 3D environments, smooth camera movement, dynamic lighting, reactive tactical enemies, party combat, deep buildcraft, rare loot, and offline 2D fallback.')
+Path('manifest.webmanifest').write_text(manifest, encoding='utf-8')
