@@ -1,0 +1,55 @@
+/* Emberfall — modern action-RPG feel pass */
+#cinematic3dStage{pointer-events:none}
+#cinematic3dCanvas{pointer-events:auto;cursor:crosshair}
+.modern3d-active .screen-wrap{min-height:clamp(520px,68vh,820px)}
+.modern3d-active #cinematic3dStage::before{content:"";position:absolute;inset:-8%;pointer-events:none;z-index:2;background:radial-gradient(circle at 50% 46%,transparent 0 44%,rgba(0,0,0,.14) 65%,rgba(0,0,0,.48) 100%);mix-blend-mode:multiply}
+.modern3d-active #cinematic3dStage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:3;opacity:0;background:radial-gradient(circle at 50% 48%,rgba(255,235,190,.42),rgba(255,118,66,.12) 22%,transparent 48%)}
+#cinematic3dStage.impact-minor::after{animation:impactFlash .18s ease-out}
+#cinematic3dStage.impact-major::after{animation:impactFlashMajor .34s ease-out}
+#cinematic3dStage.danger-flash::after{background:radial-gradient(circle at 68% 44%,rgba(255,54,69,.36),rgba(120,10,22,.18) 28%,transparent 58%);animation:dangerFlash .42s ease-out}
+#cinematic3dStage.queued-fire::after{background:radial-gradient(circle at 22% 72%,rgba(112,199,255,.26),transparent 44%);animation:impactFlash .22s ease-out}
+#cinematic3dStage.path-ping::after{background:radial-gradient(circle at 50% 55%,rgba(105,207,255,.12),transparent 42%);animation:impactFlash .2s ease-out}
+@keyframes impactFlash{0%{opacity:0}30%{opacity:.65}100%{opacity:0}}
+@keyframes impactFlashMajor{0%{opacity:0}18%{opacity:.95}100%{opacity:0}}
+@keyframes dangerFlash{0%{opacity:0}35%{opacity:.7}100%{opacity:0}}
+
+.action-queue-chip{position:absolute;right:18px;bottom:242px;z-index:8;display:flex;gap:8px;align-items:center;padding:7px 10px;border-radius:999px;border:1px solid rgba(126,205,255,.32);background:rgba(8,14,22,.82);backdrop-filter:blur(12px);box-shadow:0 10px 26px rgba(0,0,0,.3),0 0 24px rgba(96,188,255,.12);font:700 9px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.12em;color:#9bcfff;pointer-events:none}
+.action-queue-chip strong{color:#edf8ff;font-size:9px}.action-queue-chip.hidden{display:none!important}
+.modern-control-hint{position:absolute;right:14px;top:14px;z-index:6;padding:7px 10px;border-radius:999px;border:1px solid rgba(230,196,130,.2);background:rgba(7,9,13,.56);backdrop-filter:blur(10px);font:700 8px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.12em;color:rgba(241,219,178,.78);pointer-events:none;transition:opacity 1.2s ease,transform 1.2s ease}
+.modern-control-hint.fade{opacity:.12;transform:translateY(-4px)}
+
+.modern3d-active .battle-menu{box-shadow:0 -18px 60px rgba(0,0,0,.4),inset 0 1px rgba(255,255,255,.03)!important}
+.modern3d-active .battle-actions .pixel-button{min-height:42px!important;position:relative;overflow:hidden}
+.modern3d-active .battle-actions .pixel-button::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.08),transparent 70%);transform:translateX(-130%);transition:transform .28s ease}
+.modern3d-active .battle-actions .pixel-button:hover::after,.modern3d-active .battle-actions .pixel-button:focus-visible::after{transform:translateX(130%)}
+.modern3d-active .battle-actions .pixel-button:disabled{opacity:.45;filter:saturate(.65);cursor:wait}
+.modern3d-active .battle-actions .pixel-button.recommended-action{box-shadow:0 0 0 1px rgba(244,205,127,.45),0 0 28px rgba(232,174,82,.18)!important}
+.modern3d-active .enemy-intent,.modern3d-active .intent-timeline{border-color:rgba(255,116,86,.22)!important}
+.modern3d-active .combat-coach{border-left:3px solid rgba(230,192,119,.68)!important}
+.modern3d-active .quick-status-card{box-shadow:inset 0 1px rgba(255,255,255,.025),0 10px 24px rgba(0,0,0,.16)}
+
+.modern3d-active .hud-panel,.modern3d-active .log-panel{background:linear-gradient(180deg,rgba(16,20,27,.82),rgba(8,10,15,.9))!important}
+.modern3d-active .hud-panel{box-shadow:0 20px 60px rgba(0,0,0,.32),inset -1px 0 rgba(226,193,134,.07)!important}
+.modern3d-active .log-panel{box-shadow:0 20px 60px rgba(0,0,0,.32),inset 1px 0 rgba(226,193,134,.07)!important}
+.modern3d-active .meter{height:10px!important}.modern3d-active .meter i{transition:width .18s ease-out!important}
+.modern3d-active .quest-box,.modern3d-active .mini-map-card{backdrop-filter:blur(9px)}
+.modern3d-active .dialogue{max-width:min(920px,calc(100% - 28px));margin-inline:auto;box-shadow:0 18px 70px rgba(0,0,0,.5)!important}
+
+@media (min-width:1100px){
+  .modern3d-active .play-area{grid-template-columns:minmax(190px,230px) minmax(0,1fr) minmax(210px,260px)!important}
+  .modern3d-active .screen-wrap{min-height:620px}
+}
+@media (max-width:900px){
+  #cinematic3dCanvas{cursor:default}
+  .modern-control-hint{top:8px;right:8px;font-size:7px;max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .action-queue-chip{right:8px;bottom:220px;font-size:8px;padding:6px 8px}
+  .modern3d-active .screen-wrap{min-height:58vh}
+  .modern3d-active .battle-actions .pixel-button{min-height:48px!important}
+}
+@media (max-width:560px){
+  .modern-control-hint{display:none}
+  .action-queue-chip{bottom:214px;right:6px}
+  .modern3d-active .screen-wrap{min-height:54vh}
+}
+.pref-reduced-motion #cinematic3dStage::after,.pref-reduced-motion .battle-actions .pixel-button::after{display:none!important}
+.pref-high-contrast .action-queue-chip{border-color:#9bd8ff;background:#05090e;color:#bde6ff}
