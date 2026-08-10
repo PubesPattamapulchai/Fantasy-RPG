@@ -1,0 +1,42 @@
+/* Emberfall Blackstar 2D v13 — cinematic action-RPG presentation */
+#cinematic2dV13{position:absolute;inset:0;z-index:3;pointer-events:none;width:100%;height:100%;mix-blend-mode:normal}
+#modern2dCanvas{z-index:2!important}
+.screen-wrap>.overlay,.screen-wrap>.dialogue,.screen-wrap>.toast,.screen-wrap>.location-badge,.screen-wrap>.mobile-status-bar,.screen-wrap>.rotate-hint{z-index:7!important}
+#combatFx2dOverlay{z-index:8!important}
+
+.flow-surge-chip{position:absolute;z-index:9;left:50%;top:14px;transform:translateX(-50%);min-width:220px;padding:7px 10px 8px;border:1px solid rgba(235,196,126,.26);border-radius:12px;background:linear-gradient(180deg,rgba(12,14,19,.88),rgba(7,8,12,.92));backdrop-filter:blur(14px);box-shadow:0 10px 28px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.04);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;color:#e8d4ad;pointer-events:none}
+.flow-surge-chip.hidden{display:none!important}.flow-surge-chip small{font:800 8px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.16em;color:#c6b18b}.flow-surge-chip>span{height:6px;border-radius:999px;background:rgba(255,255,255,.07);overflow:hidden;box-shadow:inset 0 1px 3px rgba(0,0,0,.7)}.flow-surge-chip i{display:block;height:100%;width:0;background:linear-gradient(90deg,#6f84ff,#b76dff 45%,#f4be72);border-radius:inherit;box-shadow:0 0 12px rgba(184,116,255,.5);transition:width .18s ease}.flow-surge-chip strong{font:800 9px/1 ui-sans-serif,system-ui,sans-serif;letter-spacing:.08em;min-width:56px;text-align:right}.flow-surge-chip.ready{border-color:rgba(248,203,112,.65);box-shadow:0 0 0 1px rgba(255,216,132,.08),0 0 26px rgba(191,120,255,.2),0 12px 32px rgba(0,0,0,.45)}.flow-surge-chip.ready strong{color:#ffe2a4;text-shadow:0 0 12px rgba(255,208,116,.65)}
+
+.reaction-banner-2d{position:absolute;z-index:10;left:50%;top:24%;transform:translate(-50%,-50%);min-width:250px;text-align:center;padding:10px 18px 12px;border-top:1px solid rgba(255,221,155,.42);border-bottom:1px solid rgba(255,221,155,.42);background:linear-gradient(90deg,transparent,rgba(8,9,13,.78) 16%,rgba(8,9,13,.9) 50%,rgba(8,9,13,.78) 84%,transparent);text-shadow:0 2px 16px #000;animation:reaction2d .85s ease both;pointer-events:none}.reaction-banner-2d.hidden{display:none!important}.reaction-banner-2d small{display:block;font:800 8px/1.2 ui-sans-serif,system-ui,sans-serif;letter-spacing:.22em;color:#c8b38e;margin-bottom:5px}.reaction-banner-2d strong{font:600 21px/1.1 Georgia,serif;letter-spacing:.10em;color:#f7d690}
+@keyframes reaction2d{0%{opacity:0;transform:translate(-50%,-42%) scale(.92)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.04)}100%{opacity:0;transform:translate(-50%,-56%) scale(1)}}
+
+/* Reduce the old pixel-game visual language even further. */
+.scanlines{display:none!important}.pixel-button,.utility-key,.action-key,.dpad button{image-rendering:auto!important}
+.masthead h1,.menu-window h2,.fighter-name,.enemy-wrap h3{font-family:Georgia,'Times New Roman',serif!important;font-weight:600!important}
+.panel,.battle-menu,.menu-window,.dialogue{background:linear-gradient(180deg,rgba(21,23,30,.91),rgba(9,11,15,.95))!important;border-color:rgba(229,198,143,.16)!important;box-shadow:0 18px 48px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.025)!important}
+
+/* Battle HUD: stronger hierarchy, fewer competing boxes. */
+.battle-menu{padding:10px 12px 12px!important}.battle-menu>p{margin:0 0 9px!important;min-height:40px;display:flex;align-items:center;border-left:2px solid rgba(237,193,117,.4)!important;background:linear-gradient(90deg,rgba(229,184,107,.05),rgba(255,255,255,.018))!important}
+.battle-center{gap:6px!important}.enemy-intent{border:1px solid rgba(230,187,116,.22)!important;background:rgba(7,9,13,.72)!important;font-size:10px!important;letter-spacing:.04em!important}.intent-timeline{background:rgba(6,8,12,.58)!important;border-color:rgba(220,190,137,.10)!important}.intent-now,.intent-next{padding:6px 9px!important}
+.tabletop-combat-hud,.initiative-track,.environment-card,.surface-chip,.combat-coach,.action-inspector{background:rgba(7,9,13,.58)!important;border-color:rgba(223,193,141,.11)!important;backdrop-filter:blur(10px)}
+
+/* More action-RPG-like skill bar grouping. */
+.battle-actions{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:6px!important}.battle-actions .pixel-button{position:relative;min-height:42px!important;padding:7px 6px!important;font-size:9px!important;line-height:1.12!important;border-radius:9px!important;overflow:hidden}.battle-actions .pixel-button::after{content:"";position:absolute;inset:auto 8px 4px 8px;height:1px;background:linear-gradient(90deg,transparent,currentColor,transparent);opacity:.17}
+.battle-actions [data-action="attack"],.battle-actions [data-action="skill1"],.battle-actions [data-action="skill2"],.battle-actions [data-action="weaponTechnique"],.battle-actions [data-action="burst"],.battle-actions [data-action="execute"]{background:linear-gradient(180deg,rgba(104,42,35,.94),rgba(44,21,23,.97))!important;border-color:rgba(225,104,76,.34)!important;color:#ffe4d1!important}
+.battle-actions [data-action="guard"],.battle-actions [data-action="dodge"],.battle-actions [data-action="parry"],.battle-actions [data-action="position"]{background:linear-gradient(180deg,rgba(35,65,88,.94),rgba(19,34,49,.97))!important;border-color:rgba(103,180,232,.32)!important;color:#d7efff!important}
+.battle-actions [data-action="companion"],.battle-actions [data-action="partyTactic"],.battle-actions [data-action="reaction"],.battle-actions [data-action="tactic"],.battle-actions [data-action="inspire"]{background:linear-gradient(180deg,rgba(72,48,98,.94),rgba(34,25,53,.97))!important;border-color:rgba(178,126,235,.30)!important;color:#eadcff!important}
+.battle-actions [data-action="environment"],.battle-actions [data-action="potion"],.battle-actions [data-action="bomb"]{background:linear-gradient(180deg,rgba(48,72,51,.94),rgba(25,39,28,.97))!important;border-color:rgba(113,191,123,.28)!important;color:#dff1df!important}
+.battle-actions .pixel-button:disabled{filter:saturate(.45);opacity:.47!important}.battle-actions .pixel-button:not(:disabled):hover{transform:translateY(-1px) scale(1.01)!important}
+
+/* Bosses get a cleaner, more cinematic status block. */
+.battle.elite-battle .enemy-wrap,.battle.nemesis-battle .enemy-wrap{filter:drop-shadow(0 0 24px rgba(255,96,72,.12))}.elite-badge{border-radius:999px!important;padding:5px 9px!important;background:linear-gradient(90deg,rgba(112,35,34,.72),rgba(48,27,51,.72))!important;border-color:rgba(255,128,102,.3)!important}
+.enemy-wrap .meter.enemy{height:11px!important;background:rgba(0,0,0,.48)!important;border:1px solid rgba(255,255,255,.08)!important}.enemy-wrap .meter.enemy i{box-shadow:0 0 18px rgba(237,69,64,.32)!important}.stagger-meter{height:5px!important;border-radius:999px!important;overflow:hidden!important}
+
+/* Modern menus and inventory cards. */
+.inventory-grid>div,.derived-grid>div,.record-card,.equipment-card,.job-card,.companion-card,.shop-item,.camp-choice,.event-choice,.talent-node,.setting-card{background:linear-gradient(180deg,rgba(255,255,255,.042),rgba(255,255,255,.016))!important;border:1px solid rgba(224,194,140,.12)!important;border-radius:11px!important;box-shadow:inset 0 1px rgba(255,255,255,.025),0 8px 20px rgba(0,0,0,.13)!important}
+.meter{height:8px!important;border-radius:999px!important;background:rgba(255,255,255,.055)!important}.meter i{border-radius:inherit!important;box-shadow:0 0 12px currentColor}
+
+@media(max-width:1100px){.battle-actions{grid-template-columns:repeat(4,minmax(0,1fr))!important}.flow-surge-chip{top:9px;min-width:190px}}
+@media(max-width:700px){.battle-actions{grid-template-columns:repeat(3,minmax(0,1fr))!important}.battle-actions .pixel-button{min-height:44px!important;font-size:8.5px!important}.flow-surge-chip{top:6px;min-width:170px;padding:6px 8px}.reaction-banner-2d{top:20%;min-width:220px}.reaction-banner-2d strong{font-size:17px}}
+@media(max-width:480px){.battle-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}.flow-surge-chip small{display:none}.flow-surge-chip{grid-template-columns:1fr auto;min-width:140px}.battle-menu{padding-left:8px!important;padding-right:8px!important}}
+.pref-reduced-motion .reaction-banner-2d{animation:none}.pref-reduced-motion .flow-surge-chip i{transition:none}
