@@ -1,0 +1,70 @@
+name: Apply Blackstar 2D v13 Retry
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-blackstar-v13-retry.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply gameplay upgrade
+        run: |
+          sed -i 's/if n!=1:/if n<1:/' tools/apply-blackstar-v13.py
+          python tools/apply-blackstar-v13.py
+
+      - name: Wire cinematic 2D v13 runtime
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json, re
+          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          if 'cinematic2d-v13.css' not in s:s=s.replace('<link rel="stylesheet" href="modern2d.css" />','<link rel="stylesheet" href="modern2d.css" />\n  <link rel="stylesheet" href="cinematic2d-v13.css" />')
+          if 'cinematic2d-v13.js' not in s:s=s.replace('<script src="actionrpg2d.js"></script>','<script src="actionrpg2d.js"></script>\n  <script src="cinematic2d-v13.js"></script>')
+          s=s.replace('Emberfall: Blackstar 2D Reforged','Emberfall: Blackstar 2D Ascendant').replace('BLACKSTAR 2D REFORGED','BLACKSTAR 2D ASCENDANT').replace('cinematic layered 2D · smooth movement','cinematic layered 2D · Flow Surges · elemental reactions · smooth movement')
+          p.write_text(s,encoding='utf-8')
+          p=Path('service-worker.js'); s=p.read_text(encoding='utf-8');s=re.sub(r"const CACHE = '[^']+';","const CACHE = 'emberfall-blackstar-2d-v13';",s,count=1)
+          if "'./cinematic2d-v13.css'" not in s:s=s.replace("  './modern2d.css',","  './modern2d.css',\n  './cinematic2d-v13.css',")
+          if "'./cinematic2d-v13.js'" not in s:s=s.replace("  './actionrpg2d.js',","  './actionrpg2d.js',\n  './cinematic2d-v13.js',")
+          p.write_text(s,encoding='utf-8')
+          p=Path('manifest.webmanifest');data=json.loads(p.read_text(encoding='utf-8'));data['name']='Emberfall: Blackstar 2D Ascendant';data['description']='A cinematic high-detail 2D dark-fantasy action RPG with Flow Surges, elemental reactions, reactive tactical combat, layered lighting, boss phases, party systems, deep loot, accessibility options, and offline play.';p.write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8')
+          PY
+
+      - name: Validate upgraded game
+        run: |
+          node --check game.js
+          node --check renderer2d.js
+          node --check combat-fx2d.js
+          node --check actionrpg2d.js
+          node --check cinematic2d-v13.js
+          node --check mobile.js
+          node --check service-worker.js
+          python -m json.tool manifest.webmanifest >/dev/null
+          grep -q 'cinematic2d-v13.css' index.html
+          grep -q 'cinematic2d-v13.js' index.html
+          grep -q 'battleFlowReady' game.js
+          grep -q 'COMBUSTION' game.js
+          grep -q 'VEILFLARE' game.js
+          grep -q 'SHATTER' game.js
+          grep -q 'version:10' game.js
+          grep -q 'emberfall-blackstar-2d-v13' service-worker.js
+          if grep -Eqi 'three\.min\.js|modern3d\.js|modern3d\.css|Emberfall3D|WebGLRenderer' index.html renderer2d.js cinematic2d-v13.js service-worker.js; then echo '3D runtime reference detected'; exit 1; fi
+          if find . -type f \( -iname '*.exe' -o -iname '*.dll' -o -iname '*.msi' -o -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' \) -print | grep -q .; then echo 'Prohibited executable or installer file found'; exit 1; fi
+
+      - name: Commit Blackstar v13
+        run: |
+          rm -f tools/apply-blackstar-v13.py .github/workflows/apply-blackstar-v13.yml .github/workflows/apply-blackstar-v13-retry.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Upgrade Emberfall 2D combat flow reactions and cinematic presentation'
+          git push
