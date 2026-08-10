@@ -1,0 +1,74 @@
+name: Apply Blackstar 2D v14 Retry
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-blackstar-v14-retry.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply v14 bugfix and gameplay upgrade
+        run: python tools/apply-blackstar-v14.py
+
+      - name: Validate JavaScript
+        run: |
+          node --check game.js
+          node --check renderer2d-v14.js
+          node --check combat-fx2d.js
+          node --check actionrpg2d.js
+          node --check cinematic2d-v13.js
+          node --check mobile.js
+          node --check service-worker.js
+
+      - name: Validate runtime explicitly
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          h=Path('index.html').read_text(encoding='utf-8')
+          g=Path('game.js').read_text(encoding='utf-8')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          r=Path('renderer2d-v14.js').read_text(encoding='utf-8')
+          json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
+          checks={
+            'v14 renderer in HTML':'renderer2d-v14.js' in h,
+            'v14 CSS in HTML':'cinematic2d-v14.css' in h,
+            'v14 cache':'emberfall-blackstar-2d-v14' in sw,
+            'v14 renderer cached':'renderer2d-v14.js' in sw,
+            'interrupt gameplay':'INTERRUPTED!' in g,
+            'dodge counter opening':'counter-opening' in g,
+            'fallback renderer':'legacy.style.opacity' in r,
+          }
+          for name,ok in checks.items():
+              print(name, 'OK' if ok else 'FAIL')
+              assert ok,name
+          forbidden=['three.min.js','modern3d.js','modern3d.css','emberfall3d','webglrenderer']
+          runtime=(h+'\n'+sw+'\n'+r).lower()
+          for token in forbidden:
+              assert token not in runtime, f'3D runtime reference: {token}'
+          print('Blackstar v14 runtime validation OK')
+          PY
+
+      - name: Executable safety scan
+        run: |
+          bad=$(find . -type f \( -iname '*.exe' -o -iname '*.dll' -o -iname '*.msi' -o -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' \) -print)
+          test -z "$bad" || { echo "$bad"; exit 1; }
+
+      - name: Commit Blackstar v14
+        run: |
+          rm -f tools/apply-blackstar-v14.py .github/workflows/apply-blackstar-v14.yml .github/workflows/apply-blackstar-v14-retry.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Fix blank 2D world and upgrade responsive tactical combat'
+          git push
