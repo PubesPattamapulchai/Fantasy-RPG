@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Nightfall Covenant Edition",
+  "name": "Emberfall: Blackstar Reforged Edition",
   "short_name": "Emberfall",
-  "description": "An original cinematic dark-fantasy RPG with enemy intent timelines, Ward barriers, companion doctrines, Skill Sigils, World Tiers, Nemesis enemies, timed parries, executions, buildcraft, tactical party combat, boss phases, and offline play.",
+  "description": "An original cinematic dark-fantasy party RPG with Hunt Chains, optional tactical guidance, Covenant Surges, World Tiers, Nemesis enemies, buildcraft, accessible UI options, boss phases, and offline play.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -13,7 +13,7 @@
   ],
   "orientation": "any",
   "background_color": "#050609",
-  "theme_color": "#0b0b10",
+  "theme_color": "#090b10",
   "categories": [
     "games",
     "entertainment"
