@@ -366,6 +366,36 @@
   window.addEventListener('emberfall:action',e=>{if(legacyMode||!battleRoot?.visible)return;const a=e.detail?.action||'';document.body.classList.add('combat-action-pulse');setTimeout(()=>document.body.classList.remove('combat-action-pulse'),180);const color=a.includes('skill')?0xa778ff:a==='guard'||a==='parry'||a==='dodge'?0x72c9ff:a==='companion'?0xf5d06f:0xffa666;spawnParticles(new THREE.Vector3(-2.1,1.25,.2),color,14,1.7);});
   window.addEventListener('emberfall:enemyaction',e=>{if(legacyMode||!battleRoot?.visible)return;const intent=e.detail?.intent||'attack';const color=intent==='ultimate'?0xff3048:intent==='hex'?0xb65cff:0xff8a5d;spawnParticles(new THREE.Vector3(2.1,1.4,.1),color,intent==='ultimate'?38:16,intent==='ultimate'?3.8:1.8);});
 
+  // Public renderer interaction bridge for the modern action-RPG control/presentation layer.
+  window.Emberfall3D = {
+    canvas,
+    stage,
+    ready: () => !!renderer && !legacyMode,
+    quality: () => prefs.quality,
+    scene: () => scene,
+    camera: () => camera,
+    renderer: () => renderer,
+    worldRoot: () => worldRoot,
+    actorRoot: () => actorRoot,
+    battleRoot: () => battleRoot,
+    fxRoot: () => fxRoot,
+    actors: () => ({ heroModel, battleHero, battleEnemy, battleCompanion }),
+    screenToGround: (clientX, clientY) => {
+      if (!renderer || !camera || !THREE) return null;
+      const rect = canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      const point = new THREE.Vector2(
+        ((clientX - rect.left) / rect.width) * 2 - 1,
+        -((clientY - rect.top) / rect.height) * 2 + 1
+      );
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(point, camera);
+      const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const hit = new THREE.Vector3();
+      return raycaster.ray.intersectPlane(ground, hit) ? { x: hit.x, y: hit.y, z: hit.z } : null;
+    }
+  };
+
   const waitForOptions=()=>{addModernOptions();if(!$('#graphicsModeSetting'))setTimeout(waitForOptions,250);};
   waitForOptions();
   if(!initRenderer())applyMode();

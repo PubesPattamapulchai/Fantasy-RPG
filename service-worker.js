@@ -1,4 +1,4 @@
-const CACHE = 'emberfall-ascendant-3d-v10';
+const CACHE = 'emberfall-actionrpg-v11';
 const CORE = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const CORE = [
   './reforged.css',
   './modern3d.css',
   './modern3d.js',
+  './actionrpg-plus.css',
+  './actionrpg-plus.js',
   './reforged-ui.js',
   './game.js',
   './mobile.js',
