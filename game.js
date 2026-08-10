@@ -23,8 +23,9 @@
     companionScreen: document.getElementById('companionScreen'), companionGrid: document.getElementById('companionGrid'),
     eventScreen: document.getElementById('eventScreen'), eventTitle: document.getElementById('eventTitle'), eventText: document.getElementById('eventText'), eventChoices: document.getElementById('eventChoices'), eventAbility: document.getElementById('eventAbility'), eventRoll: document.getElementById('eventRoll'), eventResult: document.getElementById('eventResult'), eventD20: document.getElementById('eventD20'), eventAttempt: document.getElementById('eventAttemptBtn'), eventInspire: document.getElementById('eventInspireBtn'), eventLeave: document.getElementById('eventLeaveBtn'),
     shop: document.getElementById('shopScreen'), shopTitle: document.getElementById('shopTitle'), shopCopy: document.getElementById('shopCopy'), shopItems: document.getElementById('shopItems'), shopClose: document.getElementById('shopCloseBtn'),
-    camp: document.getElementById('campScreen'), campBtn: document.getElementById('campBtn'), campClose: document.getElementById('campCloseBtn'), campLocation: document.getElementById('campLocation'), campStatus: document.getElementById('campStatus'), campRations: document.getElementById('campRations'), campInspiration: document.getElementById('campInspiration'), campScouted: document.getElementById('campScouted'), campPrepared: document.getElementById('campPrepared'),
-    companionAssistBtn: document.getElementById('companionAssistBtn'), reactionBtn: document.getElementById('reactionBtn'), positionBtn: document.getElementById('positionBtn'), dodgeBtn: document.getElementById('dodgeBtn'), environmentBtn: document.getElementById('environmentBtn'), environmentCard: document.getElementById('environmentCard'), staminaText: document.getElementById('staminaText'), staminaBar: document.getElementById('staminaBar'), affixDetails: document.getElementById('affixDetails'), initiativeTrack: document.getElementById('initiativeTrack'), battlePhaseText: document.getElementById('battlePhaseText'), enemyAffinityText: document.getElementById('enemyAffinityText'), featureDetails: document.getElementById('featureDetails'), combatRecord: document.getElementById('combatRecord'),
+    camp: document.getElementById('campScreen'), campBtn: document.getElementById('campBtn'), campClose: document.getElementById('campCloseBtn'), campLocation: document.getElementById('campLocation'), campStatus: document.getElementById('campStatus'), campRations: document.getElementById('campRations'), campInspiration: document.getElementById('campInspiration'), campScouted: document.getElementById('campScouted'), campPrepared: document.getElementById('campPrepared'), campBond: document.getElementById('campBond'),
+    companionAssistBtn: document.getElementById('companionAssistBtn'), reactionBtn: document.getElementById('reactionBtn'), positionBtn: document.getElementById('positionBtn'), dodgeBtn: document.getElementById('dodgeBtn'), parryBtn: document.getElementById('parryBtn'), executeBtn: document.getElementById('executeBtn'), environmentBtn: document.getElementById('environmentBtn'), environmentCard: document.getElementById('environmentCard'), staminaText: document.getElementById('staminaText'), staminaBar: document.getElementById('staminaBar'), affixDetails: document.getElementById('affixDetails'), initiativeTrack: document.getElementById('initiativeTrack'), battlePhaseText: document.getElementById('battlePhaseText'), enemyAffinityText: document.getElementById('enemyAffinityText'), difficultyBattleText: document.getElementById('difficultyBattleText'), featureDetails: document.getElementById('featureDetails'), combatRecord: document.getElementById('combatRecord'),
+    build: document.getElementById('buildScreen'), buildBtn: document.getElementById('buildBtn'), buildClose: document.getElementById('buildCloseBtn'), talentGrid: document.getElementById('talentGrid'), talentPointsText: document.getElementById('talentPointsText'), talentPowerText: document.getElementById('talentPowerText'), techniquePreviewText: document.getElementById('techniquePreviewText'), talentResetBtn: document.getElementById('talentResetBtn'), weaponTechniqueBtn: document.getElementById('weaponTechniqueBtn'), surfaceChip: document.getElementById('surfaceChip'), eliteBadge: document.getElementById('eliteBadge'), runestoneGrid: document.getElementById('runestoneGrid'), sheetTier: document.getElementById('sheetTier'), sheetRune: document.getElementById('sheetRune'), sheetBond: document.getElementById('sheetBond'), miniMap: document.getElementById('miniMap'), miniMapLabel: document.getElementById('miniMapLabel'), worldTierText: document.getElementById('worldTierText'), bondHudText: document.getElementById('bondHudText'),
     ending: document.getElementById('endingScreen'), endingText: document.getElementById('endingText'), endingStats: document.getElementById('endingStats'), explore: document.getElementById('exploreBtn'),
     toast: document.getElementById('toast'), log: document.getElementById('adventureLog'), sound: document.getElementById('soundBtn'), save: document.getElementById('saveBtn'), reset: document.getElementById('resetBtn'), action: document.getElementById('actionBtn'),
     locationBadge: document.getElementById('locationBadge'), locationText: document.getElementById('locationText'), locationSubtext: document.getElementById('locationSubtext'), playTime: document.getElementById('playTimeText')
@@ -175,6 +176,69 @@
     sky:{name:'Storm Conductor',desc:'Ground a lightning arc through the enemy for huge stagger.',kind:'arcane',type:'arcane'},
     citadel:{name:'Crownfire Brazier',desc:'Turn the citadel flame against its guardian.',kind:'damage',type:'fire'},
     core:{name:'Fractured Crown Rune',desc:'Break a reality-rune for enormous arcane stagger.',kind:'arcane',type:'arcane'}
+  };
+
+  const WEAPON_TECHNIQUES = {
+    sword:{name:'Crescent Rend',cost:30,desc:'A sweeping cut with high stagger.',type:'physical'},
+    axe:{name:'Sunderfall',cost:32,desc:'A brutal chop that lowers enemy Armor.',type:'physical'},
+    bow:{name:'Pinning Volley',cost:28,desc:'A ranged burst that grants advantage.',type:'physical'},
+    staff:{name:'Veil Pulse',cost:30,desc:'Arcane force that restores MP.',type:'arcane'},
+    mace:{name:'Judgment Bell',cost:31,desc:'A crushing radiant strike that braces you.',type:'radiant'},
+    dagger:{name:'Nightglass Flurry',cost:27,desc:'Two rapid cuts with increased critical chance.',type:'physical'},
+    rapier:{name:'Counterline Lunge',cost:28,desc:'A precise thrust that can ready your reaction.',type:'physical'}
+  };
+  const ELITE_TRAITS = {
+    brutal:{name:'BRUTAL',desc:'Deals heavier weapon damage.',attackMult:1.16},
+    ironclad:{name:'IRONCLAD',desc:'Reinforced armor raises its defense.',armor:2},
+    swift:{name:'SWIFT',desc:'Acts quickly and attacks with greater accuracy.',initiative:2,attackRoll:2},
+    regenerating:{name:'REGENERATING',desc:'Recovers health at the start of its turn.',regen:.045},
+    hexbound:{name:'HEXBOUND',desc:'Begins combat by clouding your first attack.',hex:true}
+  };
+  const TALENTS = {
+    ruthlessEdge:{name:'Ruthless Edge',branch:'OFFENSE',level:2,desc:'+8% weapon and technique damage.'},
+    keenInstinct:{name:'Keen Instinct',branch:'OFFENSE',level:4,desc:'+5% critical chance.'},
+    executioner:{name:'Executioner',branch:'OFFENSE',level:6,desc:'+16% damage against enemies below 35% HP.'},
+    platedSoul:{name:'Plated Soul',branch:'SURVIVAL',level:2,desc:'+1 Armor Class.'},
+    reserveStep:{name:'Reserve Step',branch:'SURVIVAL',level:4,desc:'Dodge costs 28 Stamina instead of 35.'},
+    secondWind:{name:'Second Wind',branch:'SURVIVAL',level:6,desc:'Recover 8% max HP after every victory.'},
+    spellEcho:{name:'Spell Echo',branch:'ARCANA',level:2,desc:'+10% damage from job skills.'},
+    channeler:{name:'Channeler',branch:'ARCANA',level:4,desc:'Recover 1 MP after every enemy turn and +2 MP when guarding.'},
+    terrainMaster:{name:'Terrain Master',branch:'ARCANA',level:6,desc:'+20% battlefield-environment power and stagger.'},
+    tactician:{name:'Tactician',branch:'FORTUNE',level:2,desc:'Varying actions builds 8 additional Momentum.'},
+    roadFortune:{name:'Road Fortune',branch:'FORTUNE',level:4,desc:'+15% gold from battle victories.'},
+    relicSeeker:{name:'Relic Seeker',branch:'FORTUNE',level:6,desc:'Rare relic and affix drop chances are increased.'},
+    bloodRush:{name:'Blood Rush',branch:'OFFENSE',level:8,desc:'+12% damage while below half HP.'},
+    headsman:{name:'Headsman',branch:'OFFENSE',level:10,desc:'Executions cost 50 Momentum instead of 60 and deal more damage.'},
+    duelistGuard:{name:'Duelist Guard',branch:'SURVIVAL',level:8,desc:'Parry costs 17 Stamina and gains +2 on the parry check.'},
+    ironPulse:{name:'Iron Pulse',branch:'SURVIVAL',level:10,desc:'Recover 6 extra Stamina after every enemy turn.'},
+    elementalConduit:{name:'Elemental Conduit',branch:'ARCANA',level:8,desc:'Runestone elemental bonuses are 50% stronger.'},
+    veilRecovery:{name:'Veil Recovery',branch:'ARCANA',level:10,desc:'Persistent surfaces restore 2 additional MP each round.'},
+    nemesisHunter:{name:'Nemesis Hunter',branch:'FORTUNE',level:8,desc:'Nemesis enemies grant 20% more gold and improved rare drops.'},
+    kindledOath:{name:'Kindled Oath',branch:'FORTUNE',level:10,desc:'Companion bond grows 50% faster and commands recharge sooner.'}
+  };
+  const DIFFICULTIES = {
+    explorer:{name:'EXPLORER',tier:'I',enemyHp:.82,enemyAttack:.84,enemyArmor:-1,reward:1,eliteChance:.08,nemesisChance:0,loot:1,desc:'Story-forward encounters with forgiving combat.'},
+    adventurer:{name:'ADVENTURER',tier:'II',enemyHp:1,enemyAttack:1,enemyArmor:0,reward:1,eliteChance:.14,nemesisChance:.03,loot:1,desc:'The intended balanced campaign.'},
+    veteran:{name:'VETERAN',tier:'III',enemyHp:1.22,enemyAttack:1.14,enemyArmor:1,reward:1.18,eliteChance:.25,nemesisChance:.12,loot:1.25,desc:'Harder enemies, more elites, richer rewards.'},
+    nightmare:{name:'NIGHTMARE',tier:'IV',enemyHp:1.48,enemyAttack:1.28,enemyArmor:2,reward:1.38,eliteChance:.38,nemesisChance:.25,loot:1.55,desc:'Lethal bosses and frequent Nemesis encounters.'}
+  };
+  const RUNESTONES = {
+    ember:{name:'Ember Rune',rarity:'common',desc:'+10% fire damage.',type:'fire',damage:.10},
+    veil:{name:'Veil Rune',rarity:'magic',desc:'+10% arcane damage.',type:'arcane',damage:.10},
+    fang:{name:'Fang Rune',rarity:'magic',desc:'+8% physical damage.',type:'physical',damage:.08},
+    dawn:{name:'Dawn Rune',rarity:'rare',desc:'+12% radiant damage and stronger healing.',type:'radiant',damage:.12,healing:.10},
+    venom:{name:'Venom Rune',rarity:'rare',desc:'+12% poison damage.',type:'poison',damage:.12},
+    bastion:{name:'Bastion Rune',rarity:'rare',desc:'+1 Armor Class while guarding or parrying.',guardAc:1},
+    tempest:{name:'Tempest Rune',rarity:'epic',desc:'+5 Momentum whenever you vary actions.',momentum:5},
+    fortune:{name:'Fortune Rune',rarity:'epic',desc:'Improves rare relic, affix, and runestone drops.',loot:.22}
+  };
+  const RUNESTONE_POOL=['veil','fang','dawn','venom','bastion','tempest','fortune'];
+  const BATTLE_SURFACES = {
+    fire:{name:'BURNING GROUND',desc:'Enemy takes fire damage each round.',className:'fire'},
+    arcane:{name:'CHARGED VEIL',desc:'Enemy Armor -1; hero restores 2 MP each round.',className:'arcane'},
+    radiant:{name:'CONSECRATED GROUND',desc:'Hero recovers a little HP each round.',className:'radiant'},
+    physical:{name:'RUBBLE FIELD',desc:'Enemy accuracy is reduced and stagger rises each round.',className:'physical'},
+    poison:{name:'MIASMA',desc:'Enemy takes poison damage each round.',className:'poison'}
   };
 
   const ENEMY_TYPES = {
@@ -449,7 +513,7 @@
       x: 2, y: 8, facing: 'down', job: null,
       hp: 40, maxHp: 40, mp: 14, maxMp: 14, stamina: 100, maxStamina: 100,
       level: 1, exp: 0, nextExp: 38, gold: 0, potions: 3, bombs: 1,
-      baseAttack: 6, defense: 2, equippedWeapon: null, weapons: [], armorTier: 0, equippedArmor:'roadLeathers', armors:['roadLeathers'], equippedRelic:null, relics:[], weaponAffixes:{},
+      baseAttack: 6, defense: 2, equippedWeapon: null, weapons: [], armorTier: 0, equippedArmor:'roadLeathers', armors:['roadLeathers'], equippedRelic:null, relics:[], weaponAffixes:{}, talentPoints:0, talents:{}, runestones:['ember'], equippedRunestone:'ember',
       attackBuffTurns: 0, evasionTurns: 0
     },
     questStage: 0,
@@ -458,7 +522,7 @@
     sideQuests: initialSideQuests(),
     logs: [], soundOn: true, inBattle: false, battleEnemy: null, battleLocked: false, guarding: false, dialogueQueue: [], activeEnemyId: null,
     battleCombo: 0, battleMaxCombo: 0, battleMomentum: 0, battleLastAction: '', battlePerfects: 0, battleDamageTaken: 0, battleTurns: 0, timingActive: false, timingStartedAt: 0, timingDuration: 1150, timingFrame: 0,
-    activeShop: null, companion: null, inspiration: 1, checksSucceeded: 0, checksAttempted: 0, activeRoadEvent: null, selectedRoadApproach: 0, eventFailed: false, battleStance: 'balanced', battleRange:'mid', battleCompanionUsed:false, companionCooldown:0, reactionUsed:false, reactionReadied:false, battleRound:1, battlePhase:1, initiativeOrder:[], battleActiveActor:'hero', disadvantageNext:false, battleEnvironment:null, environmentUsed:false, dodgePrimed:false, rareFinds:0, advantageNext: false, rations:3, campedAt:'', roadAdvantage:false, preparedMagic:false, renown:0, choicesMade:0, totalBattles: 0, totalGoldEarned: 0, playSeconds: 0, endingSeen: false
+    activeShop: null, companion: null, companionBond:0, bondedAt:'', inspiration: 1, checksSucceeded: 0, checksAttempted: 0, activeRoadEvent: null, selectedRoadApproach: 0, eventFailed: false, difficulty:'adventurer', battleStance: 'balanced', battleRange:'mid', battleCompanionUsed:false, companionCooldown:0, reactionUsed:false, reactionReadied:false, parryPrimed:false, parryCooldown:0, executions:0, battleRound:1, battlePhase:1, initiativeOrder:[], battleActiveActor:'hero', disadvantageNext:false, battleEnvironment:null, environmentUsed:false, dodgePrimed:false, weaponTechniqueCooldown:0, battleSurface:null, eliteVictories:0, nemesisVictories:0, rareFinds:0, runestoneFinds:0, advantageNext: false, rations:3, campedAt:'', roadAdvantage:false, preparedMagic:false, renown:0, choicesMade:0, totalBattles: 0, totalGoldEarned: 0, playSeconds: 0, endingSeen: false
   });
 
   let state = initialState();
@@ -467,6 +531,7 @@
   let lastMove = 0;
   let sessionStartedAt = Date.now();
   let lastClockSecond = -1;
+  let pendingDifficulty = 'adventurer';
 
   function currentLocation() { return locations[state.location]; }
   function currentJob() { return JOBS[state.player.job] || JOBS.vanguard; }
@@ -476,11 +541,28 @@
   function currentAffixIds(){return state.player.weaponAffixes?.[state.player.equippedWeapon]||[];}
   function currentAffixes(){return currentAffixIds().map(id=>WEAPON_AFFIXES[id]).filter(Boolean);}
   function affixBonus(key){return currentAffixes().reduce((sum,a)=>sum+(a[key]||0),0);}
+  function hasTalent(id){return !!state.player.talents?.[id];}
+  function talentCount(){return Object.values(state.player.talents||{}).filter(Boolean).length;}
+  function currentTechnique(){return WEAPON_TECHNIQUES[equippedWeapon().type]||WEAPON_TECHNIQUES.sword;}
+  function difficultyData(){return DIFFICULTIES[state.difficulty]||DIFFICULTIES.adventurer;}
+  function runestone(){return RUNESTONES[state.player.equippedRunestone]||RUNESTONES.ember;}
+  function runeDamageBonus(type){const r=runestone();if(!type||r.type!==type)return 0;return (r.damage||0)*(hasTalent('elementalConduit')?1.5:1);}
+  function lootBonus(){return 1+(runestone().loot||0);}
+  function bondRank(){const b=state.companionBond||0;return b>=75?'OATHBOUND':b>=45?'TRUSTED':b>=20?'ALLY':'STRANGER';}
+  function bondMultiplier(){const b=state.companionBond||0;return 1+(b>=75?.28:b>=45?.18:b>=20?.09:0);}
+  function parryCost(){return hasTalent('duelistGuard')?17:22;}
+  function executionCost(){return hasTalent('headsman')?50:60;}
+  function executeReady(){const e=state.battleEnemy;if(!e)return false;return state.battleMomentum>=executionCost()&&(e.stunned||e.stagger>=72||e.hp/e.maxHp<=.25);}
+  function enemyTraitIds(enemy){return [enemy?.elite,enemy?.elite2].filter(Boolean);}
+  function enemyTraits(enemy){return enemyTraitIds(enemy).map(id=>ELITE_TRAITS[id]).filter(Boolean);}
+  function dodgeCost(){return hasTalent('reserveStep')?28:35;}
+  function enemyTargetArmor(){const e=state.battleEnemy;if(!e)return 10;return Math.max(7,e.armor-(state.battleSurface?.type==='arcane'?1:0));}
+  function surfaceAccuracyPenalty(){return state.battleSurface?.type==='physical'?-1:0;}
   function totalAttack() { return state.player.baseAttack + equippedWeapon().power; }
   function tileAt(x, y) { return currentLocation().map[y]?.[x] || 'W'; }
   function isEnemyVisible(enemy) { return !enemy.defeated && state.questStage >= (enemy.minStage || 0) && state.questStage <= (enemy.maxStage ?? FINAL_STAGE); }
   function isNodeVisible(node) { return !node.collected; }
-  function menusOpen() { return !ui.gear.classList.contains('hidden') || !ui.sheet.classList.contains('hidden') || !ui.shop.classList.contains('hidden') || !ui.jobScreen.classList.contains('hidden') || !ui.companionScreen.classList.contains('hidden') || !ui.eventScreen.classList.contains('hidden') || !ui.camp.classList.contains('hidden'); }
+  function menusOpen() { return !ui.gear.classList.contains('hidden') || !ui.sheet.classList.contains('hidden') || !ui.shop.classList.contains('hidden') || !ui.jobScreen.classList.contains('hidden') || !ui.companionScreen.classList.contains('hidden') || !ui.eventScreen.classList.contains('hidden') || !ui.camp.classList.contains('hidden') || !ui.build.classList.contains('hidden'); }
 
   function isBlocked(x, y) {
     if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return true;
@@ -510,9 +592,9 @@
   function relicCheckBonus(a){const r=equippedRelic();if(!r)return 0;if(r.allChecks)return r.allChecks;if(r.checkAbility===a)return r.checkBonus||0;if(r.checkAbilities?.includes(a))return r.checkBonus||0;return 0;}
   function weaponAbility(){const t=equippedWeapon().type;if(['bow','dagger','rapier'].includes(t))return'dex';if(t==='staff')return state.player.job==='cleric'?'wis':'int';return'str';}
   function attackBonus(){let b=abilityMod(weaponAbility())+Math.floor(state.player.level/3)+Math.floor(equippedWeapon().power/5)+(equippedRelic()?.attack||0);if(state.player.job==='vanguard'&&state.battleRange==='close')b+=1;b+=affixBonus('attack');return b;}
-  function heroAC(){let ac=10+state.player.defense+equippedArmor().bonus+Math.max(0,Math.floor(abilityMod('dex')/2));if(state.companion==='brann')ac+=1;ac+=equippedRelic()?.ac||0;ac+=affixBonus('ac');if(state.battleStance==='bold')ac-=2;if(state.battleStance==='warded')ac+=3;if(state.battleStance==='cunning')ac+=1;if(state.player.job==='paladin'&&state.player.hp<=state.player.maxHp*.5)ac+=1;return Math.max(8,ac);}
+  function heroAC(){let ac=10+state.player.defense+equippedArmor().bonus+Math.max(0,Math.floor(abilityMod('dex')/2));if(state.companion==='brann')ac+=1;ac+=equippedRelic()?.ac||0;ac+=affixBonus('ac');if(state.battleStance==='bold')ac-=2;if(state.battleStance==='warded')ac+=3;if(state.battleStance==='cunning')ac+=1;if(state.player.job==='paladin'&&state.player.hp<=state.player.maxHp*.5)ac+=1;if(hasTalent('platedSoul'))ac+=1;if(runestone().guardAc&&(state.guarding||state.parryPrimed))ac+=runestone().guardAc;return Math.max(8,ac);}
   function stanceDamageMultiplier(){return state.battleStance==='bold'?1.16:state.battleStance==='warded'?.9:1;}
-  function stanceCritBonus(){return (state.battleStance==='cunning'?.08:0)+(equippedRelic()?.crit||0)+affixBonus('crit')+(state.player.job==='ranger'&&state.battleRange==='far'?.05:0);}
+  function stanceCritBonus(){return (state.battleStance==='cunning'?.08:0)+(equippedRelic()?.crit||0)+affixBonus('crit')+(state.player.job==='ranger'&&state.battleRange==='far'?.05:0)+(hasTalent('keenInstinct')?.05:0);}
   function rangeDamageMultiplier(){const t=equippedWeapon().type,r=state.battleRange;if(['bow','staff'].includes(t))return r==='far'?1.14:r==='close'?.88:1.02;if(['dagger','rapier'].includes(t))return r==='close'?1.10:r==='far'?.90:1.04;return r==='close'?1.13:r==='far'?.82:1;}
   function rangeEnemyAttackMod(){return state.battleRange==='far'?-2:state.battleRange==='close'?1:0;}
   function rollD20(adv=false){const a=randomBetween(1,20);if(!adv)return a;return Math.max(a,randomBetween(1,20));}
@@ -647,6 +729,8 @@
     document.getElementById('defenseText').textContent = p.defense;
     document.getElementById('hudACText').textContent = heroAC();
     document.getElementById('rationText').textContent = state.rations;
+    if(ui.worldTierText)ui.worldTierText.textContent=difficultyData().tier;
+    if(ui.bondHudText)ui.bondHudText.textContent=state.companionBond||0;
     document.getElementById('herbText').textContent = cValue('herbs');
     document.getElementById('oreText').textContent = cValue('ore');
     document.getElementById('crystalText').textContent = cValue('crystals');
@@ -814,18 +898,47 @@
     for(let i=0;i<7;i++){const x=(i*137+Math.sin(t*.35+i)*35+640)%640,y=(i*89+Math.cos(t*.42+i)*22+480)%480;ctx.globalAlpha=.05+(i%3)*.018;ctx.fillStyle=warm?'#ffb15c':'#9dd9ff';ctx.beginPath();ctx.arc(x,y,10+(i%3)*5,0,Math.PI*2);ctx.fill();}ctx.restore();
   }
 
+  function drawAscendantAtmosphere(loc){
+    const t=Date.now()/1000,cx=state.player.x*TILE+20,cy=state.player.y*TILE+20;ctx.save();
+    const dangerous=['forest','dungeon','mine','marsh','glass','iceCave','citadel','core'].includes(loc.biome);
+    ctx.globalCompositeOperation='screen';
+    const halo=ctx.createRadialGradient(cx,cy,10,cx,cy,dangerous?150:105);halo.addColorStop(0,dangerous?'rgba(255,190,105,.13)':'rgba(255,220,155,.09)');halo.addColorStop(1,'rgba(0,0,0,0)');ctx.fillStyle=halo;ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.globalAlpha=.07;ctx.fillStyle=['snow','iceCave','sky','glass'].includes(loc.biome)?'#a9dbff':'#ffbf76';
+    for(let i=0;i<3;i++){const x=((i*250+t*8)%820)-120;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x+75,0);ctx.lineTo(x+240,480);ctx.lineTo(x+145,480);ctx.closePath();ctx.fill();}
+    ctx.globalCompositeOperation='source-over';ctx.globalAlpha=.12;ctx.fillStyle=dangerous?'#10131a':'#d6bb8a';
+    for(let i=0;i<4;i++){const y=(i*133+(t*7)%160)-60;ctx.fillRect(0,y,640,18+((i%2)*8));}
+    ctx.restore();
+  }
+
+  function drawVeilforgedAtmosphere(loc){
+    const t=Date.now()/1000;ctx.save();
+    // Layered low fog adds depth without obscuring readable tiles.
+    const fogColor=['snow','iceCave','sky','glass'].includes(loc.biome)?'rgba(145,186,214,.08)':['citadel','core','desert','desertCity'].includes(loc.biome)?'rgba(174,103,65,.065)':'rgba(127,151,135,.055)';
+    ctx.globalCompositeOperation='screen';ctx.fillStyle=fogColor;
+    for(let i=0;i<5;i++){const y=85+i*84+Math.sin(t*.45+i)*12,x=-120+((t*(6+i)+i*171)%240);ctx.globalAlpha=.38+(i%2)*.12;ctx.beginPath();ctx.ellipse(320+x,y,250+i*16,18+i*2,0,0,Math.PI*2);ctx.fill();}
+    // Small light pools around fires, shrines and magical set pieces.
+    const lights=[];if(loc.shrine)lights.push({x:loc.shrine.x*TILE+20,y:loc.shrine.y*TILE+20,c:'79,215,255'});
+    (loc.decor||[]).forEach(d=>{if(['brazier','flame','campfire','forge','crystal','obelisk','crown'].includes(d.type))lights.push({x:d.x*TILE+20,y:d.y*TILE+20,c:['crystal','obelisk'].includes(d.type)?'122,171,255':'255,141,65'});});
+    lights.slice(0,9).forEach((l,i)=>{const r=48+Math.sin(t*2.1+i)*6,g=ctx.createRadialGradient(l.x,l.y,2,l.x,l.y,r);g.addColorStop(0,`rgba(${l.c},.16)`);g.addColorStop(1,`rgba(${l.c},0)`);ctx.fillStyle=g;ctx.globalAlpha=1;ctx.fillRect(l.x-r,l.y-r,r*2,r*2);});
+    ctx.globalCompositeOperation='source-over';
+    // Directional shadow wash gives dangerous maps a more dramatic silhouette.
+    if(['dungeon','mine','marsh','iceCave','citadel','core'].includes(loc.biome)){const shade=ctx.createLinearGradient(0,0,640,480);shade.addColorStop(0,'rgba(0,0,0,.13)');shade.addColorStop(.48,'rgba(0,0,0,0)');shade.addColorStop(1,'rgba(0,0,0,.20)');ctx.fillStyle=shade;ctx.fillRect(0,0,640,480);}
+    ctx.restore();
+  }
+
   function drawWorld() {
     ctx.clearRect(0,0,canvas.width,canvas.height); const loc=currentLocation();
     for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)drawTile(x,y,loc.map[y][x]);
     loc.decor.forEach(drawDecor); loc.exits.forEach(drawExit); drawShrine(loc.shrine); loc.nodes.forEach(drawNode); loc.chests.forEach(drawChest); loc.enemies.forEach(drawEnemy);
     loc.npcs.forEach(npc=>drawCharacter(npc.x,npc.y,npc.colors,'down',npc.role==='cael'));
     drawCharacter(state.player.x,state.player.y,currentJob().colors,state.player.facing);
-    drawAmbient(loc);drawTabletopLighting(loc);drawCinematicPostFx(loc);
+    drawAmbient(loc);drawTabletopLighting(loc);drawCinematicPostFx(loc);drawAscendantAtmosphere(loc);drawVeilforgedAtmosphere(loc);
     const cycle=(currentPlaySeconds()%480)/480; if(cycle>.55){ctx.fillStyle=`rgba(20,28,65,${Math.min(.22,(cycle-.55)*.5)})`;ctx.fillRect(0,0,canvas.width,canvas.height);} drawLocationLabel();
   }
 
   function drawLocationLabel(){ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle='rgba(6,10,18,.76)';ctx.fillRect(215,448,210,22);ctx.fillStyle='#f6c453';ctx.fillText(currentLocation().short,320,463);}
-  function animate(){if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden'))drawWorld();const sec=currentPlaySeconds();if(sec!==lastClockSecond){lastClockSecond=sec;ui.playTime.textContent=formatTime(sec);}requestAnimationFrame(animate);}
+  function updateMiniMap(){if(!ui.miniMap||!state.started)return;const m=ui.miniMap.getContext('2d');m.imageSmoothingEnabled=false;m.clearRect(0,0,ui.miniMap.width,ui.miniMap.height);m.drawImage(canvas,0,0,ui.miniMap.width,ui.miniMap.height);m.strokeStyle='rgba(244,196,92,.95)';m.lineWidth=2;m.strokeRect(state.player.x*10-2,state.player.y*10-2,6,6);if(ui.miniMapLabel)ui.miniMapLabel.textContent=currentLocation().short;}
+  function animate(){if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden')){drawWorld();updateMiniMap();}const sec=currentPlaySeconds();if(sec!==lastClockSecond){lastClockSecond=sec;ui.playTime.textContent=formatTime(sec);}requestAnimationFrame(animate);}
 
   function queueDialogue(speaker, lines) {
     state.dialogueQueue = lines.map(line => typeof line === 'string' ? { speaker, text: line } : line);
@@ -842,9 +955,51 @@
 
   function renderCompanionSelection(){ui.companionGrid.innerHTML=Object.entries(COMPANIONS).map(([id,c])=>`<button class="companion-card" data-companion="${id}" type="button"><div class="companion-token ${id}">${c.name.split(' ').map(p=>p[0]).join('').slice(0,2)}</div><h3>${escapeHtml(c.name)}</h3><small>${escapeHtml(c.role)}</small><p>${escapeHtml(c.desc)}</p><strong>${escapeHtml(c.passive)}</strong></button>`).join('');ui.companionGrid.querySelectorAll('[data-companion]').forEach(b=>b.addEventListener('click',()=>selectCompanion(b.dataset.companion)));}
   function selectCompanion(id){if(!COMPANIONS[id])return;state.companion=id;ui.companionScreen.classList.add('hidden');const c=companion();addLog(`${c.name}, ${c.role}, joins Rowan.`,true);addLog('Find Elder Mira near Moonmere’s central well.');updateHud();drawWorld();chord([330,440,660]);queueDialogue('Narrator',[`You walk the ${currentJob().name}'s path, with ${c.name} at your side.`,'The Seven Roads were once held together by oaths, choices, and the strange power of the Ember Crown.','Tonight a red star rises over Moonmere. Somewhere beyond the village, old dice of fate begin to turn.']);saveGame(true);}
-  function renderSheet(){if(!ui.abilityGrid)return;const scores=abilityScores(),c=companion();ui.sheetJob.textContent=state.player.job?currentJob().name.toUpperCase():'WAYFARER';ui.sheetLevel.textContent=`LEVEL ${state.player.level}`;ui.sheetCompanion.textContent=c?`${c.name} · ${c.role}`:'Choose a companion';ui.abilityGrid.innerHTML=Object.entries(scores).map(([n,score])=>{const m=Math.floor((score-10)/2),party=companionCheckBonus(n),gear=relicCheckBonus(n);return`<div><span>${n.toUpperCase()}</span><strong>${score}</strong><small>${m>=0?'+':''}${m}${party?` · +${party} party`:''}${gear?` · +${gear} relic`:''}</small></div>`}).join('');ui.sheetAC.textContent=heroAC();const ab=attackBonus();ui.sheetAttackBonus.textContent=`${ab>=0?'+':''}${ab}`;ui.sheetInspiration.textContent=state.inspiration;ui.sheetChecks.textContent=`${state.checksSucceeded}/${state.checksAttempted}`;if(ui.sheetArmor)ui.sheetArmor.textContent=equippedArmor().name;if(ui.sheetRelic)ui.sheetRelic.textContent=equippedRelic()?.name||'None';if(ui.sheetRenown)ui.sheetRenown.textContent=state.renown;if(ui.sheetRations)ui.sheetRations.textContent=state.rations;ui.companionDetails.innerHTML=c?`<strong>${escapeHtml(c.name)} · ${escapeHtml(c.role)}</strong><br>${escapeHtml(c.desc)}<br><br>${escapeHtml(c.passive)}<br><br><em>Battle Command: ${escapeHtml(companionAssistName())} · recharges during battle</em>`:'Choose a companion after selecting your job.';if(ui.featureDetails){const f=classFeature(),r=classReaction();ui.featureDetails.innerHTML=`<strong>${escapeHtml(f.name)}</strong><br>${escapeHtml(f.desc)}<br><br><strong>Reaction · ${escapeHtml(r.name)}</strong><br>${escapeHtml(r.desc)}`;}if(ui.affixDetails){const aff=currentAffixes();ui.affixDetails.innerHTML=aff.length?`<strong>${escapeHtml(equippedWeapon().name)}</strong><br>${aff.map(a=>`<span class="affix-${a.rarity}">${escapeHtml(a.name)}</span> — ${escapeHtml(a.desc)}`).join('<br>')}`:`<strong>${escapeHtml(equippedWeapon().name)}</strong><br>No awakened affixes yet. Earn high battle ranks to reveal modifiers.`;}if(ui.combatRecord)ui.combatRecord.innerHTML=`Victories <strong>${state.totalBattles}</strong> · Rare finds <strong>${state.rareFinds||0}</strong><br>Renown <strong>${state.renown}</strong> · Checks <strong>${state.checksSucceeded}/${state.checksAttempted}</strong><br>Current affinity lore: physical, fire, arcane, radiant, and poison damage can interact differently with creature families.`;}
+  function renderSheet(){
+    if(!ui.abilityGrid)return;
+    const scores=abilityScores(),c=companion(),rune=runestone(),diff=difficultyData();
+    ui.sheetJob.textContent=state.player.job?currentJob().name.toUpperCase():'WAYFARER';
+    ui.sheetLevel.textContent=`LEVEL ${state.player.level}`;
+    ui.sheetCompanion.textContent=c?`${c.name} · ${c.role}`:'Choose a companion';
+    ui.abilityGrid.innerHTML=Object.entries(scores).map(([n,score])=>{
+      const m=Math.floor((score-10)/2),party=companionCheckBonus(n),gear=relicCheckBonus(n);
+      return`<div><span>${n.toUpperCase()}</span><strong>${score}</strong><small>${m>=0?'+':''}${m}${party?` · +${party} party`:''}${gear?` · +${gear} relic`:''}</small></div>`;
+    }).join('');
+    ui.sheetAC.textContent=heroAC();
+    const ab=attackBonus();ui.sheetAttackBonus.textContent=`${ab>=0?'+':''}${ab}`;
+    ui.sheetInspiration.textContent=state.inspiration;
+    ui.sheetChecks.textContent=`${state.checksSucceeded}/${state.checksAttempted}`;
+    if(ui.sheetArmor)ui.sheetArmor.textContent=equippedArmor().name;
+    if(ui.sheetRelic)ui.sheetRelic.textContent=equippedRelic()?.name||'None';
+    if(ui.sheetRenown)ui.sheetRenown.textContent=state.renown;
+    if(ui.sheetRations)ui.sheetRations.textContent=state.rations;
+    if(ui.sheetTier)ui.sheetTier.textContent=`${diff.tier} · ${diff.name}`;
+    if(ui.sheetRune)ui.sheetRune.textContent=rune.name;
+    if(ui.sheetBond)ui.sheetBond.textContent=`${state.companionBond||0} · ${bondRank()}`;
+    ui.companionDetails.innerHTML=c?`<strong>${escapeHtml(c.name)} · ${escapeHtml(c.role)}</strong><br>${escapeHtml(c.desc)}<br><br>${escapeHtml(c.passive)}<br><br><strong>Bond ${state.companionBond||0} · ${bondRank()}</strong><br>Battle Command: ${escapeHtml(companionAssistName())}. Bond improves command power${bondRank()==='OATHBOUND'?' and accelerates recharge.':'.'}`:'Choose a companion after selecting your job.';
+    if(ui.featureDetails){
+      const f=classFeature(),reaction=classReaction();
+      ui.featureDetails.innerHTML=`<strong>${escapeHtml(f.name)}</strong><br>${escapeHtml(f.desc)}<br><br><strong>Reaction · ${escapeHtml(reaction.name)}</strong><br>${escapeHtml(reaction.desc)}<br><br><strong>Runestone · ${escapeHtml(rune.name)}</strong><br>${escapeHtml(rune.desc)}`;
+    }
+    if(ui.affixDetails){
+      const aff=currentAffixes();
+      ui.affixDetails.innerHTML=aff.length?`<strong>${escapeHtml(equippedWeapon().name)}</strong><br>${aff.map(a=>`<span class="affix-${a.rarity}">${escapeHtml(a.name)}</span> — ${escapeHtml(a.desc)}`).join('<br>')}`:`<strong>${escapeHtml(equippedWeapon().name)}</strong><br>No awakened affixes yet. Earn high battle ranks to reveal modifiers.`;
+    }
+    if(ui.combatRecord)ui.combatRecord.innerHTML=`Victories <strong>${state.totalBattles}</strong> · Elite victories <strong>${state.eliteVictories||0}</strong> · Nemesis victories <strong>${state.nemesisVictories||0}</strong><br>Executions <strong>${state.executions||0}</strong> · Runestones found <strong>${state.runestoneFinds||0}</strong> · Rare finds <strong>${state.rareFinds||0}</strong><br>Constellation <strong>${talentCount()}/${Object.keys(TALENTS).length}</strong> · Unspent points <strong>${state.player.talentPoints||0}</strong><br>World Tier <strong>${diff.tier} · ${diff.name}</strong> · Renown <strong>${state.renown}</strong> · Checks <strong>${state.checksSucceeded}/${state.checksAttempted}</strong>`;
+  }
   function openSheet(){if(!state.started||state.inBattle||!ui.dialogue.classList.contains('hidden')||!ui.ending.classList.contains('hidden')||!ui.gear.classList.contains('hidden')||!ui.camp.classList.contains('hidden')||!ui.shop.classList.contains('hidden')||!ui.eventScreen.classList.contains('hidden'))return;renderSheet();ui.sheet.classList.remove('hidden');}
   function closeSheet(){ui.sheet.classList.add('hidden');drawWorld();}
+
+  function renderBuild(){
+    if(!ui.talentGrid||!state.player.job)return;const points=state.player.talentPoints||0;ui.talentPointsText.textContent=points;ui.talentPowerText.textContent=`${talentCount()} / ${Object.keys(TALENTS).length}`;ui.techniquePreviewText.textContent=currentTechnique().name;
+    const order=['OFFENSE','SURVIVAL','ARCANA','FORTUNE'];
+    ui.talentGrid.innerHTML=order.map(branch=>`<section class="talent-branch"><h3>${branch}</h3>${Object.entries(TALENTS).filter(([,t])=>t.branch===branch).map(([id,t])=>{const learned=hasTalent(id),available=state.player.level>=t.level&&points>0;return `<button class="talent-node ${learned?'learned':available?'available':'locked'}" data-talent="${id}" type="button" ${learned||!available?'disabled':''}><span class="node-icon">${learned?'✦':t.level}</span><strong>${escapeHtml(t.name)}</strong><small>${escapeHtml(t.desc)}</small><em>${learned?'LEARNED':state.player.level<t.level?`LEVEL ${t.level}`:'SPEND 1 POINT'}</em></button>`;}).join('')}</section>`).join('');
+    ui.talentGrid.querySelectorAll('[data-talent]').forEach(button=>button.addEventListener('click',()=>learnTalent(button.dataset.talent)));
+  }
+  function learnTalent(id){const t=TALENTS[id];if(!t||hasTalent(id)||(state.player.talentPoints||0)<1||state.player.level<t.level)return;state.player.talents[id]=true;state.player.talentPoints-=1;addLog(`Constellation learned: ${t.name}.`,true);showToast(`ASCENDANT · ${t.name.toUpperCase()}`);chord([392,523,659,988]);renderBuild();updateHud();saveGame(true);}
+  function retrainTalents(){const learned=talentCount();if(!learned){showToast('NO CONSTELLATION NODES LEARNED');return;}if(state.player.gold<150){showToast('RETRAINING COSTS 150 GOLD');return;}if(!confirm('Spend 150 gold to refund every constellation point?'))return;state.player.gold-=150;state.player.talentPoints=(state.player.talentPoints||0)+learned;state.player.talents={};addLog(`The Road Constellation was retrained. ${learned} point${learned===1?'':'s'} refunded.`,true);renderBuild();updateHud();saveGame(true);}
+  function openBuild(){if(!state.started||state.inBattle||!ui.dialogue.classList.contains('hidden')||!ui.ending.classList.contains('hidden')||!ui.gear.classList.contains('hidden')||!ui.sheet.classList.contains('hidden')||!ui.camp.classList.contains('hidden')||!ui.shop.classList.contains('hidden')||!ui.eventScreen.classList.contains('hidden'))return;renderBuild();ui.build.classList.remove('hidden');}
+  function closeBuild(){ui.build.classList.add('hidden');drawWorld();}
 
   function renderJobSelection() {
     ui.jobGrid.innerHTML = Object.entries(JOBS).map(([id,job]) => `<button class="job-card" data-job="${id}" type="button"><h3>${escapeHtml(job.name)}</h3><p>${escapeHtml(job.desc)}</p><small>HP ${job.hp} · MP ${job.mp} · ATK ${job.attack} · DEF ${job.defense}<br>${escapeHtml(job.skills[0].name)} / ${escapeHtml(job.skills[1].name)}</small></button>`).join('');
@@ -852,7 +1007,7 @@
   }
 
   function startNewGame() {
-    resetWorld(); state=initialState(); state.started=true; sessionStartedAt=Date.now(); ui.title.classList.add('hidden'); ui.jobScreen.classList.remove('hidden'); ui.ending.classList.add('hidden'); renderJobSelection(); updateHud();
+    resetWorld(); state=initialState(); state.started=true; state.difficulty=pendingDifficulty; sessionStartedAt=Date.now(); ui.title.classList.add('hidden'); ui.jobScreen.classList.remove('hidden'); ui.ending.classList.add('hidden'); renderJobSelection(); updateHud();
   }
 
   function selectJob(jobId) {
@@ -863,11 +1018,29 @@
     if(!state.started||!state.player.job)return;
     renderArmorAndRelics();
     const job=currentJob();
-    ui.weaponGrid.innerHTML=state.player.weapons.map(id=>{const w=WEAPONS[id];const equipped=id===state.player.equippedWeapon;const aff=(state.player.weaponAffixes?.[id]||[]).map(a=>WEAPON_AFFIXES[a]).filter(Boolean);return `<div class="weapon-card ${equipped?'equipped':''} ${aff.length?'affixed':''}"><h4>${escapeHtml(w.name)} ${equipped?'· EQUIPPED':''}</h4><p>${escapeHtml(w.type.toUpperCase())} · +${w.power} power${aff.length?` · ${aff.length} affix${aff.length>1?'es':''}`:''}<br>${escapeHtml(w.desc)}${aff.length?`<br><em>${aff.map(a=>escapeHtml(a.name)).join(' · ')}</em>`:''}</p><button class="pixel-button compact" data-equip="${id}" type="button" ${equipped?'disabled':''}>${equipped?'EQUIPPED':'EQUIP'}</button></div>`;}).join('');
+    ui.weaponGrid.innerHTML=state.player.weapons.map(id=>{
+      const w=WEAPONS[id],equipped=id===state.player.equippedWeapon,aff=(state.player.weaponAffixes?.[id]||[]).map(a=>WEAPON_AFFIXES[a]).filter(Boolean);
+      return `<div class="weapon-card ${equipped?'equipped':''} ${aff.length?'affixed':''}"><h4>${escapeHtml(w.name)} ${equipped?'· EQUIPPED':''}</h4><p>${escapeHtml(w.type.toUpperCase())} · +${w.power} power${aff.length?` · ${aff.length} affix${aff.length>1?'es':''}`:''}<br>${escapeHtml(w.desc)}${aff.length?`<br><em>${aff.map(a=>escapeHtml(a.name)).join(' · ')}</em>`:''}</p><button class="pixel-button compact" data-equip="${id}" type="button" ${equipped?'disabled':''}>${equipped?'EQUIPPED':'EQUIP'}</button></div>`;
+    }).join('');
     ui.weaponGrid.querySelectorAll('[data-equip]').forEach(button=>button.addEventListener('click',()=>equipWeapon(button.dataset.equip)));
-    ui.jobDetails.innerHTML=`<strong>${escapeHtml(job.name)}</strong><br>${escapeHtml(job.desc)}<br><br><strong>${escapeHtml(job.skills[0].name)} (${job.skills[0].cost} MP)</strong><br>${escapeHtml(job.skills[0].desc)}<br><br><strong>${escapeHtml(job.skills[1].name)} (${job.skills[1].cost} MP)</strong><br>${escapeHtml(job.skills[1].desc)}<br><br>Bombs: <strong>${state.player.bombs}</strong> · Arena wins: <strong>${state.counters.arenaWins}</strong>`;
+    if(ui.runestoneGrid){
+      ui.runestoneGrid.innerHTML=(state.player.runestones||[]).map(id=>{
+        const r=RUNESTONES[id];if(!r)return'';const equipped=id===state.player.equippedRunestone;
+        return `<button class="runestone-card rarity-${r.rarity} ${equipped?'equipped':''}" data-rune="${id}" type="button"><span class="rune-glyph">◆</span><strong>${escapeHtml(r.name)}</strong><small>${escapeHtml(r.rarity.toUpperCase())}</small><em>${escapeHtml(r.desc)}</em><b>${equipped?'EQUIPPED':'ATTUNE'}</b></button>`;
+      }).join('')||'<p class="record-card">Runestones can drop from elite enemies and high-rank victories.</p>';
+      ui.runestoneGrid.querySelectorAll('[data-rune]').forEach(button=>button.addEventListener('click',()=>equipRunestone(button.dataset.rune)));
+    }
+    ui.jobDetails.innerHTML=`<strong>${escapeHtml(job.name)}</strong><br>${escapeHtml(job.desc)}<br><br><strong>${escapeHtml(job.skills[0].name)} (${job.skills[0].cost} MP)</strong><br>${escapeHtml(job.skills[0].desc)}<br><br><strong>${escapeHtml(job.skills[1].name)} (${job.skills[1].cost} MP)</strong><br>${escapeHtml(job.skills[1].desc)}<br><br>Bombs: <strong>${state.player.bombs}</strong> · Arena wins: <strong>${state.counters.arenaWins}</strong><br><br><strong>Weapon Technique · ${escapeHtml(currentTechnique().name)}</strong><br>${escapeHtml(currentTechnique().desc)} · ${currentTechnique().cost} Stamina<br><br><strong>Attuned Runestone · ${escapeHtml(runestone().name)}</strong><br>${escapeHtml(runestone().desc)}`;
     ui.sideQuestList.innerHTML=Object.entries(SIDE_QUESTS).map(([id,q])=>{const sq=state.sideQuests[id]||{status:'available'};const progress=Math.min(q.goal,cValue(q.counter));return `<div><strong>${escapeHtml(q.name)}</strong><br>${escapeHtml(q.desc)}<br>${progress}/${q.goal} · ${escapeHtml(sq.status.toUpperCase())}</div>`;}).join('');
     ui.loreText.textContent=`${state.counters.lore} / ${TOTAL_LORE}`;
+  }
+
+  function equipRunestone(id){
+    if(!RUNESTONES[id]||!(state.player.runestones||[]).includes(id))return;
+    state.player.equippedRunestone=id;
+    showToast(`${RUNESTONES[id].name.toUpperCase()} ATTUNED`);
+    addLog(`${RUNESTONES[id].name} attuned to Rowan's gear.`,true);
+    renderGear();renderSheet();updateHud();saveGame(true);
   }
 
   function equipWeapon(id) {
@@ -911,9 +1084,9 @@
 
   function worldSnapshot(){const result={};Object.entries(locations).forEach(([id,loc])=>{result[id]={enemies:Object.fromEntries(loc.enemies.map(e=>[e.id,!!e.defeated])),chests:Object.fromEntries(loc.chests.map(c=>[c.id,!!c.opened])),nodes:Object.fromEntries(loc.nodes.map(n=>[n.id,!!n.collected]))};});return result;}
   function restoreWorld(snapshot={}){Object.entries(locations).forEach(([id,loc])=>{loc.enemies.forEach(e=>{e.defeated=!!snapshot[id]?.enemies?.[e.id];});loc.chests.forEach(c=>{c.opened=!!snapshot[id]?.chests?.[c.id];});loc.nodes.forEach(n=>{n.collected=!!snapshot[id]?.nodes?.[n.id];});});}
-  function saveGame(silent=false){if(!state.started||!state.player.job)return;const elapsed=currentPlaySeconds();const saveState={...state,playSeconds:elapsed,dialogueQueue:[],inBattle:false,battleEnemy:null,battleLocked:false,activeEnemyId:null,activeShop:null,activeRoadEvent:null,eventFailed:false,timingActive:false,timingStartedAt:0,timingFrame:0,battleCombo:0,battleMaxCombo:0,battleMomentum:0,battleLastAction:'',battlePerfects:0,battleDamageTaken:0,battleTurns:0,companionCooldown:0,reactionUsed:false,reactionReadied:false,battleRound:1,battlePhase:1,battleEnvironment:null,environmentUsed:false,dodgePrimed:false,initiativeOrder:[],battleActiveActor:'hero',disadvantageNext:false};localStorage.setItem(SAVE_KEY,JSON.stringify({version:5,state:saveState,world:worldSnapshot()}));updateHud();if(!silent){showToast('ADVENTURE SAVED');beep(660);}}
-  function loadGame(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;try{const save=JSON.parse(raw);if(![3,4,5].includes(save.version))throw new Error('old save');resetWorld();restoreWorld(save.world);const fresh=initialState();state={...fresh,...save.state,player:{...fresh.player,...(save.state?.player||{})},counters:{...fresh.counters,...(save.state?.counters||{})},keyItems:{...fresh.keyItems,...(save.state?.keyItems||{})},sideQuests:{...initialSideQuests(),...(save.state?.sideQuests||{})},started:true,inBattle:false,battleEnemy:null,battleLocked:false,dialogueQueue:[],activeEnemyId:null,activeShop:null};if(!locations[state.location])state.location='moonmere';if(!JOBS[state.player.job])throw new Error('invalid job');if(!COMPANIONS[state.companion])state.companion={vanguard:'brann',arcanist:'lyss',ranger:'pip',paladin:'mara',rogue:'pip',cleric:'mara',spellblade:'lyss'}[state.player.job]||'brann';sessionStartedAt=Date.now();ui.title.classList.add('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');addLog('Your long road continues.',true);updateHud();drawWorld();chord([440,554,660]);}catch(_){localStorage.removeItem(SAVE_KEY);showToast('SAVE FORMAT WAS OUTDATED');}}
-  function resetGame(){if(!confirm('Erase your local Emberfall save and restart the campaign?'))return;localStorage.removeItem(SAVE_KEY);resetWorld();state=initialState();sessionStartedAt=Date.now();ui.title.classList.remove('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');renderLog();updateHud();}
+  function saveGame(silent=false){if(!state.started||!state.player.job)return;const elapsed=currentPlaySeconds();const saveState={...state,playSeconds:elapsed,dialogueQueue:[],inBattle:false,battleEnemy:null,battleLocked:false,activeEnemyId:null,activeShop:null,activeRoadEvent:null,eventFailed:false,timingActive:false,timingStartedAt:0,timingFrame:0,battleCombo:0,battleMaxCombo:0,battleMomentum:0,battleLastAction:'',battlePerfects:0,battleDamageTaken:0,battleTurns:0,companionCooldown:0,reactionUsed:false,reactionReadied:false,battleRound:1,battlePhase:1,battleEnvironment:null,environmentUsed:false,dodgePrimed:false,parryPrimed:false,parryCooldown:0,weaponTechniqueCooldown:0,battleSurface:null,initiativeOrder:[],battleActiveActor:'hero',disadvantageNext:false};localStorage.setItem(SAVE_KEY,JSON.stringify({version:7,state:saveState,world:worldSnapshot()}));updateHud();if(!silent){showToast('ADVENTURE SAVED');beep(660);}}
+  function loadGame(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;try{const save=JSON.parse(raw);if(![3,4,5,6,7].includes(save.version))throw new Error('old save');resetWorld();restoreWorld(save.world);const fresh=initialState();state={...fresh,...save.state,player:{...fresh.player,...(save.state?.player||{}),talents:{...fresh.player.talents,...(save.state?.player?.talents||{})},runestones:[...new Set([...(fresh.player.runestones||[]),...(save.state?.player?.runestones||[])])]},counters:{...fresh.counters,...(save.state?.counters||{})},keyItems:{...fresh.keyItems,...(save.state?.keyItems||{})},sideQuests:{...initialSideQuests(),...(save.state?.sideQuests||{})},started:true,inBattle:false,battleEnemy:null,battleLocked:false,dialogueQueue:[],activeEnemyId:null,activeShop:null};if(!locations[state.location])state.location='moonmere';if(!JOBS[state.player.job])throw new Error('invalid job');if(!COMPANIONS[state.companion])state.companion={vanguard:'brann',arcanist:'lyss',ranger:'pip',paladin:'mara',rogue:'pip',cleric:'mara',spellblade:'lyss'}[state.player.job]||'brann';if(save.version<6){state.player.talentPoints=Math.max(state.player.talentPoints||0,Math.floor(state.player.level/2));state.player.talents={};}sessionStartedAt=Date.now();ui.title.classList.add('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');addLog('Your long road continues.',true);updateHud();drawWorld();chord([440,554,660]);}catch(_){localStorage.removeItem(SAVE_KEY);showToast('SAVE FORMAT WAS OUTDATED');}}
+  function resetGame(){if(!confirm('Erase your local Emberfall save and restart the campaign?'))return;localStorage.removeItem(SAVE_KEY);resetWorld();state=initialState();sessionStartedAt=Date.now();ui.title.classList.remove('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');renderLog();updateHud();}
 
   function move(dx,dy){
     if(!state.started||!state.player.job||state.inBattle||menusOpen()||!ui.dialogue.classList.contains('hidden')||!ui.ending.classList.contains('hidden'))return;
@@ -936,10 +1109,51 @@
   function travel(target,targetPos){if(!locations[target])return;state.location=target;state.campedAt='';state.player.x=targetPos.x;state.player.y=targetPos.y;state.player.facing='down';const loc=currentLocation();showToast(loc.short);addLog(`Arrived at ${loc.name}.`,true);chord([330,440,554]);updateHud();saveGame(true);drawWorld();setTimeout(maybeTriggerRoadEvent,520);}
 
 
-  function renderCamp(){if(!ui.camp)return;ui.campLocation.textContent=currentLocation().name.toUpperCase();ui.campRations.textContent=state.rations;ui.campInspiration.textContent=state.inspiration;ui.campScouted.textContent=state.roadAdvantage?'YES':'NO';ui.campPrepared.textContent=state.preparedMagic?'YES':'NO';const used=state.campedAt===state.location;ui.campStatus.textContent=used?'The party has already taken a camp activity in this area. Travel onward before resting again.':'Choose one camp activity for this visit.';document.querySelectorAll('[data-camp]').forEach(b=>b.disabled=used);}
+  function renderCamp(){
+    if(!ui.camp)return;
+    ui.campLocation.textContent=currentLocation().name.toUpperCase();
+    ui.campRations.textContent=state.rations;
+    ui.campInspiration.textContent=state.inspiration;
+    ui.campScouted.textContent=state.roadAdvantage?'YES':'NO';
+    ui.campPrepared.textContent=state.preparedMagic?'YES':'NO';
+    if(ui.campBond)ui.campBond.textContent=`${state.companionBond||0} · ${bondRank()}`;
+    const used=state.campedAt===state.location,bonded=state.bondedAt===state.location;
+    ui.campStatus.textContent=used?'The party has already taken a rest activity here. Fireside talk may still be available.':'Choose a rest activity, or talk with your companion by the fire.';
+    document.querySelectorAll('[data-camp]').forEach(b=>{
+      const isBond=b.dataset.camp==='bond';
+      b.disabled=isBond?bonded:used;
+    });
+  }
   function openCamp(){if(!state.started||state.inBattle||!ui.dialogue.classList.contains('hidden')||!ui.ending.classList.contains('hidden')||menusOpen())return;renderCamp();ui.camp.classList.remove('hidden');}
   function closeCamp(){ui.camp.classList.add('hidden');drawWorld();}
-  function campAction(kind){if(state.campedAt===state.location)return;const p=state.player,c=companion();if(['rest','prepare','scout'].includes(kind)&&state.rations<1){ui.campStatus.textContent='No rations remain. Try foraging or visit an inn.';beep(90);return;}if(kind==='rest'){state.rations-=1;const hp=Math.min(Math.ceil(p.maxHp*.42),p.maxHp-p.hp),mp=Math.min(Math.ceil(p.maxMp*.42),p.maxMp-p.mp);p.hp+=hp;p.mp+=mp;state.inspiration=Math.min(3,state.inspiration+(c?.role==='Battle Healer'?1:0));ui.campStatus.textContent=`Short rest: +${hp} HP, +${mp} MP${c?.role==='Battle Healer'?' and Mara grants Inspiration':''}.`;addLog(`Camped in ${currentLocation().name}; the party took a short rest.`,true);chord([262,330,392]);}if(kind==='prepare'){state.rations-=1;const mp=Math.min(Math.ceil(p.maxMp*.6),p.maxMp-p.mp);p.mp+=mp;state.preparedMagic=true;ui.campStatus.textContent=`Preparation complete: +${mp} MP. Your next job skill deals 18% more damage or healing.`;addLog('The party studies spells, maps, and enemy habits by firelight.',true);chord([330,440,554]);}if(kind==='scout'){state.rations-=1;state.roadAdvantage=true;state.inspiration=Math.min(3,state.inspiration+1);ui.campStatus.textContent='Scouting complete: advantage on the next road check and +1 Inspiration.';addLog(`${c?.name||'The party'} scouts the road ahead.`,true);chord([392,523,659]);}if(kind==='forage'){state.checksAttempted+=1;const mod=abilityMod('wis')+companionCheckBonus('wis')+relicCheckBonus('wis'),roll=rollD20(false),total=roll+mod,dc=12;state.choicesMade+=1;if(roll===20||(roll!==1&&total>=dc)){state.checksSucceeded+=1;state.rations+=2;ui.campStatus.textContent=`Forage ${roll} ${mod>=0?'+':''}${mod} = ${total}: success. Found 2 rations.`;addLog('The party finds edible roots, dry wood, and two days of rations.',true);chord([440,554,660]);}else{const harm=Math.max(1,Math.floor(p.maxHp*.05));p.hp=Math.max(1,p.hp-harm);ui.campStatus.textContent=`Forage ${roll} ${mod>=0?'+':''}${mod} = ${total}: failed. Lost ${harm} HP to thorns and bad footing.`;beep(92,.14,'square',.04);}}state.campedAt=state.location;renderCamp();updateHud();saveGame(true);}
+  function campAction(kind){
+    const p=state.player,c=companion();
+    if(kind==='bond'){
+      if(state.bondedAt===state.location){ui.campStatus.textContent='You have already shared a fireside conversation in this area.';beep(90);return;}
+      if(!c){ui.campStatus.textContent='There is no companion here to speak with.';return;}
+      const gain=hasTalent('kindledOath')?9:6;
+      state.companionBond=Math.min(100,(state.companionBond||0)+gain);
+      state.bondedAt=state.location;
+      if(state.companionBond>=45)state.inspiration=Math.min(3,state.inspiration+1);
+      const lines={
+        brann:'Brann speaks about the walls he failed to hold—and the people he still intends to protect.',
+        lyss:'Lyss sketches old runes in the ash and admits that certainty frightens her more than magic.',
+        pip:'Pip tells a ridiculous road story, then quietly asks what kind of home Rowan hopes survives.',
+        mara:'Mara sings a low temple hymn and talks about healing a kingdom that keeps choosing war.'
+      };
+      ui.campStatus.textContent=`Bond +${gain}. ${c.name} is now ${bondRank()}.`;
+      addLog(`${lines[state.companion]||'The party shares stories beside the fire.'} Bond ${state.companionBond}.`,true);
+      chord([294,392,494,659]);renderCamp();renderSheet();updateHud();saveGame(true);return;
+    }
+    if(state.campedAt===state.location)return;
+    if(['rest','prepare','scout'].includes(kind)&&state.rations<1){ui.campStatus.textContent='No rations remain. Try foraging or visit an inn.';beep(90);return;}
+    if(kind==='rest'){state.rations-=1;const healBonus=1+(runestone().healing||0);const hp=Math.min(Math.ceil(p.maxHp*.42*healBonus),p.maxHp-p.hp),mp=Math.min(Math.ceil(p.maxMp*.42),p.maxMp-p.mp);p.hp+=hp;p.mp+=mp;state.inspiration=Math.min(3,state.inspiration+(c?.role==='Battle Healer'?1:0));ui.campStatus.textContent=`Short rest: +${hp} HP, +${mp} MP${c?.role==='Battle Healer'?' and Mara grants Inspiration':''}.`;addLog(`Camped in ${currentLocation().name}; the party took a short rest.`,true);chord([262,330,392]);}
+    if(kind==='prepare'){state.rations-=1;const mp=Math.min(Math.ceil(p.maxMp*.6),p.maxMp-p.mp);p.mp+=mp;state.preparedMagic=true;ui.campStatus.textContent=`Preparation complete: +${mp} MP. Your next job skill deals 18% more damage or healing.`;addLog('The party studies spells, maps, and enemy habits by firelight.',true);chord([330,440,554]);}
+    if(kind==='scout'){state.rations-=1;state.roadAdvantage=true;state.inspiration=Math.min(3,state.inspiration+1);ui.campStatus.textContent='Scouting complete: advantage on the next road check and +1 Inspiration.';addLog(`${c?.name||'The party'} scouts the road ahead.`,true);chord([392,523,659]);}
+    if(kind==='forage'){state.checksAttempted+=1;const mod=abilityMod('wis')+companionCheckBonus('wis')+relicCheckBonus('wis'),roll=rollD20(false),total=roll+mod,dc=12;state.choicesMade+=1;if(roll===20||(roll!==1&&total>=dc)){state.checksSucceeded+=1;state.rations+=2;ui.campStatus.textContent=`Forage ${roll} ${mod>=0?'+':''}${mod} = ${total}: success. Found 2 rations.`;addLog('The party finds edible roots, dry wood, and two days of rations.',true);chord([440,554,660]);}else{const harm=Math.max(1,Math.floor(p.maxHp*.05));p.hp=Math.max(1,p.hp-harm);ui.campStatus.textContent=`Forage ${roll} ${mod>=0?'+':''}${mod} = ${total}: failed. Lost ${harm} HP to thorns and bad footing.`;beep(92,.14,'square',.04);}}
+    state.campedAt=state.location;renderCamp();updateHud();saveGame(true);
+  }
+
 
   function interact(){
     if(!state.started)return;if(!ui.dialogue.classList.contains('hidden')){nextDialogue();return;}if(state.inBattle||menusOpen()||!ui.ending.classList.contains('hidden'))return;
@@ -1081,7 +1295,15 @@
 
 
   function companionAssistName(){return {brann:'Shield Bash',lyss:'Runic Recall',pip:'Ambush Shot',mara:'Healing Hymn'}[state.companion]||'Party Assist';}
-  function useCompanionAssist(){if(state.companionCooldown>0)return false;const p=state.player,e=state.battleEnemy,c=state.companion;if(!c)return false;state.companionCooldown=3;advanceCombo('companion',14);if(c==='brann'){applyEnemyDamage(effectiveAttack()*.78+8,'Brann crashes his shield into the foe for {damage} damage!',{skill:true,prepared:false,stagger:42,flash:true,type:'physical'});state.guarding=true;}if(c==='lyss'){const d=18+p.level*4+equippedWeapon().power;applyEnemyDamage(d,'Lyss breaks a rune for {damage} arcane damage!',{skill:true,prepared:false,stagger:18,flash:true,type:'arcane'});p.mp=Math.min(p.maxMp,p.mp+6);}if(c==='pip'){const d=effectiveAttack()*1.18+randomBetween(5,12);applyEnemyDamage(d,'Pip appears from the flank for {damage} damage!',{skill:true,prepared:false,stagger:24,flash:true,type:'physical'});state.advantageNext=true;}if(c==='mara'){const heal=Math.min(Math.ceil(p.maxHp*.34)+p.level*2,p.maxHp-p.hp);p.hp+=heal;spawnFx('heal',`+${heal}`,'hero');ui.battleLog.textContent=`Mara's Healing Hymn restores ${heal} HP and steadies the party.`;state.guarding=true;}spawnFx('word',companionAssistName().toUpperCase());chord([330,440,660]);updateBattleUi();return true;}
+  function useCompanionAssist(){
+    if(state.companionCooldown>0)return false;const p=state.player,e=state.battleEnemy,c=state.companion;if(!c)return false;
+    const bond=bondMultiplier(),fast=hasTalent('kindledOath')||bondRank()==='OATHBOUND';state.companionCooldown=fast?2:3;advanceCombo('companion',14);
+    if(c==='brann'){applyEnemyDamage((effectiveAttack()*.78+8)*bond,'Brann crashes his shield into the foe for {damage} damage!',{skill:true,prepared:false,stagger:Math.floor(42*bond),flash:true,type:'physical'});state.guarding=true;}
+    if(c==='lyss'){const d=(18+p.level*4+equippedWeapon().power)*bond;applyEnemyDamage(d,'Lyss breaks a rune for {damage} arcane damage!',{skill:true,prepared:false,stagger:18,flash:true,type:'arcane'});p.mp=Math.min(p.maxMp,p.mp+Math.floor(6*bond));}
+    if(c==='pip'){const d=(effectiveAttack()*1.18+randomBetween(5,12))*bond;applyEnemyDamage(d,'Pip appears from the flank for {damage} damage!',{skill:true,prepared:false,stagger:24,flash:true,type:'physical'});state.advantageNext=true;}
+    if(c==='mara'){const healing=1+(runestone().healing||0);const heal=Math.min(Math.ceil((p.maxHp*.34+p.level*2)*bond*healing),p.maxHp-p.hp);p.hp+=heal;spawnFx('heal',`+${heal}`,'hero');ui.battleLog.textContent=`Mara's Healing Hymn restores ${heal} HP. ${bondRank()} trust steadies the party.`;state.guarding=true;}
+    spawnFx('word',`${companionAssistName().toUpperCase()} · ${bondRank()}`);chord([330,440,660]);updateBattleUi();return true;
+  }
 
   function setBattleTheme(){
     [...ui.battle.classList].filter(name=>name.startsWith('biome-')).forEach(name=>ui.battle.classList.remove(name));
@@ -1092,20 +1314,56 @@
   function startBattle(enemy){
     const base=ENEMY_TYPES[enemy.type];if(!base)return;
     state.inBattle=true;state.battleLocked=false;state.guarding=false;state.activeEnemyId=enemy.id;
-    state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.timingActive=false;state.battleStance='balanced';state.battleRange='mid';state.battleCompanionUsed=false;state.companionCooldown=0;state.reactionUsed=false;state.reactionReadied=false;state.battleRound=1;state.battlePhase=1;state.disadvantageNext=false;state.advantageNext=state.player.job==='rogue';state.player.stamina=state.player.maxStamina||100;state.environmentUsed=false;state.dodgePrimed=false;state.battleEnvironment=BATTLE_ENVIRONMENTS[currentLocation().biome]||BATTLE_ENVIRONMENTS.grass;
-    const arenaScale=enemy.repeatable?Math.max(0,state.player.level-5):0;const hp=base.hp+arenaScale*18;
-    state.battleEnemy={id:enemy.id,type:enemy.type,name:base.name,hp,maxHp:hp,attack:base.attack+arenaScale*2,exp:base.exp+arenaScale*6,gold:[base.gold[0]+arenaScale*3,base.gold[1]+arenaScale*4],boss:!!base.boss,sprite:base.sprite,repeatable:!!enemy.repeatable,dotTurns:0,dotDamage:0,dotName:'',stunned:false,stagger:0,ward:0,intent:null,armor:10+Math.floor((base.attack+arenaScale*2)/5)+(base.boss?2:0),initiative:Math.floor((base.attack+arenaScale*2)/6)+(base.boss?1:0),phase:1};
-    setBattleTheme();ui.battle.classList.remove('phase-1','phase-2','phase-3');ui.battle.classList.add('phase-1');chooseEnemyIntent();ui.battle.classList.remove('hidden');ui.timingPanel.classList.add('hidden');
-    const heroRoll=rollD20(),heroInit=heroRoll+abilityMod('dex'),enemyRoll=rollD20(),enemyInit=enemyRoll+state.battleEnemy.initiative,c=companion(),compRoll=rollD20(),compMod=state.companion==='pip'?3:state.companion==='brann'?0:1,compInit=compRoll+compMod;state.initiativeOrder=[{id:'hero',label:'ROWAN',roll:heroInit},{id:'companion',label:c?c.name.split(' ')[0].toUpperCase():'ALLY',roll:compInit},{id:'enemy',label:base.name.split(',')[0].toUpperCase(),roll:enemyInit}].sort((a,b)=>b.roll-a.roll);state.battleActiveActor=enemyInit>heroInit?'enemy':'hero';
-    showBattleRoll('Initiative',heroRoll,abilityMod('dex'),heroInit);ui.battleLog.textContent=`${base.intro} Initiative: you ${heroInit}, ${c?c.name.split(' ')[0]:'ally'} ${compInit}, ${base.name} ${enemyInit}.`;updateBattleUi();setTimeout(()=>spawnFx('word',base.boss?'BOSS BATTLE':'ENGAGE!'),100);chord(base.boss?[164,147,131,98]:[196,185,174]);if(enemyInit>heroInit){state.battleLocked=true;setBattleButtons(true);ui.battleLog.textContent+=` ${base.name} moves first!`;setTimeout(enemyTurn,1050);}else{state.battleLocked=false;setBattleButtons(false);ui.battleLog.textContent+=' You move first.';}
+    state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.timingActive=false;state.battleStance='balanced';state.battleRange='mid';state.battleCompanionUsed=false;state.companionCooldown=0;state.reactionUsed=false;state.reactionReadied=false;state.parryPrimed=false;state.parryCooldown=0;state.battleRound=1;state.battlePhase=1;state.disadvantageNext=false;state.advantageNext=state.player.job==='rogue';state.player.stamina=state.player.maxStamina||100;state.environmentUsed=false;state.dodgePrimed=false;state.weaponTechniqueCooldown=0;state.battleSurface=null;state.battleEnvironment=BATTLE_ENVIRONMENTS[currentLocation().biome]||BATTLE_ENVIRONMENTS.grass;
+    const diff=difficultyData(),arenaScale=enemy.repeatable?Math.max(0,state.player.level-5):0,rawAttack=base.attack+arenaScale*2;
+    const hp=Math.ceil((base.hp+arenaScale*18)*diff.enemyHp);
+    state.battleEnemy={id:enemy.id,type:enemy.type,name:base.name,hp,maxHp:hp,attack:Math.ceil(rawAttack*diff.enemyAttack),exp:Math.floor((base.exp+arenaScale*6)*diff.reward),gold:[Math.floor((base.gold[0]+arenaScale*3)*diff.reward),Math.floor((base.gold[1]+arenaScale*4)*diff.reward)],boss:!!base.boss,sprite:base.sprite,repeatable:!!enemy.repeatable,dotTurns:0,dotDamage:0,dotName:'',stunned:false,stagger:0,ward:0,intent:null,armor:10+Math.floor(rawAttack/5)+(base.boss?2:0)+diff.enemyArmor,initiative:Math.floor(rawAttack/6)+(base.boss?1:0),phase:1,elite:null,elite2:null};
+    if(!base.boss&&state.questStage>=6){
+      const eliteChance=Math.min(.78,diff.eliteChance+state.questStage*.007);
+      if(Math.random()<eliteChance){
+        const ids=Object.keys(ELITE_TRAITS),first=ids[randomBetween(0,ids.length-1)];
+        state.battleEnemy.elite=first;
+        if(state.questStage>=14&&Math.random()<diff.nemesisChance){
+          const secondPool=ids.filter(id=>id!==first);state.battleEnemy.elite2=secondPool[randomBetween(0,secondPool.length-1)];
+        }
+        enemyTraits(state.battleEnemy).forEach(trait=>{
+          if(trait.attackMult)state.battleEnemy.attack=Math.ceil(state.battleEnemy.attack*trait.attackMult);
+          if(trait.armor)state.battleEnemy.armor+=trait.armor;
+          if(trait.initiative)state.battleEnemy.initiative+=trait.initiative;
+          if(trait.hex)state.disadvantageNext=true;
+        });
+        const names=enemyTraitIds(state.battleEnemy).map(id=>ELITE_TRAITS[id].name);
+        state.battleEnemy.name=`${state.battleEnemy.elite2?'NEMESIS · ':''}${names.join(' · ')} ${base.name}`;
+        const eliteReward=state.battleEnemy.elite2?1.58:1.30;
+        state.battleEnemy.exp=Math.floor(state.battleEnemy.exp*eliteReward);
+        state.battleEnemy.gold=state.battleEnemy.gold.map(v=>Math.floor(v*eliteReward));
+      }
+    }
+    setBattleTheme();ui.battle.classList.remove('phase-1','phase-2','phase-3','nemesis-battle');ui.battle.classList.add('phase-1');if(state.battleEnemy.elite2)ui.battle.classList.add('nemesis-battle');chooseEnemyIntent();ui.battle.classList.remove('hidden');ui.timingPanel.classList.add('hidden');
+    const heroRoll=rollD20(),heroInit=heroRoll+abilityMod('dex'),enemyRoll=rollD20(),enemyInit=enemyRoll+state.battleEnemy.initiative,c=companion(),compRoll=rollD20(),compMod=state.companion==='pip'?3:state.companion==='brann'?0:1,compInit=compRoll+compMod;
+    state.initiativeOrder=[{id:'hero',label:'ROWAN',roll:heroInit},{id:'companion',label:c?c.name.split(' ')[0].toUpperCase():'ALLY',roll:compInit},{id:'enemy',label:base.name.split(',')[0].toUpperCase(),roll:enemyInit}].sort((a,b)=>b.roll-a.roll);state.battleActiveActor=enemyInit>heroInit?'enemy':'hero';
+    showBattleRoll('Initiative',heroRoll,abilityMod('dex'),heroInit);ui.battleLog.textContent=`${base.intro} World Tier ${diff.tier} · ${diff.name}. Initiative: you ${heroInit}, ${c?c.name.split(' ')[0]:'ally'} ${compInit}, ${base.name} ${enemyInit}.`;updateBattleUi();setTimeout(()=>spawnFx('word',state.battleEnemy.elite2?'NEMESIS':base.boss?'BOSS BATTLE':state.battleEnemy.elite?'ELITE':'ENGAGE!'),100);chord(base.boss?[164,147,131,98]:state.battleEnemy.elite2?[174,130,98,73]:[196,185,174]);
+    if(enemyInit>heroInit){state.battleLocked=true;setBattleButtons(true);ui.battleLog.textContent+=` ${base.name} moves first!`;setTimeout(enemyTurn,1050);}else{state.battleLocked=false;setBattleButtons(false);ui.battleLog.textContent+=' You move first.';}
   }
+
 
   function setBattleButtons(disabled){
     document.querySelectorAll('[data-action]').forEach(button=>{
-      const burstLocked=button.dataset.action==='burst'&&state.battleMomentum<100;const dodgeLocked=button.dataset.action==='dodge'&&(state.player.stamina||0)<35;const environmentLocked=button.dataset.action==='environment'&&state.environmentUsed;const companionLocked=button.dataset.action==='companion'&&state.companionCooldown>0;const reactionLocked=button.dataset.action==='reaction'&&state.reactionUsed;
-      button.disabled=disabled||burstLocked||dodgeLocked||environmentLocked||companionLocked||reactionLocked;button.style.opacity=(disabled||burstLocked||dodgeLocked||environmentLocked||companionLocked||reactionLocked)?'.55':'1';
+      const action=button.dataset.action;
+      const burstLocked=action==='burst'&&state.battleMomentum<100;
+      const dodgeLocked=action==='dodge'&&(state.player.stamina||0)<dodgeCost();
+      const parryLocked=action==='parry'&&((state.player.stamina||0)<parryCost()||state.parryCooldown>0||state.parryPrimed);
+      const executeLocked=action==='execute'&&!executeReady();
+      const techniqueLocked=action==='weaponTechnique'&&((state.player.stamina||0)<currentTechnique().cost||state.weaponTechniqueCooldown>0);
+      const environmentLocked=action==='environment'&&state.environmentUsed;
+      const companionLocked=action==='companion'&&state.companionCooldown>0;
+      const reactionLocked=action==='reaction'&&state.reactionUsed;
+      const locked=disabled||burstLocked||dodgeLocked||parryLocked||executeLocked||techniqueLocked||environmentLocked||companionLocked||reactionLocked;
+      button.disabled=locked;button.style.opacity=locked?'.55':'1';
     });
     ui.burstBtn.classList.toggle('ready',state.battleMomentum>=100&&!disabled);
+    if(ui.executeBtn)ui.executeBtn.classList.toggle('ready',executeReady()&&!disabled);
+    if(ui.parryBtn)ui.parryBtn.classList.toggle('ready',state.parryPrimed);
   }
 
   function intentInfo(intent){
@@ -1138,17 +1396,17 @@
 
   function updateBattleUi(){
     const enemy=state.battleEnemy;if(!enemy)return;
-    ui.enemyName.textContent=enemy.name.toUpperCase();ui.enemyHpText.textContent=`${Math.max(0,enemy.hp)} / ${enemy.maxHp} HP`;
+    ui.enemyName.textContent=enemy.name.toUpperCase();ui.battle.classList.toggle('elite-battle',!!enemy.elite);ui.battle.classList.toggle('nemesis-battle',!!enemy.elite2);ui.enemyHpText.textContent=`${Math.max(0,enemy.hp)} / ${enemy.maxHp} HP`;
     ui.enemyHpBar.style.width=`${Math.max(0,enemy.hp/enemy.maxHp*100)}%`;const transient=[...ui.enemySprite.classList].filter(name=>['hit-anim','attack-anim','skill-anim'].includes(name));ui.enemySprite.className=`enemy-sprite ${enemy.sprite}${enemy.stunned?' staggered':''}`;transient.forEach(name=>ui.enemySprite.classList.add(name));
-    const statuses=[];if(enemy.dotTurns>0)statuses.push(`${enemy.dotName.toUpperCase()} · ${enemy.dotTurns} TURNS`);if(enemy.ward>0)statuses.push('IRON WARD');if(enemy.stunned)statuses.push('STAGGERED');if(enemy.phase>1)statuses.push(`PHASE ${enemy.phase}`);
+    const statuses=[];if(enemy.dotTurns>0)statuses.push(`${enemy.dotName.toUpperCase()} · ${enemy.dotTurns} TURNS`);if(enemy.ward>0)statuses.push('IRON WARD');if(enemy.stunned)statuses.push('STAGGERED');if(enemy.phase>1)statuses.push(`PHASE ${enemy.phase}`);if(enemy.elite)statuses.push(ELITE_TRAITS[enemy.elite].name);if(enemy.elite2)statuses.push(ELITE_TRAITS[enemy.elite2].name);if(state.battleSurface)statuses.push(BATTLE_SURFACES[state.battleSurface.type].name);
     ui.enemyStatus.textContent=statuses.join(' · ');ui.staggerBar.style.width=`${Math.min(100,enemy.stagger||0)}%`;
     const intent=intentInfo(enemy.intent);ui.enemyIntent.innerHTML=`<strong>INTENT: ${intent[0]}</strong><br>${intent[1]}`;ui.enemyIntent.className=`enemy-intent ${intent[2]}`;
     ui.comboText.textContent=`x${state.battleCombo}`;ui.momentumText.textContent=`${Math.floor(state.battleMomentum)}%`;ui.momentumBar.style.width=`${Math.min(100,state.battleMomentum)}%`;
-    const p=state.player;if(ui.environmentCard){const env=state.battleEnvironment||BATTLE_ENVIRONMENTS.grass;ui.environmentCard.innerHTML=`<small>BATTLEFIELD ${state.environmentUsed?'· SPENT':''}</small><strong>${escapeHtml(env.name)}</strong><span>${escapeHtml(env.desc)}</span>`;ui.environmentCard.classList.toggle('spent',state.environmentUsed);}if(ui.environmentBtn)ui.environmentBtn.textContent=state.environmentUsed?'ENVIRONMENT · SPENT':'USE ENVIRONMENT';if(ui.dodgeBtn)ui.dodgeBtn.textContent=`DODGE · 35 STA`;if(ui.staminaText)ui.staminaText.textContent=`${Math.floor(p.stamina||0)} / ${p.maxStamina||100}`;if(ui.staminaBar)ui.staminaBar.style.width=`${Math.max(0,(p.stamina||0)/(p.maxStamina||100)*100)}%`;const hero=[];if(state.guarding)hero.push('GUARD');if(p.attackBuffTurns>0)hero.push(`POWER ${p.attackBuffTurns}`);if(p.evasionTurns>0)hero.push(`EVADE ${p.evasionTurns}`);ui.heroStatus.textContent=hero.join(' · ');
-    ui.burstBtn.textContent=state.player.job?JOB_BURSTS[state.player.job].name:'ROADBURST';if(ui.armorClassText)ui.armorClassText.textContent=heroAC();if(ui.stanceText)ui.stanceText.textContent=`STANCE · ${state.battleStance.toUpperCase()}`;if(ui.companionBattleChip){const c=companion();ui.companionBattleChip.textContent=c?`${c.name.toUpperCase()} · ${c.role.toUpperCase()} · ${state.companionCooldown?`COMMAND IN ${state.companionCooldown}`:'COMMAND READY'}`:'SOLO ADVENTURER';}if(ui.inspireBtn)ui.inspireBtn.textContent=`INSPIRATION ${state.inspiration}`;if(ui.companionAssistBtn)ui.companionAssistBtn.textContent=state.companionCooldown?`COMPANION · ${state.companionCooldown}`:`COMPANION · ${companionAssistName().toUpperCase()}`;if(ui.reactionBtn)ui.reactionBtn.textContent=state.reactionReadied?`${classReaction().name} · READY`:state.reactionUsed?'REACTION · SPENT':`REACTION · ${classReaction().name}`;if(ui.positionBtn)ui.positionBtn.textContent=`POSITION · ${state.battleRange.toUpperCase()}`;if(ui.initiativeTrack)ui.initiativeTrack.innerHTML=initiativeHtml();if(ui.battlePhaseText)ui.battlePhaseText.textContent=`ROUND ${state.battleRound} · PHASE ${enemy.phase}`;if(ui.enemyAffinityText)ui.enemyAffinityText.textContent=affinityLabel(enemy);setBattleButtons(state.battleLocked&&!state.timingActive);updateHud();
+    const p=state.player;if(ui.environmentCard){const env=state.battleEnvironment||BATTLE_ENVIRONMENTS.grass;ui.environmentCard.innerHTML=`<small>BATTLEFIELD ${state.environmentUsed?'· SPENT':''}</small><strong>${escapeHtml(env.name)}</strong><span>${escapeHtml(env.desc)}</span>`;ui.environmentCard.classList.toggle('spent',state.environmentUsed);}if(ui.environmentBtn)ui.environmentBtn.textContent=state.environmentUsed?'ENVIRONMENT · SPENT':'USE ENVIRONMENT';if(ui.dodgeBtn)ui.dodgeBtn.textContent=`DODGE · ${dodgeCost()} STA`;if(ui.parryBtn)ui.parryBtn.textContent=state.parryPrimed?'PARRY · READY':state.parryCooldown?`PARRY · ${state.parryCooldown}`:`PARRY · ${parryCost()} STA`;if(ui.executeBtn)ui.executeBtn.textContent=`EXECUTION · ${executionCost()} MOM`;if(ui.weaponTechniqueBtn){const tech=currentTechnique();ui.weaponTechniqueBtn.textContent=state.weaponTechniqueCooldown?`${tech.name.toUpperCase()} · ${state.weaponTechniqueCooldown}`:`${tech.name.toUpperCase()} · ${tech.cost} STA`;}if(ui.eliteBadge){const traits=enemyTraits(enemy);ui.eliteBadge.classList.toggle('hidden',!traits.length);ui.eliteBadge.textContent=traits.length?`${enemy.elite2?'NEMESIS':'ELITE'} · ${traits.map(t=>t.name).join(' + ')} · ${traits.map(t=>t.desc).join(' ')}`:'';}if(ui.surfaceChip){const surf=state.battleSurface?BATTLE_SURFACES[state.battleSurface.type]:null;ui.surfaceChip.className=`surface-chip ${surf?surf.className:'dormant'}`;ui.surfaceChip.innerHTML=surf?`<small>SURFACE · ${state.battleSurface.turns} ROUNDS</small><strong>${surf.name}</strong><span>${surf.desc}</span>`:`<small>SURFACE</small><strong>STABLE GROUND</strong><span>No persistent field effect.</span>`;}if(ui.staminaText)ui.staminaText.textContent=`${Math.floor(p.stamina||0)} / ${p.maxStamina||100}`;if(ui.staminaBar)ui.staminaBar.style.width=`${Math.max(0,(p.stamina||0)/(p.maxStamina||100)*100)}%`;const hero=[];if(state.guarding)hero.push('GUARD');if(p.attackBuffTurns>0)hero.push(`POWER ${p.attackBuffTurns}`);if(p.evasionTurns>0)hero.push(`EVADE ${p.evasionTurns}`);if(state.parryPrimed)hero.push('PARRY READY');ui.heroStatus.textContent=hero.join(' · ');
+    ui.burstBtn.textContent=state.player.job?JOB_BURSTS[state.player.job].name:'ROADBURST';if(ui.armorClassText)ui.armorClassText.textContent=heroAC();if(ui.stanceText)ui.stanceText.textContent=`STANCE · ${state.battleStance.toUpperCase()}`;if(ui.companionBattleChip){const c=companion();ui.companionBattleChip.textContent=c?`${c.name.toUpperCase()} · ${c.role.toUpperCase()} · BOND ${state.companionBond||0} ${bondRank()} · ${state.companionCooldown?`COMMAND IN ${state.companionCooldown}`:'COMMAND READY'}`:'SOLO ADVENTURER';}if(ui.inspireBtn)ui.inspireBtn.textContent=`INSPIRATION ${state.inspiration}`;if(ui.companionAssistBtn)ui.companionAssistBtn.textContent=state.companionCooldown?`COMPANION · ${state.companionCooldown}`:`COMPANION · ${companionAssistName().toUpperCase()}`;if(ui.reactionBtn)ui.reactionBtn.textContent=state.reactionReadied?`${classReaction().name} · READY`:state.reactionUsed?'REACTION · SPENT':`REACTION · ${classReaction().name}`;if(ui.positionBtn)ui.positionBtn.textContent=`POSITION · ${state.battleRange.toUpperCase()}`;if(ui.initiativeTrack)ui.initiativeTrack.innerHTML=initiativeHtml();if(ui.battlePhaseText)ui.battlePhaseText.textContent=`ROUND ${state.battleRound} · PHASE ${enemy.phase}`;if(ui.enemyAffinityText)ui.enemyAffinityText.textContent=affinityLabel(enemy);if(ui.difficultyBattleText)ui.difficultyBattleText.textContent=`TIER ${difficultyData().tier} · ${difficultyData().name}`;setBattleButtons(state.battleLocked&&!state.timingActive);updateHud();
   }
 
-  function effectiveAttack(){let base=(totalAttack()+state.player.level*2)*stanceDamageMultiplier()*rangeDamageMultiplier()*(1+(equippedRelic()?.damage||0)+affixBonus('damage'));base=state.player.attackBuffTurns>0?base*1.28:base;return Math.floor(base);}
+  function effectiveAttack(){let base=(totalAttack()+state.player.level*2)*stanceDamageMultiplier()*rangeDamageMultiplier()*(1+(equippedRelic()?.damage||0)+affixBonus('damage')+(hasTalent('ruthlessEdge')?.08:0));if(hasTalent('executioner')&&state.battleEnemy&&state.battleEnemy.hp/state.battleEnemy.maxHp<.35)base*=1.16;base=state.player.attackBuffTurns>0?base*1.28:base;return Math.floor(base);}
   function spendMp(cost){if(state.player.mp<cost){ui.battleLog.textContent=`Not enough MP. Need ${cost}.`;beep(90);return false;}state.player.mp-=cost;if(state.companion==='lyss'&&Math.random()<.22){state.player.mp=Math.min(state.player.maxMp,state.player.mp+1);showToast('LYSS RECOVERS 1 MP');}return true;}
 
   function animateClass(element,className,duration=460){element.classList.remove(className);void element.offsetWidth;element.classList.add(className);setTimeout(()=>element.classList.remove(className),duration);}
@@ -1162,11 +1420,11 @@
   function advanceCombo(action,bonus=0){
     const varied=state.battleLastAction&&state.battleLastAction!==action;
     state.battleCombo=varied?Math.min(9,state.battleCombo+1):Math.max(1,state.battleCombo-(state.battleLastAction===action?1:0));
-    state.battleLastAction=action;state.battleMaxCombo=Math.max(state.battleMaxCombo,state.battleCombo);state.battleMomentum=Math.min(100,state.battleMomentum+8+state.battleCombo*2+bonus+(equippedRelic()?.momentum||0)+affixBonus('momentum'));
+    state.battleLastAction=action;state.battleMaxCombo=Math.max(state.battleMaxCombo,state.battleCombo);state.battleMomentum=Math.min(100,state.battleMomentum+8+state.battleCombo*2+bonus+(equippedRelic()?.momentum||0)+affixBonus('momentum')+(hasTalent('tactician')&&varied?8:0));
   }
 
   function applyEnemyDamage(amount,text,options={}){
-    const enemy=state.battleEnemy;if(options.skill&&options.prepared!==false&&state.preparedMagic){amount*=1.18;state.preparedMagic=false;showToast('PREPARED BONUS');}if(options.skill){if(state.player.job==='arcanist')amount*=1.08;if(state.player.job==='spellblade')amount*=1.05;amount*=1+(equippedRelic()?.spellPower||0)+affixBonus('skill');}const damageType=options.type||'physical',affinity=affinityMultiplier(enemy,damageType);amount*=affinity;let damage=Math.max(1,Math.floor(amount));
+    const enemy=state.battleEnemy;if(options.skill&&options.prepared!==false&&state.preparedMagic){amount*=1.18;state.preparedMagic=false;showToast('PREPARED BONUS');}if(options.skill){if(state.player.job==='arcanist')amount*=1.08;if(state.player.job==='spellblade')amount*=1.05;amount*=1+(equippedRelic()?.spellPower||0)+affixBonus('skill')+(hasTalent('spellEcho')?.10:0);}const damageType=options.type||'physical',affinity=affinityMultiplier(enemy,damageType);amount*=affinity*(1+runeDamageBonus(damageType));if(hasTalent('bloodRush')&&state.player.hp<=state.player.maxHp*.5)amount*=1.12;let damage=Math.max(1,Math.floor(amount));
     const chainBonus=1+Math.min(.24,state.battleCombo*.03);damage=Math.floor(damage*chainBonus);
     if(enemy.ward>0){damage=Math.max(1,Math.floor(damage*(1-enemy.ward)));enemy.ward=0;text=`Iron Ward softens the hit. ${text}`;}
     enemy.hp-=damage;if(affixBonus('leech')>0&&state.player.hp>0){const leeched=Math.min(Math.max(1,Math.floor(damage*affixBonus('leech'))),state.player.maxHp-state.player.hp);if(leeched>0){state.player.hp+=leeched;spawnFx('heal',`+${leeched}`,'hero');}}enemy.stagger=Math.min(100,(enemy.stagger||0)+(options.stagger||8)+affixBonus('stagger')+Math.floor(damage/enemy.maxHp*32));
@@ -1183,16 +1441,16 @@
     if(jobId==='vanguard'&&slot===1){damage=applyEnemyDamage(atk*1.65+randomBetween(2,7),'Power Strike crashes for {damage} damage!',{skill:true,stagger:24,flash:true,type:'physical'});}
     if(jobId==='vanguard'&&slot===2){damage=damageEnemy(atk*1.05+randomBetween(3,8),'War Cry hits for {damage}; your Attack rises!','physical');p.attackBuffTurns=3;}
     if(jobId==='arcanist'&&slot===1){damage=damageEnemy(15+p.level*4+equippedWeapon().power*1.2+randomBetween(2,8),'Arc Bolt deals {damage} magic damage!','arcane');}
-    if(jobId==='arcanist'&&slot===2){damage=applyEnemyDamage(29+p.level*6+equippedWeapon().power*1.5+randomBetween(4,12),'Starfall erupts for {damage} damage and ignites the enemy!',{skill:true,stagger:18,flash:true,type:'fire'});enemy.dotTurns=3;enemy.dotDamage=7+p.level;enemy.dotName='burn';}
+    if(jobId==='arcanist'&&slot===2){damage=applyEnemyDamage(29+p.level*6+equippedWeapon().power*1.5+randomBetween(4,12),'Starfall erupts for {damage} damage and ignites the enemy!',{skill:true,stagger:18,flash:true,type:'fire'});enemy.dotTurns=3;enemy.dotDamage=7+p.level;enemy.dotName='burn';createBattleSurface('fire',3);}
     if(jobId==='ranger'&&slot===1){const hit1=Math.max(1,Math.floor(atk*.72)+randomBetween(1,5)),hit2=Math.max(1,Math.floor(atk*.72)+randomBetween(1,5));damage=applyEnemyDamage(hit1+hit2,'Twin Shot lands twice for {damage} total damage!',{skill:true,stagger:16,type:'physical'});}
-    if(jobId==='ranger'&&slot===2){damage=damageEnemy(atk*1.12+randomBetween(2,7),'Venom Arrow deals {damage} damage and poisons the enemy!','poison');enemy.dotTurns=4;enemy.dotDamage=5+Math.floor(p.level*.8);enemy.dotName='poison';}
+    if(jobId==='ranger'&&slot===2){damage=damageEnemy(atk*1.12+randomBetween(2,7),'Venom Arrow deals {damage} damage and poisons the enemy!','poison');enemy.dotTurns=4;enemy.dotDamage=5+Math.floor(p.level*.8);enemy.dotName='poison';createBattleSurface('poison',3);}
     if(jobId==='paladin'&&slot===1){damage=applyEnemyDamage(atk*1.38+p.level*2+randomBetween(2,8),'Radiant Smite pierces for {damage} holy damage!',{skill:true,stagger:20,flash:true,type:'radiant'});}
-    if(jobId==='paladin'&&slot===2){let healBase=Math.floor(p.maxHp*.38)+p.level*2;if(state.preparedMagic){healBase=Math.floor(healBase*1.18);state.preparedMagic=false;showToast('PREPARED BONUS');}const healed=Math.min(healBase,p.maxHp-p.hp);p.hp+=healed;state.guarding=true;ui.battleLog.textContent=`Sanctuary restores ${healed} HP and raises a holy guard.`;spawnFx('heal',`+${healed}`,'hero');animateClass(ui.battleHero,'guard-anim');}
+    if(jobId==='paladin'&&slot===2){let healBase=(Math.floor(p.maxHp*.38)+p.level*2)*(1+(runestone().healing||0));if(state.preparedMagic){healBase=Math.floor(healBase*1.18);state.preparedMagic=false;showToast('PREPARED BONUS');}const healed=Math.min(healBase,p.maxHp-p.hp);p.hp+=healed;state.guarding=true;ui.battleLog.textContent=`Sanctuary restores ${healed} HP and raises a holy guard.`;spawnFx('heal',`+${healed}`,'hero');animateClass(ui.battleHero,'guard-anim');createBattleSurface('radiant',3);}
     if(jobId==='rogue'&&slot===1){const crit=Math.random()<.48;damage=applyEnemyDamage(atk*(crit?2.25:1.18)+randomBetween(2,8),crit?'Perfect Backstab! {damage} critical damage!':'Backstab deals {damage} damage.',{skill:true,stagger:crit?25:13,flash:crit,type:'physical'});if(crit)spawnFx('word','CRITICAL!');}
     if(jobId==='rogue'&&slot===2){damage=damageEnemy(atk*.95+randomBetween(2,6),'Smoke Veil cuts for {damage}; you fade from sight!','physical');p.evasionTurns=2;}
     if(jobId==='cleric'&&slot===1){damage=damageEnemy(14+p.level*4+equippedWeapon().power+randomBetween(2,7),'Light Spear burns corruption for {damage} damage!','radiant');p.mp=Math.min(p.maxMp,p.mp+3);}
-    if(jobId==='cleric'&&slot===2){let healBase=Math.floor(p.maxHp*.52)+p.level*3;if(state.preparedMagic){healBase=Math.floor(healBase*1.18);state.preparedMagic=false;showToast('PREPARED BONUS');}const healed=Math.min(healBase,p.maxHp-p.hp);p.hp+=healed;ui.battleLog.textContent=`Greater Heal restores ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');animateClass(ui.battleHero,'skill-anim');}
-    if(jobId==='spellblade'&&slot===1){damage=damageEnemy(atk*1.18+p.level*3+randomBetween(3,9),'Flame Arc deals {damage} enchanted damage!','fire');enemy.dotTurns=2;enemy.dotDamage=5+p.level;enemy.dotName='burn';}
+    if(jobId==='cleric'&&slot===2){let healBase=(Math.floor(p.maxHp*.52)+p.level*3)*(1+(runestone().healing||0));if(state.preparedMagic){healBase=Math.floor(healBase*1.18);state.preparedMagic=false;showToast('PREPARED BONUS');}const healed=Math.min(healBase,p.maxHp-p.hp);p.hp+=healed;ui.battleLog.textContent=`Greater Heal restores ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');animateClass(ui.battleHero,'skill-anim');}
+    if(jobId==='spellblade'&&slot===1){damage=damageEnemy(atk*1.18+p.level*3+randomBetween(3,9),'Flame Arc deals {damage} enchanted damage!','fire');enemy.dotTurns=2;enemy.dotDamage=5+p.level;enemy.dotName='burn';createBattleSurface('fire',3);}
     if(jobId==='spellblade'&&slot===2){damage=damageEnemy(atk*1.52+randomBetween(3,9),'Mana Edge strikes for {damage} and returns power!','arcane');p.mp=Math.min(p.maxMp,p.mp+5);}
     chord([392,523,784]);return true;
   }
@@ -1210,7 +1468,7 @@
     if(!auto&&distance<=.045){quality='PERFECT',mult=1.72,bonus=26,stagger=28;state.battlePerfects+=1;state.player.mp=Math.min(state.player.maxMp,state.player.mp+2+(state.player.job==='spellblade'?1:0));}
     else if(!auto&&distance<=.11){quality='GREAT',mult=1.35,bonus=16,stagger=18;}
     else if(!auto&&distance<=.21){quality='GOOD',mult=1.05,bonus=10,stagger=12;}
-    const p=state.player,ability=weaponAbility(),mod=attackBonus(),roll=battleD20(state.advantageNext,state.disadvantageNext),total=roll+mod,target=state.battleEnemy.armor;state.advantageNext=false;state.disadvantageNext=false;showBattleRoll(`${ability.toUpperCase()} ATTACK`,roll,mod,total);const hit=roll===20||(roll!==1&&total>=target),crit=roll===20||Math.random()<.06+(p.job==='rogue'?.10:0)+(state.companion==='pip'?.06:0)+stanceCritBonus()+(quality==='PERFECT'?.12:0);if(!hit){quality=roll===1?'NATURAL 1':'GLANCING';mult*=.48;}let raw=(effectiveAttack()+randomBetween(1,7))*mult;if(crit)raw*=1.65;
+    const p=state.player,ability=weaponAbility(),mod=attackBonus(),roll=battleD20(state.advantageNext,state.disadvantageNext),total=roll+mod,target=enemyTargetArmor();state.advantageNext=false;state.disadvantageNext=false;showBattleRoll(`${ability.toUpperCase()} ATTACK`,roll,mod,total);const hit=roll===20||(roll!==1&&total>=target),crit=roll===20||Math.random()<.06+(p.job==='rogue'?.10:0)+(state.companion==='pip'?.06:0)+stanceCritBonus()+(quality==='PERFECT'?.12:0);if(!hit){quality=roll===1?'NATURAL 1':'GLANCING';mult*=.48;}let raw=(effectiveAttack()+randomBetween(1,7))*mult;if(crit)raw*=1.65;
     advanceCombo('attack',bonus);applyEnemyDamage(raw,`${quality}${crit?' CRITICAL':''}! You deal {damage} damage.`,{stagger,flash:quality==='PERFECT'||crit,type:'physical'});if(quality==='PERFECT'){spawnFx('word','PERFECT!');shakeBattle(6);}else if(crit){spawnFx('word','CRITICAL!');shakeBattle(5);}
     beep(quality==='PERFECT'?220:crit?180:130,.09,'sawtooth',.04);finishPlayerTurn();
   }
@@ -1221,24 +1479,74 @@
     if(p.job==='vanguard'){applyEnemyDamage(atk*2.8+randomBetween(10,22),`${burst.text} {damage} damage!`,{skill:true,stagger:100,flash:true,type:'physical'});}
     if(p.job==='arcanist'){applyEnemyDamage(54+p.level*9+equippedWeapon().power*2,`${burst.text} {damage} damage!`,{skill:true,stagger:35,flash:true,type:'fire'});enemy.dotTurns=4;enemy.dotDamage=10+p.level*2;enemy.dotName='starfire';}
     if(p.job==='ranger'){applyEnemyDamage(atk*2.45+randomBetween(15,28),`${burst.text} {damage} total damage!`,{skill:true,stagger:45,flash:true,type:'poison'});enemy.dotTurns=4;enemy.dotDamage=7+p.level;enemy.dotName='venom';}
-    if(p.job==='paladin'){applyEnemyDamage(atk*2.15+p.level*4,`${burst.text} {damage} holy damage!`,{skill:true,stagger:45,flash:true,type:'radiant'});const heal=Math.min(Math.floor(p.maxHp*.42),p.maxHp-p.hp);p.hp+=heal;state.guarding=true;spawnFx('heal',`+${heal}`,'hero');}
+    if(p.job==='paladin'){applyEnemyDamage(atk*2.15+p.level*4,`${burst.text} {damage} holy damage!`,{skill:true,stagger:45,flash:true,type:'radiant'});const heal=Math.min(Math.floor(p.maxHp*.42*(1+(runestone().healing||0))),p.maxHp-p.hp);p.hp+=heal;state.guarding=true;spawnFx('heal',`+${heal}`,'hero');}
     if(p.job==='rogue'){applyEnemyDamage(atk*3.2+randomBetween(12,26),`${burst.text} {damage} critical damage!`,{skill:true,stagger:42,flash:true,type:'physical'});p.evasionTurns=3;}
-    if(p.job==='cleric'){applyEnemyDamage(46+p.level*8+equippedWeapon().power*2,`${burst.text} {damage} radiant damage!`,{skill:true,stagger:42,flash:true,type:'radiant'});const heal=Math.min(Math.floor(p.maxHp*.6),p.maxHp-p.hp);p.hp+=heal;spawnFx('heal',`+${heal}`,'hero');}
+    if(p.job==='cleric'){applyEnemyDamage(46+p.level*8+equippedWeapon().power*2,`${burst.text} {damage} radiant damage!`,{skill:true,stagger:42,flash:true,type:'radiant'});const heal=Math.min(Math.floor(p.maxHp*.6*(1+(runestone().healing||0))),p.maxHp-p.hp);p.hp+=heal;spawnFx('heal',`+${heal}`,'hero');}
     if(p.job==='spellblade'){applyEnemyDamage(atk*2.75+p.level*5,`${burst.text} {damage} eclipse damage!`,{skill:true,stagger:50,flash:true,type:'arcane'});p.mp=p.maxMp;}
     return true;
   }
 
+  function createBattleSurface(type,turns=3){if(!BATTLE_SURFACES[type])return;state.battleSurface={type,turns};spawnFx('word',BATTLE_SURFACES[type].name);updateBattleUi();}
+  function tickBattleSurface(){
+    const s=state.battleSurface,e=state.battleEnemy,p=state.player;if(!s||!e)return;
+    if(s.type==='fire'){const d=5+Math.floor(p.level*.8);e.hp-=d;spawnFx('number',`-${d}`,'enemy');ui.battleLog.textContent=`Burning ground scorches ${e.name} for ${d}.`;}
+    if(s.type==='poison'){const d=4+Math.floor(p.level*.65);e.hp-=d;spawnFx('number',`-${d}`,'enemy');ui.battleLog.textContent=`Miasma poisons ${e.name} for ${d}.`;}
+    if(s.type==='arcane'){p.mp=Math.min(p.maxMp,p.mp+2);spawnFx('heal','+2 MP','hero');}
+    if(s.type==='radiant'){const h=Math.min(Math.max(2,Math.floor(p.maxHp*.035)),p.maxHp-p.hp);p.hp+=h;if(h)spawnFx('heal',`+${h}`,'hero');}
+    if(s.type==='physical'){e.stagger=Math.min(100,(e.stagger||0)+7);}
+    if(hasTalent('veilRecovery')){const mp=Math.min(2,p.maxMp-p.mp);p.mp+=mp;if(mp)spawnFx('heal',`+${mp} MP`,'hero');}
+    s.turns-=1;if(s.turns<=0)state.battleSurface=null;
+  }
+
+  function useWeaponTechnique(){const p=state.player,e=state.battleEnemy,tech=currentTechnique();if(!e||state.weaponTechniqueCooldown>0||p.stamina<tech.cost)return false;p.stamina-=tech.cost;state.weaponTechniqueCooldown=2;advanceCombo('weaponTechnique',16);let d=0;
+    if(equippedWeapon().type==='sword')d=applyEnemyDamage(effectiveAttack()*1.48+randomBetween(3,9),`${tech.name} carves through the foe for {damage} damage!`,{stagger:34,flash:true,type:'physical'});
+    if(equippedWeapon().type==='axe'){d=applyEnemyDamage(effectiveAttack()*1.66+randomBetween(5,12),`${tech.name} crashes down for {damage} damage and sunders armor!`,{stagger:42,flash:true,type:'physical'});e.armor=Math.max(7,e.armor-2);}
+    if(equippedWeapon().type==='bow'){d=applyEnemyDamage(effectiveAttack()*1.32+randomBetween(3,10),`${tech.name} pins the target for {damage} damage!`,{stagger:24,flash:true,type:'physical'});state.battleRange='far';state.advantageNext=true;}
+    if(equippedWeapon().type==='staff'){d=applyEnemyDamage(effectiveAttack()*1.38+p.level*2,`${tech.name} detonates for {damage} arcane damage!`,{skill:true,stagger:30,flash:true,type:'arcane'});p.mp=Math.min(p.maxMp,p.mp+5);createBattleSurface('arcane',2);}
+    if(equippedWeapon().type==='mace'){d=applyEnemyDamage(effectiveAttack()*1.4+p.level*2,`${tech.name} tolls for {damage} radiant damage!`,{stagger:48,flash:true,type:'radiant'});state.guarding=true;}
+    if(equippedWeapon().type==='dagger'){const crit=Math.random()<.36+stanceCritBonus();const raw=effectiveAttack()*(crit?1.85:1.38)+randomBetween(5,11);d=applyEnemyDamage(raw,`${tech.name}${crit?' critically':''} tears through for {damage} damage!`,{stagger:26,flash:crit,type:'physical'});if(crit)spawnFx('word','CRITICAL!');}
+    if(equippedWeapon().type==='rapier'){d=applyEnemyDamage(effectiveAttack()*1.55+randomBetween(4,10),`${tech.name} pierces for {damage} damage!`,{stagger:30,flash:true,type:'physical'});if(!state.reactionUsed){state.reactionReadied=true;state.reactionUsed=true;spawnFx('word','RIPOSTE READY');}}
+    if(hasTalent('ruthlessEdge')&&d>0)state.battleMomentum=Math.min(100,state.battleMomentum+6);shakeBattle(6);chord([196,294,392,587]);return true;
+  }
+
+  function useParry(){
+    const p=state.player,cost=parryCost();
+    if(state.parryPrimed){ui.battleLog.textContent='Your parry is already readied.';return false;}
+    if(state.parryCooldown>0){ui.battleLog.textContent=`Parry recovers in ${state.parryCooldown} turn${state.parryCooldown===1?'':'s'}.`;beep(90);return false;}
+    if((p.stamina||0)<cost){ui.battleLog.textContent=`You need ${cost} Stamina to ready a parry.`;beep(90);return false;}
+    p.stamina-=cost;state.parryPrimed=true;state.parryCooldown=2;advanceCombo('parry',12);
+    ui.battleLog.textContent='You lower your center of gravity and wait for the strike. Time and steel will decide the counter.';
+    spawnFx('word','PARRY READY');animateClass(ui.battleHero,'guard-anim');beep(310,.08,'square',.03);return true;
+  }
+
+  function useExecution(){
+    const e=state.battleEnemy,p=state.player;if(!e)return false;
+    if(!executeReady()){ui.battleLog.textContent='Execution requires a broken, staggered, or badly wounded enemy and enough Momentum.';beep(90);return false;}
+    const cost=executionCost();state.battleMomentum=Math.max(0,state.battleMomentum-cost);advanceCombo('execution',20);
+    const ability=weaponAbility(),mod=attackBonus()+2,roll=battleD20(true,false),total=roll+mod,target=enemyTargetArmor();showBattleRoll(`${ability.toUpperCase()} EXECUTION`,roll,mod,total);
+    if(roll===1||(roll!==20&&total<target)){ui.battleLog.textContent=`The finishing line closes before you can take it. ${e.name} survives.`;spawnFx('word','DENIED');return true;}
+    const vulnerable=e.stunned||e.stagger>=72,low=e.hp/e.maxHp<=.25,headsman=hasTalent('headsman');
+    let raw=effectiveAttack()*(headsman?2.15:1.8)+e.maxHp*(e.boss?(headsman?.13:.10):(headsman?.25:.20))+randomBetween(8,18);
+    if(vulnerable)raw*=1.12;if(roll===20)raw*=1.3;
+    const lethal=!e.boss&&low&&e.hp/e.maxHp<=.15;
+    if(lethal)raw=Math.max(raw,e.hp+8);
+    ui.battle.classList.add('execution-cinematic');setTimeout(()=>ui.battle.classList.remove('execution-cinematic'),900);
+    const before=e.hp;applyEnemyDamage(raw,`EXECUTION! You break the opening for {damage} damage!`,{stagger:100,flash:true,type:'physical'});
+    if(before>0&&e.hp<=0)state.executions=(state.executions||0)+1;
+    spawnFx('word',roll===20?'PERFECT EXECUTION':'EXECUTION');shakeBattle(12);chord([110,165,220,330,440]);return true;
+  }
+
   function useEnvironment(){
-    if(state.environmentUsed||!state.battleEnemy)return false;const env=state.battleEnvironment||BATTLE_ENVIRONMENTS.grass,p=state.player,e=state.battleEnemy;state.environmentUsed=true;advanceCombo('environment',20);state.battleMomentum=Math.min(100,state.battleMomentum+12);
-    if(env.kind==='damage'){applyEnemyDamage(24+p.level*5+equippedWeapon().power*.8,`${env.name} erupts for {damage} ${env.type} damage!`,{skill:true,prepared:false,stagger:34,flash:true,type:env.type});}
-    else if(env.kind==='control'){applyEnemyDamage(12+p.level*3,`${env.name} crashes into the foe for {damage} damage and heavy stagger!`,{skill:true,prepared:false,stagger:72,flash:true,type:env.type});state.advantageNext=true;}
-    else if(env.kind==='arcane'){applyEnemyDamage(28+p.level*5,`${env.name} detonates for {damage} arcane damage!`,{skill:true,prepared:false,stagger:48,flash:true,type:'arcane'});state.advantageNext=true;}
+    if(state.environmentUsed||!state.battleEnemy)return false;const env=state.battleEnvironment||BATTLE_ENVIRONMENTS.grass,p=state.player,e=state.battleEnemy,terrainMult=hasTalent('terrainMaster')?1.20:1;state.environmentUsed=true;advanceCombo('environment',20);state.battleMomentum=Math.min(100,state.battleMomentum+12);
+    if(env.kind==='damage'){applyEnemyDamage((24+p.level*5+equippedWeapon().power*.8)*terrainMult,`${env.name} erupts for {damage} ${env.type} damage!`,{skill:true,prepared:false,stagger:34,flash:true,type:env.type});}
+    else if(env.kind==='control'){applyEnemyDamage((12+p.level*3)*terrainMult,`${env.name} crashes into the foe for {damage} damage and heavy stagger!`,{skill:true,prepared:false,stagger:Math.floor(72*terrainMult),flash:true,type:env.type});state.advantageNext=true;}
+    else if(env.kind==='arcane'){applyEnemyDamage((28+p.level*5)*terrainMult,`${env.name} detonates for {damage} arcane damage!`,{skill:true,prepared:false,stagger:Math.floor(48*terrainMult),flash:true,type:'arcane'});state.advantageNext=true;}
     else if(env.kind==='heal'){const heal=Math.min(Math.floor(p.maxHp*.34)+p.level*2,p.maxHp-p.hp);p.hp+=heal;p.mp=Math.min(p.maxMp,p.mp+8);spawnFx('heal',`+${heal}`,'hero');ui.battleLog.textContent=`${env.name} restores ${heal} HP and 8 MP.`;}
     else if(env.kind==='mana'){p.mp=Math.min(p.maxMp,p.mp+12);state.advantageNext=true;state.battleMomentum=Math.min(100,state.battleMomentum+20);ui.battleLog.textContent=`${env.name} restores 12 MP and grants advantage on your next attack.`;spawnFx('word','ASTRAL SURGE');}
-    else {state.guarding=true;state.battleMomentum=Math.min(100,state.battleMomentum+25);ui.battleLog.textContent=`${env.name} fortifies the party. You brace and gain Momentum.`;spawnFx('word','FORTIFIED');}
+    else {state.guarding=true;state.battleMomentum=Math.min(100,state.battleMomentum+25);ui.battleLog.textContent=`${env.name} fortifies the party. You brace and gain Momentum.`;spawnFx('word','FORTIFIED');}createBattleSurface(env.type==='fire'?'fire':env.type==='arcane'?'arcane':env.type==='radiant'?'radiant':'physical',3);
     shakeBattle(7);return true;
   }
-  function useDodge(){const p=state.player;if((p.stamina||0)<35)return false;p.stamina-=35;state.dodgePrimed=true;state.battleRange=state.battleRange==='close'?'mid':'far';advanceCombo('dodge',10);ui.battleLog.textContent=`You break away to ${state.battleRange.toUpperCase()} range and prepare to evade the next attack.`;spawnFx('word','DODGE READY');animateClass(ui.battleHero,'dodge-anim',520);return true;}
+  function useDodge(){const p=state.player,cost=dodgeCost();if((p.stamina||0)<cost)return false;p.stamina-=cost;state.dodgePrimed=true;state.battleRange=state.battleRange==='close'?'mid':'far';advanceCombo('dodge',10);ui.battleLog.textContent=`You break away to ${state.battleRange.toUpperCase()} range and prepare to evade the next attack.`;spawnFx('word','DODGE READY');animateClass(ui.battleHero,'dodge-anim',520);return true;}
   function shakeBattle(power=5){if(!ui.battle)return;ui.battle.style.setProperty('--shake',`${power}px`);ui.battle.classList.remove('camera-shake');void ui.battle.offsetWidth;ui.battle.classList.add('camera-shake');setTimeout(()=>ui.battle.classList.remove('camera-shake'),420);}
 
   function finishPlayerTurn(){
@@ -1251,10 +1559,13 @@
     if(action==='attack'){startTimingAttack();return;}
     if(action==='skill1'){acted=useJobSkill(1);if(acted)advanceCombo('skill1',8);}
     if(action==='skill2'){acted=useJobSkill(2);if(acted)advanceCombo('skill2',12);}
-    if(action==='guard'){state.guarding=true;p.mp=Math.min(p.maxMp,p.mp+4+(equippedRelic()?.guardMp||0));p.stamina=Math.min(p.maxStamina,p.stamina+18);advanceCombo('guard',5);ui.battleLog.textContent=`You brace, recover ${4+(equippedRelic()?.guardMp||0)} MP and 18 Stamina.`;beep(260,.08,'square',.03);animateClass(ui.battleHero,'guard-anim');acted=true;}
+    if(action==='weaponTechnique'){acted=useWeaponTechnique();}
+    if(action==='guard'){state.guarding=true;p.mp=Math.min(p.maxMp,p.mp+4+(equippedRelic()?.guardMp||0)+(hasTalent('channeler')?2:0));p.stamina=Math.min(p.maxStamina,p.stamina+18);advanceCombo('guard',5);ui.battleLog.textContent=`You brace, recover ${4+(equippedRelic()?.guardMp||0)+(hasTalent('channeler')?2:0)} MP and 18 Stamina.`;beep(260,.08,'square',.03);animateClass(ui.battleHero,'guard-anim');acted=true;}
     if(action==='dodge'){acted=useDodge();}
+    if(action==='parry'){acted=useParry();}
+    if(action==='execute'){acted=useExecution();}
     if(action==='environment'){acted=useEnvironment();}
-    if(action==='potion'){if(p.potions<1){ui.battleLog.textContent='Your potion pouch is empty.';beep(90);return;}if(p.hp>=p.maxHp){ui.battleLog.textContent='Your HP is already full.';beep(90);return;}p.potions-=1;const healed=Math.min(30+p.level*3,p.maxHp-p.hp);p.hp+=healed;advanceCombo('potion',2);ui.battleLog.textContent=`You recover ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');chord([523,659]);acted=true;}
+    if(action==='potion'){if(p.potions<1){ui.battleLog.textContent='Your potion pouch is empty.';beep(90);return;}if(p.hp>=p.maxHp){ui.battleLog.textContent='Your HP is already full.';beep(90);return;}p.potions-=1;const healed=Math.min(Math.floor((30+p.level*3)*(1+(runestone().healing||0))),p.maxHp-p.hp);p.hp+=healed;advanceCombo('potion',2);ui.battleLog.textContent=`You recover ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');chord([523,659]);acted=true;}
     if(action==='bomb'){if(p.bombs<1){ui.battleLog.textContent='You have no Crown Bombs.';beep(90);return;}p.bombs-=1;advanceCombo('bomb',15);const damage=34+p.level*5+randomBetween(0,10);applyEnemyDamage(damage,'The Crown Bomb explodes for {damage} piercing damage!',{stagger:32,flash:true,slash:false,type:'fire'});spawnFx('burst');chord([110,165,82]);acted=true;}
     if(action==='burst')acted=useBurst();
     if(action==='companion'){useCompanionAssist();return;}
@@ -1266,32 +1577,62 @@
   }
 
   function enemyTurn(){
-    if(!state.inBattle||!state.battleEnemy)return;const enemy=state.battleEnemy,p=state.player;state.battleActiveActor='enemy';if(state.companionCooldown>0)state.companionCooldown-=1;
+    if(!state.inBattle||!state.battleEnemy)return;const enemy=state.battleEnemy,p=state.player;state.battleActiveActor='enemy';
+    if(state.companionCooldown>0)state.companionCooldown-=1;if(state.weaponTechniqueCooldown>0)state.weaponTechniqueCooldown-=1;if(state.parryCooldown>0)state.parryCooldown-=1;
+    if(hasTalent('channeler'))p.mp=Math.min(p.maxMp,p.mp+1);tickBattleSurface();if(enemy.hp<=0){updateBattleUi();setTimeout(victory,420);return;}
+    const traits=enemyTraits(enemy),regen=traits.reduce((sum,t)=>sum+(t.regen||0),0);if(regen){const heal=Math.max(3,Math.floor(enemy.maxHp*regen));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);spawnFx('heal',`+${heal}`,'enemy');}
     if(enemy.dotTurns>0){enemy.hp-=enemy.dotDamage;enemy.dotTurns-=1;ui.battleLog.textContent=`${enemy.dotName} deals ${enemy.dotDamage} damage to ${enemy.name}.`;spawnFx('number',`-${enemy.dotDamage}`,'enemy');updateBattleUi();if(enemy.hp<=0){setTimeout(victory,520);return;}}
-    if(enemy.stunned){enemy.stunned=false;ui.battleLog.textContent=`${enemy.name} is staggered and loses the turn!`;spawnFx('word','OPENING!');chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
+    if(enemy.stunned){enemy.stunned=false;ui.battleLog.textContent=`${enemy.name} is staggered and loses the turn!`;spawnFx('word','OPENING!');chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+18+(hasTalent('ironPulse')?6:0));state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
     const intent=enemy.intent||'attack';
     if(intent==='mend'){const heal=Math.max(8,Math.floor(enemy.maxHp*.14));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);ui.battleLog.textContent=`${enemy.name} gathers dark energy and restores ${heal} HP.`;spawnFx('heal',`+${heal}`,'enemy');animateClass(ui.enemySprite,'skill-anim');}
     else if(intent==='brace'){enemy.ward=.5;ui.battleLog.textContent=`${enemy.name} raises an Iron Ward. Its next damage taken is reduced.`;spawnFx('word','WARD');}
     else {
       let multiplier=1,label='attacks';if(intent==='heavy'){multiplier=1.52;label='uses Crushing Blow';}if(intent==='sweep'){multiplier=state.battleRange==='far'?.72:state.battleRange==='close'?1.48:1.15;label='uses a Wide Sweep';}if(intent==='hex'){multiplier=.72;label='casts a Dread Hex';}if(intent==='drain'){multiplier=.82;label='tears at your mana';}if(intent==='ultimate'){multiplier=1.92+(enemy.phase-1)*.12;label='unleashes Crown Catastrophe';}
-      if(state.dodgePrimed){const dodgeRoll=rollD20(),dodgeTotal=dodgeRoll+abilityMod('dex')+Math.floor(p.level/4),dodgeDC=10+Math.floor(enemy.attack/6)+(intent==='ultimate'?3:intent==='heavy'?2:0);showBattleRoll('DODGE',dodgeRoll,abilityMod('dex')+Math.floor(p.level/4),dodgeTotal);state.dodgePrimed=false;if(dodgeRoll===20||(dodgeRoll!==1&&dodgeTotal>=dodgeDC)){ui.battleLog.textContent=`Perfect footwork! You evade ${enemy.name}'s ${intentInfo(intent)[0].toLowerCase()} and gain Momentum.`;state.battleMomentum=Math.min(100,state.battleMomentum+22);spawnFx('word','EVADE!');animateClass(ui.battleHero,'dodge-anim',520);chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+24);state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}ui.battleLog.textContent=`Dodge check ${dodgeTotal} vs DC ${dodgeDC}: you are clipped as you move.`;}
-      if(p.evasionTurns>0&&Math.random()<.55){p.evasionTurns-=1;ui.battleLog.textContent=`You read the motion and evade ${enemy.name}'s ${intentInfo(intent)[0].toLowerCase()}!`;animateClass(ui.battleHero,'attack-anim');spawnFx('word','EVADE!');beep(520,.07,'square',.025);chooseEnemyIntent();state.guarding=false;p.stamina=Math.min(p.maxStamina||100,(p.stamina||0)+18);if(p.attackBuffTurns>0)p.attackBuffTurns-=1;state.battleActiveActor='hero';state.battleRound+=1;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
-      const enemyMod=Math.floor(enemy.attack/5)+(intent==='heavy'?2:intent==='ultimate'?3:0)+rangeEnemyAttackMod(),attackRoll=rollD20(),attackTotal=attackRoll+enemyMod;showBattleRoll(`${enemy.name} ATTACK`,attackRoll,enemyMod,attackTotal);if(attackRoll===1||(attackRoll!==20&&attackTotal<heroAC())){ui.battleLog.textContent=`${enemy.name} ${label}, but rolls ${attackTotal} against AC ${heroAC()} and misses!`;spawnFx('word','MISS!');state.guarding=false;chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}let raw=(enemy.attack+randomBetween(0,6))*multiplier;if(attackRoll===20)raw*=1.45;const reaction=resolveReaction(raw);raw=reaction.raw;if(reaction.note)ui.battleLog.textContent=reaction.note;if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,420);return;}if(reaction.evaded){spawnFx('word','EVADE!');chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;state.guarding=false;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}if(['drain','ultimate'].includes(intent)){const saveAbility=intent==='drain'?'wis':'dex',saveMod=abilityMod(saveAbility)+companionCheckBonus(saveAbility)+relicCheckBonus(saveAbility),saveRoll=rollD20(false),saveTotal=saveRoll+saveMod,saveDC=12+Math.floor(enemy.attack/8);showBattleRoll(`${saveAbility.toUpperCase()} SAVE`,saveRoll,saveMod,saveTotal);if(saveRoll===20||(saveRoll!==1&&saveTotal>=saveDC)){raw*=.55;ui.battleLog.textContent=`Saving throw ${saveTotal} vs DC ${saveDC}: success! You blunt the effect.`;}else{ui.battleLog.textContent=`Saving throw ${saveTotal} vs DC ${saveDC}: failed.`;}}if(state.guarding)raw*=intent==='ultimate'?.38:.43;const damage=Math.max(1,Math.floor(raw)-p.defense-Math.floor(p.level/3));p.hp-=damage;state.battleDamageTaken+=damage;
+      if(state.parryPrimed){
+        const parryAbility=Math.max(abilityMod('str'),abilityMod('dex')),parryMod=parryAbility+Math.floor(p.level/4)+(hasTalent('duelistGuard')?2:0),parryRoll=rollD20(),parryTotal=parryRoll+parryMod,parryDC=11+Math.floor(enemy.attack/7)+(intent==='ultimate'?4:intent==='heavy'?2:0);showBattleRoll('PARRY',parryRoll,parryMod,parryTotal);state.parryPrimed=false;
+        if(parryRoll===20||(parryRoll!==1&&parryTotal>=parryDC)){
+          const perfect=parryRoll===20||parryTotal>=parryDC+5,counter=(effectiveAttack()*(perfect?.85:.52)+randomBetween(3,9));state.battleMomentum=Math.min(100,state.battleMomentum+(perfect?34:22));enemy.stagger=Math.min(100,(enemy.stagger||0)+(perfect?48:32));
+          applyEnemyDamage(counter,`${perfect?'PERFECT ':''}PARRY! Steel answers steel for {damage} counter damage.`,{stagger:perfect?38:22,flash:true,type:'physical'});spawnFx('word',perfect?'PERFECT PARRY':'PARRY');animateClass(ui.battleHero,'attack-anim');shakeBattle(perfect?9:6);
+          if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,420);return;}
+          chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+12+(hasTalent('ironPulse')?6:0));state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;
+        } else {ui.battleLog.textContent=`Parry ${parryTotal} vs DC ${parryDC}: the blow breaks through your timing.`;spawnFx('word','PARRY BROKEN');}
+      }
+      if(state.dodgePrimed){const dodgeRoll=rollD20(),dodgeTotal=dodgeRoll+abilityMod('dex')+Math.floor(p.level/4),dodgeDC=10+Math.floor(enemy.attack/6)+(intent==='ultimate'?3:intent==='heavy'?2:0);showBattleRoll('DODGE',dodgeRoll,abilityMod('dex')+Math.floor(p.level/4),dodgeTotal);state.dodgePrimed=false;if(dodgeRoll===20||(dodgeRoll!==1&&dodgeTotal>=dodgeDC)){ui.battleLog.textContent=`Perfect footwork! You evade ${enemy.name}'s ${intentInfo(intent)[0].toLowerCase()} and gain Momentum.`;state.battleMomentum=Math.min(100,state.battleMomentum+22);spawnFx('word','EVADE!');animateClass(ui.battleHero,'dodge-anim',520);chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+24+(hasTalent('ironPulse')?6:0));state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}ui.battleLog.textContent=`Dodge check ${dodgeTotal} vs DC ${dodgeDC}: you are clipped as you move.`;}
+      if(p.evasionTurns>0&&Math.random()<.55){p.evasionTurns-=1;ui.battleLog.textContent=`You read the motion and evade ${enemy.name}'s ${intentInfo(intent)[0].toLowerCase()}!`;animateClass(ui.battleHero,'attack-anim');spawnFx('word','EVADE!');beep(520,.07,'square',.025);chooseEnemyIntent();state.guarding=false;p.stamina=Math.min(p.maxStamina||100,(p.stamina||0)+18+(hasTalent('ironPulse')?6:0));if(p.attackBuffTurns>0)p.attackBuffTurns-=1;state.battleActiveActor='hero';state.battleRound+=1;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
+      const traitAttackRoll=traits.reduce((sum,t)=>sum+(t.attackRoll||0),0),enemyMod=Math.floor(enemy.attack/5)+(intent==='heavy'?2:intent==='ultimate'?3:0)+rangeEnemyAttackMod()+surfaceAccuracyPenalty()+traitAttackRoll,attackRoll=rollD20(),attackTotal=attackRoll+enemyMod;showBattleRoll(`${enemy.name} ATTACK`,attackRoll,enemyMod,attackTotal);if(attackRoll===1||(attackRoll!==20&&attackTotal<heroAC())){ui.battleLog.textContent=`${enemy.name} ${label}, but rolls ${attackTotal} against AC ${heroAC()} and misses!`;spawnFx('word','MISS!');state.guarding=false;chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+(hasTalent('ironPulse')?6:0));state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}let raw=(enemy.attack+randomBetween(0,6))*multiplier;if(attackRoll===20)raw*=1.45;const reaction=resolveReaction(raw);raw=reaction.raw;if(reaction.note)ui.battleLog.textContent=reaction.note;if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,420);return;}if(reaction.evaded){spawnFx('word','EVADE!');chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;state.guarding=false;state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}if(['drain','ultimate'].includes(intent)){const saveAbility=intent==='drain'?'wis':'dex',saveMod=abilityMod(saveAbility)+companionCheckBonus(saveAbility)+relicCheckBonus(saveAbility),saveRoll=rollD20(false),saveTotal=saveRoll+saveMod,saveDC=12+Math.floor(enemy.attack/8);showBattleRoll(`${saveAbility.toUpperCase()} SAVE`,saveRoll,saveMod,saveTotal);if(saveRoll===20||(saveRoll!==1&&saveTotal>=saveDC)){raw*=.55;ui.battleLog.textContent=`Saving throw ${saveTotal} vs DC ${saveDC}: success! You blunt the effect.`;}else{ui.battleLog.textContent=`Saving throw ${saveTotal} vs DC ${saveDC}: failed.`;}}if(state.guarding)raw*=intent==='ultimate'?.38:.43;const damage=Math.max(1,Math.floor(raw)-p.defense-Math.floor(p.level/3));p.hp-=damage;state.battleDamageTaken+=damage;
       if(intent==='hex'){state.disadvantageNext=true;}if(intent==='drain'){const drained=Math.min(p.mp,5+Math.floor(p.level/5));p.mp-=drained;ui.battleLog.textContent=`${enemy.name} ${label} for ${damage} damage and drains ${drained} MP!`;}
       else ui.battleLog.textContent=`${reaction.note?reaction.note+' ':''}${enemy.name} ${label} for ${damage} damage${state.guarding?' through your guard':''}${intent==='hex'?' and leaves you SHAKEN':''}!`;
       animateClass(ui.enemySprite,'attack-anim');setTimeout(()=>animateClass(ui.battleHero,'hit-anim'),180);spawnFx('number',`-${damage}`,'hero');flashBattle(true);if(intent==='ultimate')shakeBattle(10);else if(intent==='heavy')shakeBattle(5);beep(intent==='ultimate'?52:intent==='heavy'?67:80,intent==='ultimate'?.2:.12,'square',.04);
     }
-    state.guarding=false;p.stamina=Math.min(p.maxStamina||100,(p.stamina||0)+18);if(p.attackBuffTurns>0)p.attackBuffTurns-=1;if(p.evasionTurns>0&&intent!=='mend'&&intent!=='brace')p.evasionTurns-=1;
+    state.guarding=false;p.stamina=Math.min(p.maxStamina||100,(p.stamina||0)+18+(hasTalent('ironPulse')?6:0));if(p.attackBuffTurns>0)p.attackBuffTurns-=1;if(p.evasionTurns>0&&intent!=='mend'&&intent!=='brace')p.evasionTurns-=1;
     chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;updateBattleUi();if(p.hp<=0)setTimeout(defeat,650);else{state.battleLocked=false;setBattleButtons(false);}
   }
 
   function tryWeaponAffix(rank,enemy){
-    if(enemy.repeatable||!state.player.equippedWeapon)return null;const chance={S:.62,A:.38,B:.20,C:.09}[rank]||.08;if(Math.random()>=chance)return null;const weaponId=state.player.equippedWeapon;state.player.weaponAffixes||={};const owned=state.player.weaponAffixes[weaponId]||[];if(owned.length>=3)return null;const pool=Object.keys(WEAPON_AFFIXES).filter(id=>!owned.includes(id));if(!pool.length)return null;const id=pool[randomBetween(0,pool.length-1)];state.player.weaponAffixes[weaponId]=[...owned,id];const a=WEAPON_AFFIXES[id];state.rareFinds=(state.rareFinds||0)+1;addLog(`${equippedWeapon().name} awakened the ${a.name} affix.`,true);showToast(`${a.rarity.toUpperCase()} AFFIX · ${a.name.toUpperCase()}`);spawnFx('word',`${a.name.toUpperCase()} LOOT`);return id;
+    if(enemy.repeatable||!state.player.equippedWeapon)return null;const nemesisBoost=enemy.elite2&&hasTalent('nemesisHunter')?1.25:1;const chance=({S:.62,A:.38,B:.20,C:.09}[rank]||.08)*(hasTalent('relicSeeker')?1.35:1)*difficultyData().loot*lootBonus()*nemesisBoost;if(Math.random()>=Math.min(.94,chance))return null;const weaponId=state.player.equippedWeapon;state.player.weaponAffixes||={};const owned=state.player.weaponAffixes[weaponId]||[];if(owned.length>=3)return null;const pool=Object.keys(WEAPON_AFFIXES).filter(id=>!owned.includes(id));if(!pool.length)return null;const id=pool[randomBetween(0,pool.length-1)];state.player.weaponAffixes[weaponId]=[...owned,id];const a=WEAPON_AFFIXES[id];state.rareFinds=(state.rareFinds||0)+1;addLog(`${equippedWeapon().name} awakened the ${a.name} affix.`,true);showToast(`${a.rarity.toUpperCase()} AFFIX · ${a.name.toUpperCase()}`);spawnFx('word',`${a.name.toUpperCase()} LOOT`);return id;
   }
 
-  function tryRareRelic(rank,enemy){if(enemy.boss||enemy.repeatable)return null;const chance={S:.22,A:.13,B:.07,C:.035}[rank]||.03;if(Math.random()>=chance)return null;const available=RARE_RELIC_POOL.filter(id=>!state.player.relics.includes(id));if(!available.length)return null;const id=available[randomBetween(0,available.length-1)];state.player.relics.push(id);state.player.equippedRelic||=id;state.rareFinds=(state.rareFinds||0)+1;addLog(`Rare relic discovered: ${RELICS[id].name}.`,true);showToast(`${(RELICS[id].rarity||'rare').toUpperCase()} RELIC · ${RELICS[id].name.toUpperCase()}`);return id;}
+  function tryRareRelic(rank,enemy){
+    if(enemy.boss||enemy.repeatable)return null;const nemesisBoost=enemy.elite2&&hasTalent('nemesisHunter')?1.3:1;const chance=({S:.22,A:.13,B:.07,C:.035}[rank]||.03)*(hasTalent('relicSeeker')?1.55:1)*difficultyData().loot*lootBonus()*nemesisBoost;if(Math.random()>=Math.min(.72,chance))return null;const available=RARE_RELIC_POOL.filter(id=>!state.player.relics.includes(id));if(!available.length)return null;const id=available[randomBetween(0,available.length-1)];state.player.relics.push(id);state.player.equippedRelic||=id;state.rareFinds=(state.rareFinds||0)+1;addLog(`Rare relic discovered: ${RELICS[id].name}.`,true);showToast(`${(RELICS[id].rarity||'rare').toUpperCase()} RELIC · ${RELICS[id].name.toUpperCase()}`);return id;
+  }
 
-  function victory(){const loc=currentLocation(),enemy=state.battleEnemy;if(!enemy)return;const enemyRecord=!enemy.repeatable?loc.enemies.find(e=>e.id===state.activeEnemyId):null;if(enemyRecord)enemyRecord.defeated=true;let rank='C',multiplier=1;if(state.battleDamageTaken===0&&state.battlePerfects>=1&&state.battleMaxCombo>=4){rank='S';multiplier=1.5;}else if(state.battlePerfects>=1||state.battleMaxCombo>=5){rank='A';multiplier=1.28;}else if(state.battleMaxCombo>=3||state.battleDamageTaken<state.player.maxHp*.25){rank='B';multiplier=1.12;}const baseGold=randomBetween(enemy.gold[0],enemy.gold[1]),gold=Math.floor(baseGold*multiplier);state.player.gold+=gold;state.totalGoldEarned+=gold;state.totalBattles+=1;gainExp(enemy.exp);if(state.companion==='mara'){const heal=Math.min(Math.ceil(state.player.maxHp*.10),state.player.maxHp-state.player.hp);if(heal>0){state.player.hp+=heal;addLog(`Mara restores ${heal} HP after the battle.`);}}if(enemy.boss)state.inspiration=Math.min(3,state.inspiration+1);if(rank==='S'&&Math.random()<.45){state.player.bombs+=1;addLog('S-rank bonus: one Crown Bomb.',true);}tryRareRelic(rank,enemy);tryWeaponAffix(rank,enemy);addLog(`Defeated ${enemy.name} with rank ${rank}. Gained ${gold} gold and ${enemy.exp} EXP.`);const relicId=BOSS_RELICS[enemy.type];if(relicId&&!state.player.relics.includes(relicId)){state.player.relics.push(relicId);state.player.equippedRelic||=relicId;addLog(`Boss relic found: ${RELICS[relicId].name}.`,true);showToast(`RELIC · ${RELICS[relicId].name.toUpperCase()}`);}processVictory(enemy.type,enemy.repeatable);ui.battleLog.textContent=`VICTORY — RANK ${rank}! ${gold} gold · ${enemy.exp} EXP`;spawnFx('word',`RANK ${rank}`);chord(enemy.boss?[392,523,659,784,1047]:[523,659,784]);setTimeout(()=>{endBattle();if(state.questStage===FINAL_STAGE&&!state.endingSeen)finishStory();},enemy.boss?1350:950);}
+  function tryRunestone(rank,enemy){
+    if(enemy.repeatable)return null;const base=({S:.34,A:.20,B:.10,C:.045}[rank]||.04),nemesis=enemy.elite2?1.65:enemy.elite?1.25:1,boss=enemy.boss?1.4:1,hunter=enemy.elite2&&hasTalent('nemesisHunter')?1.3:1,chance=base*difficultyData().loot*lootBonus()*nemesis*boss*hunter;
+    if(Math.random()>=Math.min(.82,chance))return null;const available=RUNESTONE_POOL.filter(id=>!(state.player.runestones||[]).includes(id));if(!available.length)return null;const id=available[randomBetween(0,available.length-1)],r=RUNESTONES[id];state.player.runestones=[...(state.player.runestones||[]),id];state.player.equippedRunestone||=id;state.runestoneFinds=(state.runestoneFinds||0)+1;state.rareFinds=(state.rareFinds||0)+1;addLog(`Runestone discovered: ${r.name}.`,true);showToast(`${r.rarity.toUpperCase()} RUNESTONE · ${r.name.toUpperCase()}`);spawnFx('word','RUNESTONE FOUND');return id;
+  }
+
+  function victory(){
+    const loc=currentLocation(),enemy=state.battleEnemy;if(!enemy)return;const enemyRecord=!enemy.repeatable?loc.enemies.find(e=>e.id===state.activeEnemyId):null;if(enemyRecord)enemyRecord.defeated=true;
+    let rank='C',multiplier=1;if(state.battleDamageTaken===0&&state.battlePerfects>=1&&state.battleMaxCombo>=4){rank='S';multiplier=1.5;}else if(state.battlePerfects>=1||state.battleMaxCombo>=5){rank='A';multiplier=1.28;}else if(state.battleMaxCombo>=3||state.battleDamageTaken<state.player.maxHp*.25){rank='B';multiplier=1.12;}
+    const nemesisGold=enemy.elite2&&hasTalent('nemesisHunter')?1.2:1,baseGold=randomBetween(enemy.gold[0],enemy.gold[1]),gold=Math.floor(baseGold*multiplier*(hasTalent('roadFortune')?1.15:1)*nemesisGold);state.player.gold+=gold;state.totalGoldEarned+=gold;state.totalBattles+=1;if(enemy.elite)state.eliteVictories=(state.eliteVictories||0)+1;if(enemy.elite2)state.nemesisVictories=(state.nemesisVictories||0)+1;
+    const exp=Math.floor(enemy.exp*(enemy.elite2?1.08:1));gainExp(exp);
+    const rawBond=enemy.boss?4:enemy.elite2?3:enemy.elite?2:1,bondGain=Math.max(1,Math.round(rawBond*(hasTalent('kindledOath')?1.5:1)));if(state.companion)state.companionBond=Math.min(100,(state.companionBond||0)+bondGain);
+    if(hasTalent('secondWind')){const h=Math.min(Math.max(1,Math.floor(state.player.maxHp*.08)),state.player.maxHp-state.player.hp);state.player.hp+=h;if(h)addLog(`Second Wind restores ${h} HP.`,true);}if(state.companion==='mara'){const heal=Math.min(Math.ceil(state.player.maxHp*.10*bondMultiplier()*(1+(runestone().healing||0))),state.player.maxHp-state.player.hp);if(heal>0){state.player.hp+=heal;addLog(`Mara restores ${heal} HP after the battle.`);}}if(enemy.boss)state.inspiration=Math.min(3,state.inspiration+1);if(rank==='S'&&Math.random()<.45){state.player.bombs+=1;addLog('S-rank bonus: one Crown Bomb.',true);}
+    tryRareRelic(rank,enemy);tryWeaponAffix(rank,enemy);tryRunestone(rank,enemy);
+    addLog(`Defeated ${enemy.name} with rank ${rank}. Gained ${gold} gold and ${exp} EXP.${state.companion?` Bond +${bondGain}.`:''}`);
+    const relicId=BOSS_RELICS[enemy.type];if(relicId&&!state.player.relics.includes(relicId)){state.player.relics.push(relicId);state.player.equippedRelic||=relicId;addLog(`Boss relic found: ${RELICS[relicId].name}.`,true);showToast(`RELIC · ${RELICS[relicId].name.toUpperCase()}`);}
+    processVictory(enemy.type,enemy.repeatable);ui.battleLog.textContent=`VICTORY — RANK ${rank}! ${gold} gold · ${exp} EXP${enemy.elite2?' · NEMESIS BROKEN':''}`;spawnFx('word',enemy.elite2?`NEMESIS · RANK ${rank}`:`RANK ${rank}`);chord(enemy.boss?[392,523,659,784,1047]:[523,659,784]);setTimeout(()=>{endBattle();if(state.questStage===FINAL_STAGE&&!state.endingSeen)finishStory();},enemy.boss?1450:1000);
+  }
 
   function processVictory(type,repeatable=false){
     if(type==='mossSlime'){if(state.questStage===1)state.counters.moss+=1;if(Math.random()<.35)state.counters.herbs+=1;}
@@ -1331,16 +1672,19 @@
   }
 
   function defeat(){const p=state.player;p.hp=p.maxHp;p.mp=p.maxMp;const loss=Math.min(p.gold,Math.max(10,Math.floor(p.gold*.1)));p.gold-=loss;const loc=currentLocation(),respawn=loc.shrine||loc.start;p.x=respawn.x;p.y=respawn.y;ui.battleLog.textContent=`The Seven Roads pull you back from defeat. You lose ${loss} gold.`;addLog(`You awaken in ${loc.name}. ${loss} gold was lost.`);setTimeout(endBattle,1000);}
-  function endBattle(){cancelAnimationFrame(state.timingFrame);state.timingActive=false;state.inBattle=false;state.battleEnemy=null;state.activeEnemyId=null;state.battleLocked=false;state.guarding=false;state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.battleStance='balanced';state.battleRange='mid';state.battleCompanionUsed=false;state.companionCooldown=0;state.reactionUsed=false;state.reactionReadied=false;state.battleRound=1;state.battlePhase=1;state.battleEnvironment=null;state.environmentUsed=false;state.dodgePrimed=false;state.player.stamina=state.player.maxStamina||100;state.initiativeOrder=[];state.battleActiveActor='hero';state.advantageNext=false;state.disadvantageNext=false;state.player.attackBuffTurns=0;state.player.evasionTurns=0;ui.timingPanel.classList.add('hidden');ui.battleFx.innerHTML='';ui.battle.classList.add('hidden');setBattleButtons(false);updateHud();saveGame(true);}
-  function gainExp(amount){const p=state.player;p.exp+=amount;while(p.exp>=p.nextExp){p.exp-=p.nextExp;p.level+=1;p.nextExp=Math.floor(p.nextExp*1.29);p.maxHp+=currentJob().hp>=45?8:6;p.hp=p.maxHp;p.maxMp+=currentJob().mp>=22?4:3;p.mp=p.maxMp;p.baseAttack+=1;if(p.level%3===0)p.defense+=1;addLog(`Level up! Rowan reached level ${p.level}.`,true);showToast(`LEVEL ${p.level}!`);chord([523,659,784,1047]);}updateHud();}
+  function endBattle(){cancelAnimationFrame(state.timingFrame);state.timingActive=false;state.inBattle=false;state.battleEnemy=null;state.activeEnemyId=null;state.battleLocked=false;state.guarding=false;state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.battleStance='balanced';state.battleRange='mid';state.battleCompanionUsed=false;state.companionCooldown=0;state.reactionUsed=false;state.reactionReadied=false;state.parryPrimed=false;state.parryCooldown=0;state.battleRound=1;state.battlePhase=1;state.battleEnvironment=null;state.environmentUsed=false;state.dodgePrimed=false;state.weaponTechniqueCooldown=0;state.battleSurface=null;state.player.stamina=state.player.maxStamina||100;state.initiativeOrder=[];state.battleActiveActor='hero';state.advantageNext=false;state.disadvantageNext=false;state.player.attackBuffTurns=0;state.player.evasionTurns=0;ui.timingPanel.classList.add('hidden');ui.battleFx.innerHTML='';ui.battle.classList.remove('elite-battle','nemesis-battle','execution-cinematic');ui.battle.classList.add('hidden');setBattleButtons(false);updateHud();saveGame(true);}
 
-  function finishStory(){state.endingSeen=true;state.playSeconds=currentPlaySeconds();sessionStartedAt=Date.now();ui.endingText.textContent='Dusk remembers, Sun reveals, Frost restrains, and Star chooses. Together they close the Ember Crown—not under a ruler, but under the shared will of every village and city you saved.';const claimed=Object.values(state.sideQuests).filter(q=>q.status==='claimed').length;ui.endingStats.innerHTML=`<div><span>PLAY TIME</span><strong>${formatTime(state.playSeconds)}</strong></div><div><span>JOB</span><strong>${escapeHtml(currentJob().name)}</strong></div><div><span>COMPANION</span><strong>${escapeHtml(companion()?.name||'None')}</strong></div><div><span>CHECKS</span><strong>${state.checksSucceeded}/${state.checksAttempted}</strong></div><div><span>RENOWN</span><strong>${state.renown}</strong></div><div><span>CHOICES</span><strong>${state.choicesMade}</strong></div><div><span>RELICS</span><strong>${state.player.relics.length}</strong></div><div><span>RARE FINDS</span><strong>${state.rareFinds||0}</strong></div><div><span>LEVEL</span><strong>${state.player.level}</strong></div><div><span>VICTORIES</span><strong>${state.totalBattles}</strong></div><div><span>WEAPONS</span><strong>${state.player.weapons.length}</strong></div><div><span>GUILD QUESTS</span><strong>${claimed}/6</strong></div><div><span>LORE</span><strong>${state.counters.lore}/${TOTAL_LORE}</strong></div><div><span>AREAS</span><strong>18</strong></div><div><span>STORY</span><strong>100%</strong></div>`;ui.ending.classList.remove('hidden');addLog('The Ember Crown is sealed by the will of the Seven Roads.',true);chord([392,523,659,784,1047,1319]);saveGame(true);}
+  function gainExp(amount){const p=state.player;p.exp+=amount;while(p.exp>=p.nextExp){p.exp-=p.nextExp;p.level+=1;p.nextExp=Math.floor(p.nextExp*1.29);p.maxHp+=currentJob().hp>=45?8:6;p.hp=p.maxHp;p.maxMp+=currentJob().mp>=22?4:3;p.mp=p.maxMp;p.baseAttack+=1;if(p.level%3===0)p.defense+=1;if(p.level%2===0){p.talentPoints=(p.talentPoints||0)+1;addLog(`The Road Constellation grants 1 Ascendant point.`,true);}addLog(`Level up! Rowan reached level ${p.level}.`,true);showToast(`LEVEL ${p.level}!`);chord([523,659,784,1047]);}updateHud();}
+
+  function finishStory(){state.endingSeen=true;state.playSeconds=currentPlaySeconds();sessionStartedAt=Date.now();ui.endingText.textContent='Dusk remembers, Sun reveals, Frost restrains, and Star chooses. Together they close the Ember Crown—not under a ruler, but under the shared will of every village and city you saved.';const claimed=Object.values(state.sideQuests).filter(q=>q.status==='claimed').length,d=difficultyData();ui.endingStats.innerHTML=`<div><span>PLAY TIME</span><strong>${formatTime(state.playSeconds)}</strong></div><div><span>WORLD TIER</span><strong>${d.tier} · ${d.name}</strong></div><div><span>JOB</span><strong>${escapeHtml(currentJob().name)}</strong></div><div><span>COMPANION</span><strong>${escapeHtml(companion()?.name||'None')}</strong></div><div><span>BOND</span><strong>${state.companionBond||0} · ${bondRank()}</strong></div><div><span>CHECKS</span><strong>${state.checksSucceeded}/${state.checksAttempted}</strong></div><div><span>RENOWN</span><strong>${state.renown}</strong></div><div><span>CHOICES</span><strong>${state.choicesMade}</strong></div><div><span>RELICS</span><strong>${state.player.relics.length}</strong></div><div><span>RUNESTONES</span><strong>${state.player.runestones?.length||1}</strong></div><div><span>EXECUTIONS</span><strong>${state.executions||0}</strong></div><div><span>NEMESIS WINS</span><strong>${state.nemesisVictories||0}</strong></div><div><span>ELITE WINS</span><strong>${state.eliteVictories||0}</strong></div><div><span>CONSTELLATION</span><strong>${talentCount()}/${Object.keys(TALENTS).length}</strong></div><div><span>LEVEL</span><strong>${state.player.level}</strong></div><div><span>VICTORIES</span><strong>${state.totalBattles}</strong></div><div><span>WEAPONS</span><strong>${state.player.weapons.length}</strong></div><div><span>GUILD QUESTS</span><strong>${claimed}/6</strong></div><div><span>LORE</span><strong>${state.counters.lore}/${TOTAL_LORE}</strong></div><div><span>AREAS</span><strong>18</strong></div><div><span>STORY</span><strong>100%</strong></div>`;ui.ending.classList.remove('hidden');addLog('The Ember Crown is sealed by the will of the Seven Roads.',true);chord([392,523,659,784,1047,1319]);saveGame(true);}
+
   function toggleSound(){state.soundOn=!state.soundOn;ui.sound.textContent=state.soundOn?'♪ SOUND':'× MUTED';ui.sound.setAttribute('aria-pressed',String(state.soundOn));if(state.soundOn)beep(660);}
 
-  document.addEventListener('keydown',event=>{const key=event.key.toLowerCase();const handled=['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' ','enter','m','g','escape','1','2','3','4','5','6','7','8','9','0','e','c','r'].includes(key);if(handled)event.preventDefault();if(state.timingActive&&(key===' '||key==='enter')){confirmTimingAttack(false);return;}if(state.inBattle&&!state.battleLocked){const battleKeys={'1':'attack','2':'skill1','3':'skill2','4':'guard','5':'potion','6':'bomb','7':'burst','8':'tactic','9':'inspire','0':'dodge','e':'environment',' ':'attack','enter':'attack'};if(battleKeys[key]){battleAction(battleKeys[key]);return;}}if(key==='escape'){if(!ui.shop.classList.contains('hidden'))closeShop();else if(!ui.gear.classList.contains('hidden'))closeGear();else if(!ui.sheet.classList.contains('hidden'))closeSheet();else if(!ui.camp.classList.contains('hidden'))closeCamp();return;}if(key==='g'){if(ui.gear.classList.contains('hidden'))openGear();else closeGear();return;}if(key==='c'){if(ui.sheet.classList.contains('hidden'))openSheet();else closeSheet();return;}if(key==='r'){if(ui.camp.classList.contains('hidden'))openCamp();else closeCamp();return;}if(key==='arrowup'||key==='w')move(0,-1);if(key==='arrowdown'||key==='s')move(0,1);if(key==='arrowleft'||key==='a')move(-1,0);if(key==='arrowright'||key==='d')move(1,0);if(key===' '||key==='enter')interact();if(key==='m')toggleSound();});
+  document.addEventListener('keydown',event=>{const key=event.key.toLowerCase();const handled=['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' ','enter','m','g','escape','1','2','3','4','5','6','7','8','9','0','e','c','r','b','q','p','x'].includes(key);if(handled)event.preventDefault();if(state.timingActive&&(key===' '||key==='enter')){confirmTimingAttack(false);return;}if(state.inBattle&&!state.battleLocked){const battleKeys={'1':'attack','2':'skill1','3':'skill2','4':'guard','5':'potion','6':'bomb','7':'burst','8':'tactic','9':'inspire','0':'dodge','e':'environment','q':'weaponTechnique','p':'parry','x':'execute',' ':'attack','enter':'attack'};if(battleKeys[key]){battleAction(battleKeys[key]);return;}}if(key==='escape'){if(!ui.shop.classList.contains('hidden'))closeShop();else if(!ui.gear.classList.contains('hidden'))closeGear();else if(!ui.sheet.classList.contains('hidden'))closeSheet();else if(!ui.camp.classList.contains('hidden'))closeCamp();else if(!ui.build.classList.contains('hidden'))closeBuild();return;}if(key==='g'){if(ui.gear.classList.contains('hidden'))openGear();else closeGear();return;}if(key==='c'){if(ui.sheet.classList.contains('hidden'))openSheet();else closeSheet();return;}if(key==='b'){if(ui.build.classList.contains('hidden'))openBuild();else closeBuild();return;}if(key==='r'){if(ui.camp.classList.contains('hidden'))openCamp();else closeCamp();return;}if(key==='arrowup'||key==='w')move(0,-1);if(key==='arrowdown'||key==='s')move(0,1);if(key==='arrowleft'||key==='a')move(-1,0);if(key==='arrowright'||key==='d')move(1,0);if(key===' '||key==='enter')interact();if(key==='m')toggleSound();});
+  document.querySelectorAll('[data-difficulty]').forEach(button=>button.addEventListener('click',()=>{pendingDifficulty=button.dataset.difficulty||'adventurer';document.querySelectorAll('[data-difficulty]').forEach(card=>card.classList.toggle('selected',card===button));beep(420,.05,'square',.02);showToast(`WORLD TIER ${DIFFICULTIES[pendingDifficulty].tier} · ${DIFFICULTIES[pendingDifficulty].name}`);}));
   document.querySelectorAll('[data-move]').forEach(button=>button.addEventListener('pointerdown',()=>{if(document.body.classList.contains('mobile-device'))return;const directions={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};move(...directions[button.dataset.move]);}));
   document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>battleAction(button.dataset.action)));
-  ui.start.addEventListener('click',startNewGame);ui.continueBtn.addEventListener('click',loadGame);ui.dialogueNext.addEventListener('click',nextDialogue);ui.action.addEventListener('click',interact);ui.sound.addEventListener('click',toggleSound);ui.save.addEventListener('click',()=>saveGame(false));ui.reset.addEventListener('click',resetGame);ui.gearBtn.addEventListener('click',openGear);ui.gearClose.addEventListener('click',closeGear);ui.sheetBtn.addEventListener('click',openSheet);ui.sheetClose.addEventListener('click',closeSheet);ui.campBtn.addEventListener('click',openCamp);ui.campClose.addEventListener('click',closeCamp);document.querySelectorAll('[data-camp]').forEach(button=>button.addEventListener('click',()=>campAction(button.dataset.camp)));document.getElementById('mobileCampBtn')?.addEventListener('click',openCamp);ui.shopClose.addEventListener('click',closeShop);ui.timingHit.addEventListener('click',()=>confirmTimingAttack(false));ui.explore.addEventListener('click',()=>{ui.ending.classList.add('hidden');drawWorld();});ui.eventAttempt.addEventListener('click',()=>attemptRoadEvent(false));ui.eventInspire.addEventListener('click',()=>attemptRoadEvent(true));ui.eventLeave.addEventListener('click',closeRoadEvent);
+  ui.start.addEventListener('click',startNewGame);ui.continueBtn.addEventListener('click',loadGame);ui.dialogueNext.addEventListener('click',nextDialogue);ui.action.addEventListener('click',interact);ui.sound.addEventListener('click',toggleSound);ui.save.addEventListener('click',()=>saveGame(false));ui.reset.addEventListener('click',resetGame);ui.gearBtn.addEventListener('click',openGear);ui.gearClose.addEventListener('click',closeGear);ui.buildBtn.addEventListener('click',openBuild);ui.buildClose.addEventListener('click',closeBuild);ui.talentResetBtn.addEventListener('click',retrainTalents);ui.sheetBtn.addEventListener('click',openSheet);ui.sheetClose.addEventListener('click',closeSheet);ui.campBtn.addEventListener('click',openCamp);ui.campClose.addEventListener('click',closeCamp);document.querySelectorAll('[data-camp]').forEach(button=>button.addEventListener('click',()=>campAction(button.dataset.camp)));document.getElementById('mobileCampBtn')?.addEventListener('click',openCamp);ui.shopClose.addEventListener('click',closeShop);ui.timingHit.addEventListener('click',()=>confirmTimingAttack(false));ui.explore.addEventListener('click',()=>{ui.ending.classList.add('hidden');drawWorld();});ui.eventAttempt.addEventListener('click',()=>attemptRoadEvent(false));ui.eventInspire.addEventListener('click',()=>attemptRoadEvent(true));ui.eventLeave.addEventListener('click',closeRoadEvent);
   window.addEventListener('beforeunload',()=>{if(state.started&&state.player.job)saveGame(true);});
 
   resetWorld();renderJobSelection();renderLog();updateHud();animate();

@@ -776,3 +776,122 @@ body{background:radial-gradient(circle at 50% -10%,#2c2724 0,#12151a 34%,#07090d
 .location-badge{background:linear-gradient(90deg,transparent,rgba(8,10,13,.86) 18%,rgba(8,10,13,.86) 82%,transparent);border:none;color:#ead29a;letter-spacing:.15em;text-shadow:0 2px #000}.toast{background:rgba(16,13,12,.94);border-color:#b28c4f;box-shadow:0 12px 28px rgba(0,0,0,.55),inset 0 0 18px rgba(226,163,76,.08)}
 @media(max-width:780px){.battle-actions.seven{grid-template-columns:repeat(3,minmax(0,1fr))}.environment-card{max-width:250px;padding:5px 7px}.environment-card span{display:none}.enemy-sprite.boss{transform:scale(.92)}}
 @media(max-width:430px){.battle-actions.seven{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}.battle-actions .pixel-button{font-size:6px;min-height:38px}.environment-card{max-width:210px}.environment-card strong{font-size:7px}.battle-center .tabletop-combat-hud{transform:scale(.88);transform-origin:center}.battle-scene:before{left:-8%;right:-8%}}
+
+
+/* ============================================================
+   VEILBOUND ASCENDANT — modern dark-fantasy presentation layer
+   ============================================================ */
+:root{
+  --asc-bg:#07090d;--asc-panel:rgba(14,17,22,.94);--asc-panel2:rgba(24,25,30,.93);
+  --asc-gold:#c9a96a;--asc-bright:#f0d79a;--asc-steel:#677282;--asc-red:#a9473f;
+  --asc-blue:#668db8;--asc-violet:#81649f;--asc-green:#6e9b7a;
+}
+body{background:radial-gradient(circle at 50% -15%,#303640 0,#12151b 35%,#080a0f 72%,#040507 100%);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;letter-spacing:.015em;color:#e5e1d7;}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(199,157,87,.035),transparent 28%,transparent 70%,rgba(84,113,154,.045)),repeating-linear-gradient(0deg,rgba(255,255,255,.008) 0 1px,transparent 1px 4px);mix-blend-mode:screen;}
+.game-shell{max-width:1540px}.masthead,.panel,footer{background:linear-gradient(180deg,rgba(25,27,32,.96),rgba(9,11,15,.98));border:1px solid rgba(201,169,106,.34);box-shadow:0 18px 60px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.04);border-radius:10px;}
+.masthead h1,.overlay h2,.menu-window h2,.panel h2,.ending-screen h2{font-family:Georgia,"Times New Roman",serif;letter-spacing:.08em;text-shadow:0 2px 12px rgba(0,0,0,.7)}
+.masthead h1{font-size:clamp(24px,3vw,44px);background:linear-gradient(#f5e3b2,#b58a48);-webkit-background-clip:text;color:transparent}
+.eyebrow{letter-spacing:.18em;color:#a99572}.pixel-button{border:1px solid rgba(201,169,106,.45);border-radius:6px;background:linear-gradient(180deg,#30343c,#171a20);box-shadow:inset 0 1px rgba(255,255,255,.06),0 4px 12px rgba(0,0,0,.32);font-family:inherit;font-weight:750;letter-spacing:.055em;text-shadow:none;transition:transform .15s ease,border-color .15s ease,filter .15s ease}.pixel-button:hover:not(:disabled){transform:translateY(-1px);border-color:#e1c483;filter:brightness(1.12)}.pixel-button.primary{background:linear-gradient(180deg,#7d5a2f,#4d321b);border-color:#d3ad67}.pixel-button.danger{background:linear-gradient(180deg,#5a2a2d,#301619)}
+.screen-wrap{border:1px solid rgba(196,168,113,.35);border-radius:12px;overflow:hidden;box-shadow:0 28px 80px rgba(0,0,0,.55),inset 0 0 60px rgba(0,0,0,.3);background:#080a0e}#gameCanvas{image-rendering:pixelated;filter:contrast(1.12) saturate(1.18) brightness(.96);transform:translateZ(0)}.scanlines{opacity:.11;mix-blend-mode:overlay}.location-badge{border-radius:4px;background:rgba(8,10,14,.78);border:1px solid rgba(201,169,106,.52);backdrop-filter:blur(8px);box-shadow:0 10px 24px rgba(0,0,0,.28)}
+.hud-panel .portrait{filter:drop-shadow(0 8px 10px rgba(0,0,0,.5));border-color:#8e764c}.meter{height:10px;border-radius:8px;overflow:hidden;background:#06080c;border:1px solid #353943;box-shadow:inset 0 2px 5px #000}.meter i,.momentum-meter i,.stagger-meter i{box-shadow:0 0 12px currentColor}.quest-box,.location-card,.record-card,.weapon-card,.shop-item{border:1px solid rgba(119,128,143,.36);border-radius:7px;background:linear-gradient(180deg,rgba(26,30,37,.94),rgba(13,16,21,.96));box-shadow:inset 0 1px rgba(255,255,255,.025)}
+.menu-overlay{background:radial-gradient(circle at 50% 20%,rgba(39,42,49,.92),rgba(5,6,9,.985) 68%);backdrop-filter:blur(8px)}.menu-window{border:1px solid rgba(201,169,106,.48);border-radius:12px;background:linear-gradient(145deg,rgba(25,27,31,.98),rgba(10,12,16,.99));box-shadow:0 34px 100px rgba(0,0,0,.68),inset 0 1px rgba(255,255,255,.035)}.parchment-window:before{opacity:.09}
+.title-screen{background:radial-gradient(circle at 50% 31%,rgba(91,68,40,.34),rgba(7,8,11,.92) 55%,#040507 90%)}.title-screen h2{font-size:clamp(48px,8vw,92px);background:linear-gradient(#f8e8ba,#b88b47 58%,#72502a);-webkit-background-clip:text;color:transparent;filter:drop-shadow(0 10px 22px #000)}
+/* Battle scene: layered depth, battle-mat perspective, modern information cards */
+.battle{background-color:#080b10!important;isolation:isolate}.battle:before{content:"";position:absolute;left:-15%;right:-15%;bottom:31%;height:36%;z-index:0;transform:perspective(430px) rotateX(61deg) scale(1.22);transform-origin:bottom;background:repeating-linear-gradient(90deg,rgba(217,190,130,.08) 0 1px,transparent 1px 52px),repeating-linear-gradient(0deg,rgba(217,190,130,.07) 0 1px,transparent 1px 52px),radial-gradient(ellipse at 50% 40%,rgba(126,98,57,.28),rgba(17,20,26,.72) 68%);border-top:1px solid rgba(216,179,111,.22);box-shadow:0 -25px 90px rgba(4,5,7,.65) inset}.battle:after{opacity:.32;filter:blur(.2px)}.battle-scene{position:relative;z-index:2}.battle-center{background:linear-gradient(180deg,rgba(9,11,15,.58),rgba(9,11,15,.28));border:1px solid rgba(201,169,106,.2);border-radius:12px;padding:8px 9px;backdrop-filter:blur(4px);box-shadow:0 12px 38px rgba(0,0,0,.3)}
+.battle-hero,.enemy-sprite{filter:drop-shadow(0 18px 12px rgba(0,0,0,.58)) drop-shadow(0 0 20px rgba(215,174,100,.08));transform-origin:50% 100%}.enemy-sprite.boss{filter:drop-shadow(0 22px 15px rgba(0,0,0,.7)) drop-shadow(0 0 26px rgba(201,66,48,.28));transform:scale(1.18)}.fighter-name{font-family:Georgia,serif;font-size:12px;color:#ead8ad}.enemy-intent{border-radius:7px;border:1px solid rgba(167,181,197,.32);background:rgba(9,12,17,.86);box-shadow:0 8px 24px rgba(0,0,0,.3)}.enemy-intent.danger{border-color:rgba(208,78,65,.65);box-shadow:0 0 26px rgba(161,53,47,.16)}
+.elite-badge{margin:6px auto 3px;padding:6px 9px;max-width:360px;border:1px solid rgba(177,118,214,.6);border-radius:5px;background:linear-gradient(90deg,rgba(73,42,91,.8),rgba(28,19,37,.92));color:#e2c0f3;font-size:9px;letter-spacing:.08em;box-shadow:0 0 20px rgba(153,86,188,.14)}
+.environment-card,.surface-chip{border-radius:7px;background:linear-gradient(180deg,rgba(25,29,35,.88),rgba(10,13,17,.92));border:1px solid rgba(116,138,163,.38);box-shadow:0 8px 18px rgba(0,0,0,.24)}.surface-chip{margin-top:6px;padding:7px 9px;text-align:left}.surface-chip small,.surface-chip span{display:block;font-size:8px;color:#a9b1bc}.surface-chip strong{display:block;margin:2px 0;color:#e8dfca;font-size:10px}.surface-chip.fire{border-color:#b6603e;box-shadow:inset 0 0 20px rgba(192,75,35,.12)}.surface-chip.arcane{border-color:#7e68af;box-shadow:inset 0 0 20px rgba(107,78,167,.14)}.surface-chip.radiant{border-color:#cfb869;box-shadow:inset 0 0 20px rgba(218,193,98,.12)}.surface-chip.poison{border-color:#628e64;box-shadow:inset 0 0 20px rgba(68,128,73,.12)}.surface-chip.physical{border-color:#807765}.surface-chip.dormant{opacity:.58}
+.battle-menu{z-index:4;background:linear-gradient(180deg,rgba(9,11,15,.94),rgba(5,6,9,.99));border-top:1px solid rgba(201,169,106,.28);backdrop-filter:blur(10px)}.battle-actions{gap:6px}.battle-actions .pixel-button{min-height:42px;font-size:9px}.technique-button{border-color:#8266ad;background:linear-gradient(180deg,#3b2e4d,#1d1827)}.technique-button:not(:disabled){box-shadow:inset 0 1px rgba(255,255,255,.05),0 0 15px rgba(115,79,164,.16)}
+.phase-2 .enemy-sprite.boss{filter:drop-shadow(0 22px 15px rgba(0,0,0,.7)) drop-shadow(0 0 32px rgba(227,94,48,.38))}.phase-3 .enemy-sprite.boss{filter:drop-shadow(0 22px 15px rgba(0,0,0,.7)) drop-shadow(0 0 46px rgba(229,55,61,.54));animation:ascBossPulse 1.5s ease-in-out infinite alternate}@keyframes ascBossPulse{to{transform:scale(1.23);filter:drop-shadow(0 24px 17px rgba(0,0,0,.72)) drop-shadow(0 0 55px rgba(230,58,54,.72))}}
+/* Constellation buildcraft */
+.ascendant-window{overflow:hidden;position:relative}.ascendant-window:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 47%,rgba(121,93,155,.12),transparent 45%),linear-gradient(125deg,transparent 47%,rgba(201,169,106,.05) 50%,transparent 53%)}.constellation-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:15px 0;padding:10px;border:1px solid rgba(201,169,106,.25);border-radius:8px;background:rgba(7,9,13,.58)}.constellation-summary span{font-size:9px;color:#9ca5b1}.constellation-summary strong{display:block;margin-top:4px;color:#e3c37f;font-family:Georgia,serif;font-size:14px}.talent-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;position:relative;z-index:1}.talent-branch{display:grid;gap:8px;padding:9px;border:1px solid rgba(99,107,120,.24);border-radius:9px;background:rgba(7,9,12,.48)}.talent-branch h3{margin:0 0 2px;color:#bca374;letter-spacing:.14em}.talent-node{position:relative;display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto auto;gap:1px 8px;min-height:94px;padding:9px;text-align:left;color:#ddd6c7;border:1px solid #3b404a;border-radius:8px;background:linear-gradient(145deg,#1d2026,#0d0f13);box-shadow:0 8px 20px rgba(0,0,0,.25);cursor:pointer}.talent-node .node-icon{grid-row:1/4;width:31px;height:31px;display:grid;place-items:center;border:1px solid #6b7481;border-radius:50%;background:#11151b;color:#b4beca;font-family:Georgia,serif}.talent-node strong{color:#dfd3b9;font-size:10px}.talent-node small{color:#9da5af;font-size:8px;line-height:1.35}.talent-node em{color:#796f60;font-size:7px;font-style:normal;letter-spacing:.08em}.talent-node.available{border-color:#a18452;box-shadow:0 0 22px rgba(194,153,82,.11)}.talent-node.available .node-icon{border-color:#d3ae66;color:#e6ca8f;box-shadow:0 0 16px rgba(201,169,106,.2)}.talent-node.learned{border-color:#735d91;background:linear-gradient(145deg,#2a2233,#111017)}.talent-node.learned .node-icon{border-color:#b89ad4;background:#382c46;color:#f1dcff;box-shadow:0 0 18px rgba(161,105,203,.25)}.talent-node.locked{opacity:.48}.ascendant-legend{display:flex;gap:16px;margin-top:12px;color:#939ca8;font-size:8px}.node-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;border:1px solid #68707a}.node-dot.unlocked{border-color:#c7a35f}.node-dot.purchased{background:#76558d;border-color:#b28acb}.node-dot.locked{background:#242831}
+/* Gear rarity polish */
+.weapon-card.affixed{position:relative;border-color:#65537b;box-shadow:inset 0 0 24px rgba(105,72,133,.08)}.weapon-card.affixed:before{content:"AFFIXED";position:absolute;top:6px;right:7px;color:#b890d0;font-size:7px;letter-spacing:.12em}.affix-epic{color:#d28eff;text-shadow:0 0 8px rgba(194,111,233,.3)}.affix-rare{color:#75a9e6}.affix-magic{color:#8db5ff}
+@media(max-width:980px){.talent-grid{grid-template-columns:1fr 1fr}.constellation-summary{grid-template-columns:1fr 1fr}.battle-center{padding:5px}}
+@media(max-width:600px){.talent-grid{grid-template-columns:1fr}.constellation-summary{grid-template-columns:1fr}.battle-actions{grid-template-columns:repeat(2,1fr)!important}.battle-actions .pixel-button{min-height:46px}.elite-badge{font-size:8px}.surface-chip{display:none}.mobile-utility-row{grid-template-columns:repeat(4,1fr)!important}.masthead h1{font-size:27px}.menu-window{border-radius:8px}}
+
+.ascendant-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.elite-battle .enemy-wrap{filter:drop-shadow(0 0 14px rgba(159,93,196,.2))}.elite-battle .enemy-sprite{animation:eliteBreath 1.8s ease-in-out infinite alternate}@keyframes eliteBreath{to{filter:drop-shadow(0 18px 12px rgba(0,0,0,.6)) drop-shadow(0 0 26px rgba(172,101,213,.28))}}@media(max-width:600px){.ascendant-footer{align-items:stretch;flex-direction:column}.ascendant-footer .pixel-button{width:100%}}
+
+/* ============================================================
+   VEILFORGED EDITION — modern cinematic dark-fantasy pass
+   Original presentation inspired by contemporary party/loot RPGs.
+   ============================================================ */
+:root{
+  --vf-gold:#d7b36a;--vf-gold-hot:#f3d491;--vf-ink:#080b10;--vf-panel:#11151c;
+  --vf-red:#a6473e;--vf-violet:#8e66b4;--vf-blue:#6c94b8;--vf-green:#78a879;
+}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:
+  radial-gradient(circle at 14% 8%,rgba(131,84,50,.13),transparent 28%),
+  radial-gradient(circle at 84% 16%,rgba(70,86,127,.10),transparent 31%),
+  linear-gradient(118deg,transparent 42%,rgba(218,174,95,.025) 50%,transparent 58%);}
+.game-shell{background:linear-gradient(180deg,rgba(11,13,17,.84),rgba(6,8,11,.97));border-left:1px solid rgba(215,179,106,.12);border-right:1px solid rgba(215,179,106,.12)}
+.masthead{position:relative;overflow:hidden;box-shadow:0 14px 35px rgba(0,0,0,.34)}
+.masthead:after{content:"";position:absolute;left:12%;right:12%;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--vf-gold),transparent);opacity:.55}
+.panel,.menu-window{border-color:rgba(194,157,91,.36);box-shadow:0 22px 55px rgba(0,0,0,.42),inset 0 1px rgba(255,231,179,.025)}
+.panel:before,.menu-window:after{pointer-events:none}
+
+/* World tier selection */
+.difficulty-picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;width:min(760px,94%);margin:14px auto 18px;padding:8px;border:1px solid rgba(207,168,92,.22);border-radius:9px;background:rgba(5,7,10,.48);box-shadow:inset 0 0 28px rgba(0,0,0,.25)}
+.difficulty-card{position:relative;display:grid;gap:3px;min-height:74px;padding:10px 8px;text-align:left;color:#b8bec7;border:1px solid #343b47;border-radius:7px;background:linear-gradient(155deg,#1a1f27,#0d1015);font:inherit;cursor:pointer;transition:.16s transform,.16s border-color,.16s box-shadow,.16s filter}
+.difficulty-card:hover{transform:translateY(-2px);border-color:#766747;filter:brightness(1.08)}
+.difficulty-card small{color:#8d97a4;font-size:7px;letter-spacing:.14em}.difficulty-card strong{color:#d8d2c3;font-family:Georgia,serif;font-size:11px;letter-spacing:.08em}.difficulty-card span{font-size:7px;line-height:1.35;color:#89919c}
+.difficulty-card.selected{border-color:#c4a05b;background:linear-gradient(155deg,#302719,#121318);box-shadow:0 0 20px rgba(214,172,89,.13),inset 0 0 18px rgba(216,171,81,.05)}
+.difficulty-card.selected:after{content:"SELECTED";position:absolute;right:6px;top:5px;color:#e8c87d;font-size:5px;letter-spacing:.12em}
+.difficulty-card.nightmare{border-color:#58313b}.difficulty-card.nightmare.selected{border-color:#b75464;background:linear-gradient(155deg,#321923,#131117);box-shadow:0 0 24px rgba(169,54,73,.18)}
+
+/* Tactical minimap */
+.mini-map-card{margin:10px 0;padding:7px;border:1px solid rgba(191,156,90,.3);border-radius:7px;background:linear-gradient(180deg,rgba(12,15,19,.9),rgba(6,8,11,.95));box-shadow:inset 0 0 20px rgba(0,0,0,.3)}
+.mini-map-card>div{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;color:#928b7d;font-size:6px;letter-spacing:.1em}.mini-map-card strong{color:#d2b471;font-size:6px}
+#miniMap{display:block;width:100%;height:auto;aspect-ratio:4/3;border:1px solid rgba(103,118,133,.32);background:#06080b;image-rendering:pixelated;filter:saturate(.82) contrast(1.12) brightness(.78);box-shadow:inset 0 0 20px #000}
+
+/* Battle readability and contemporary HUD depth */
+.battle{isolation:isolate}.battle .battle-scene{min-height:335px;align-items:end;padding-top:16px}
+.battle .battle-scene:before{animation:vfArenaBreath 6s ease-in-out infinite alternate}
+@keyframes vfArenaBreath{to{filter:brightness(1.15) saturate(1.08);box-shadow:inset 0 0 85px rgba(0,0,0,.68),0 25px 70px rgba(0,0,0,.62),0 0 38px rgba(210,164,85,.05)}}
+.battle-center{position:relative;border-color:rgba(187,158,103,.25);box-shadow:0 18px 45px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.025)}
+.combat-rules-row{gap:6px}.tier-chip{padding:4px 7px;border:1px solid #79613b;background:linear-gradient(#2a231a,#141313);font-size:6px;color:#e4c379;letter-spacing:.08em;box-shadow:0 0 12px rgba(203,159,78,.08)}
+.fighter-column{transition:.2s filter,.2s transform}.fighter-column.hero-column{background:linear-gradient(180deg,rgba(31,38,47,.2),rgba(7,9,12,.45))}.enemy-wrap{background:linear-gradient(180deg,rgba(47,26,25,.17),rgba(7,8,11,.46))}
+.enemy-sprite{transition:.18s filter,.18s transform}.enemy-sprite:not(.boss){filter:drop-shadow(0 17px 11px rgba(0,0,0,.64)) drop-shadow(0 0 13px rgba(165,91,69,.1))}
+.battle-hero{filter:drop-shadow(0 18px 10px rgba(0,0,0,.64)) drop-shadow(0 0 14px rgba(87,139,181,.09))}
+
+/* Parry / execution language */
+.parry-button{border-color:#6f91a8!important;background:linear-gradient(180deg,#283c49,#111c25)!important;color:#cce6f2!important}.parry-button.ready{animation:vfParryReady .75s ease-in-out infinite alternate;box-shadow:0 0 18px rgba(104,167,204,.28),inset 0 0 12px rgba(137,202,231,.08)!important}
+@keyframes vfParryReady{to{filter:brightness(1.28);box-shadow:0 0 26px rgba(105,182,222,.4),inset 0 0 16px rgba(137,202,231,.15)!important}}
+.execute-button{border-color:#663843!important;background:linear-gradient(180deg,#472029,#1e1117)!important;color:#e4b0ad!important}.execute-button.ready{border-color:#c75a53!important;color:#ffe1c9!important;animation:vfExecute 1s ease-in-out infinite alternate;box-shadow:0 0 20px rgba(201,67,56,.3),inset 0 0 15px rgba(255,124,72,.11)!important}
+@keyframes vfExecute{to{filter:brightness(1.32);transform:translateY(-1px);text-shadow:0 0 9px rgba(255,187,132,.65)}}
+.battle.execution-cinematic:before{background:linear-gradient(180deg,#000 0 9%,transparent 9% 91%,#000 91% 100%),radial-gradient(circle at 66% 48%,rgba(196,51,39,.2),transparent 34%),linear-gradient(90deg,rgba(0,0,0,.6),transparent 25%,transparent 75%,rgba(0,0,0,.65));animation:vfLetterbox .9s ease}
+.battle.execution-cinematic .enemy-wrap{animation:vfExecutionTarget .9s cubic-bezier(.2,.8,.2,1)}
+.battle.execution-cinematic .hero-column{animation:vfExecutionHero .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes vfLetterbox{0%{filter:brightness(1)}35%{filter:brightness(.45) contrast(1.35)}100%{filter:brightness(1)}}
+@keyframes vfExecutionTarget{35%{transform:scale(1.07);filter:drop-shadow(0 0 30px rgba(209,72,53,.56))}65%{transform:translateX(4px) scale(.98)}}
+@keyframes vfExecutionHero{32%{transform:translateX(12px) scale(1.06);filter:brightness(1.35)}65%{transform:translateX(-4px)}}
+
+/* Nemesis presentation */
+.nemesis-battle .battle-scene{box-shadow:inset 0 0 0 2px rgba(136,54,85,.45),inset 0 0 85px rgba(82,27,56,.18),0 0 35px rgba(110,48,85,.09)}
+.nemesis-battle .enemy-wrap{border-color:rgba(183,77,128,.44);box-shadow:inset 0 0 30px rgba(99,36,81,.12)}
+.nemesis-battle .enemy-sprite{animation:vfNemesis 1.45s ease-in-out infinite alternate!important;filter:drop-shadow(0 20px 12px rgba(0,0,0,.7)) drop-shadow(0 0 24px rgba(189,72,139,.36))!important}
+.nemesis-battle .elite-badge{border-color:#b34d82;background:linear-gradient(90deg,rgba(83,27,62,.92),rgba(30,15,33,.95));color:#ffc4df;box-shadow:0 0 22px rgba(181,66,129,.22)}
+@keyframes vfNemesis{to{transform:translateY(-3px) scale(1.025);filter:drop-shadow(0 22px 13px rgba(0,0,0,.72)) drop-shadow(0 0 33px rgba(215,71,148,.48))!important}}
+
+/* Runestone inventory */
+.runestone-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:14px}.runestone-card{display:grid;gap:3px;padding:9px;text-align:left;border:1px solid #3c4652;border-radius:7px;background:linear-gradient(145deg,#191e25,#0c0f14);color:#c8ced5;cursor:pointer;box-shadow:0 7px 16px rgba(0,0,0,.24)}.runestone-card strong{font-family:Georgia,serif;font-size:10px;color:#dad4c5}.runestone-card small{font-size:6px;letter-spacing:.13em;color:#818b98}.runestone-card span{font-size:7px;line-height:1.35;color:#9ca5af}.runestone-card.equipped{border-color:#c3a15c;box-shadow:0 0 18px rgba(202,159,82,.13),inset 0 0 18px rgba(201,159,79,.06)}.runestone-card.rarity-magic{border-left:3px solid #668bc2}.runestone-card.rarity-rare{border-left:3px solid #d0ad55}.runestone-card.rarity-epic{border-left:3px solid #a268cf}.runestone-card.rarity-epic strong{color:#dab5f3}
+
+/* Companion bond + build progression */
+.camp-choice[data-camp="bond"]{border-color:#8f7246;background:radial-gradient(circle at 18% 20%,rgba(230,159,77,.1),transparent 40%),linear-gradient(#2a2119,#151414)}
+.camp-choice[data-camp="bond"] strong{color:#edc77e}.derived-grid strong{word-break:break-word}.constellation-summary strong{font-size:13px}.talent-node.learned{box-shadow:0 0 24px rgba(149,96,190,.14),inset 0 0 18px rgba(137,90,174,.06)}
+
+/* More cinematic title / modal framing */
+.title-screen{background:radial-gradient(circle at 50% 31%,rgba(109,76,46,.17),transparent 34%),linear-gradient(180deg,rgba(5,7,10,.72),rgba(5,7,10,.96));backdrop-filter:blur(2px)}
+.title-screen h2{font-family:Georgia,serif;letter-spacing:.16em;text-shadow:0 4px 0 #000,0 0 35px rgba(212,165,86,.22)}
+.title-screen .tagline{max-width:850px;line-height:1.55;color:#b9b7b0}.menu-window{background:radial-gradient(circle at 18% 8%,rgba(208,165,92,.055),transparent 26%),linear-gradient(180deg,rgba(22,24,29,.98),rgba(8,10,14,.99))}
+.pixel-button{border-radius:3px;letter-spacing:.05em}.pixel-button:focus-visible{outline:2px solid #edc978;outline-offset:2px}
+
+/* Battle atmosphere: fog bands and light shafts */
+.battle-sky:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 14%,rgba(219,192,143,.04) 28%,transparent 43%),linear-gradient(72deg,transparent 55%,rgba(142,173,200,.035) 70%,transparent 82%);animation:vfLightShift 9s ease-in-out infinite alternate}
+@keyframes vfLightShift{to{transform:translateX(22px);opacity:.65}}
+.battle-menu{box-shadow:0 -18px 45px rgba(0,0,0,.4)}
+
+@media(max-width:980px){.difficulty-picker{grid-template-columns:1fr 1fr}.mini-map-card{display:none}.battle .battle-scene{min-height:300px}.runestone-grid{grid-template-columns:1fr}}
+@media(max-width:600px){.difficulty-picker{width:96%;gap:5px;padding:5px}.difficulty-card{min-height:62px;padding:7px}.difficulty-card span{font-size:6px}.difficulty-card strong{font-size:9px}.battle .battle-scene{min-height:270px}.battle-center{max-width:48vw}.tier-chip{font-size:5px}.parry-button,.execute-button{grid-column:span 1}.runestone-grid{grid-template-columns:1fr}.nemesis-battle .elite-badge{font-size:7px}}
+@media(max-width:420px){.difficulty-picker{grid-template-columns:1fr 1fr}.difficulty-card span{display:none}.difficulty-card{min-height:47px}.battle-center{max-width:46vw;padding:4px}.battle-actions .pixel-button{font-size:7.5px}}
+.runestone-card .rune-glyph{grid-row:1/5;float:left;margin-right:7px;color:#d1ad66;font-size:17px;text-shadow:0 0 12px currentColor}.runestone-card em{font-style:normal;font-size:7px;line-height:1.35;color:#9ea7b2}.runestone-card b{justify-self:end;color:#cdb278;font-size:6px;letter-spacing:.1em}.runestone-card.rarity-magic .rune-glyph{color:#79a6dc}.runestone-card.rarity-rare .rune-glyph{color:#e0bb62}.runestone-card.rarity-epic .rune-glyph{color:#bb7ee5}

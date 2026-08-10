@@ -1,4 +1,4 @@
-const CACHE = 'emberfall-eclipse-roads-v1';
+const CACHE = 'emberfall-veilforged-v7';
 const CORE = [
   './',
   './index.html',

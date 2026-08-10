@@ -9,15 +9,16 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Emberfall" />
   <meta name="format-detection" content="telephone=no" />
-  <meta name="description" content="Emberfall: Eclipse Roads Edition — an original cinematic dark-fantasy mobile RPG with tactical party combat, d20-style checks, active dodging, interactive battlefields, weapon affixes, boss phases, companions, and a three-hour campaign." />
+  <meta name="description" content="Emberfall: Veilforged Edition — an original cinematic dark-fantasy RPG with tactical party combat, world tiers, nemesis enemies, runestone buildcraft, executions, timed parries, companion bonds, weapon techniques, persistent surfaces, rare loot, and a three-hour campaign." />
   <meta property="og:title" content="Emberfall: Crown of Seven Roads" />
   <meta property="og:description" content="Build a hero and companion party, roll checks, read enemy intent, exploit weaknesses, ready class reactions, survive multi-phase bosses, and uncover rare relics across a long fantasy campaign." />
   <meta property="og:image" content="assets/promo.png" />
-  <title>Emberfall: Eclipse Roads Edition — Mobile</title>
+  <title>Emberfall: Veilforged Edition</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icon-192.png" sizes="192x192" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="veilforged.css" />
 </head>
 <body>
   <main class="game-shell" aria-label="Emberfall browser RPG">
@@ -30,6 +31,7 @@
         <button id="installBtn" class="pixel-button compact mobile-install hidden" type="button">INSTALL</button>
         <button id="fullscreenBtn" class="pixel-button compact" type="button">FULLSCREEN</button>
         <button id="gearBtn" class="pixel-button compact" type="button">GEAR</button>
+        <button id="buildBtn" class="pixel-button compact build-button" type="button">BUILD</button>
         <button id="sheetBtn" class="pixel-button compact" type="button">SHEET</button>
         <button id="campBtn" class="pixel-button compact camp-button" type="button">CAMP</button>
         <button id="soundBtn" class="pixel-button compact" type="button" aria-pressed="true">♪ SOUND</button>
@@ -64,6 +66,8 @@
           <div><span>DEFENSE</span><strong id="defenseText">2</strong></div>
           <div><span>ARMOR CLASS</span><strong id="hudACText">10</strong></div>
           <div><span>RATIONS</span><strong id="rationText">3</strong></div>
+          <div><span>WORLD TIER</span><strong id="worldTierText">II</strong></div>
+          <div><span>BOND</span><strong id="bondHudText">0</strong></div>
         </div>
 
         <div class="material-grid">
@@ -71,6 +75,11 @@
           <span>ORE <strong id="oreText">0</strong></span>
           <span>CRYSTAL <strong id="crystalText">0</strong></span>
           <span>SHELL <strong id="shellText">0</strong></span>
+        </div>
+
+        <div class="mini-map-card">
+          <div class="mini-map-header"><span>TACTICAL MAP</span><strong id="miniMapLabel">MOONMERE</strong></div>
+          <canvas id="miniMap" width="160" height="120" aria-label="Tactical minimap"></canvas>
         </div>
 
         <div class="quest-box">
@@ -97,9 +106,15 @@
 
         <section id="titleScreen" class="overlay title-screen">
           <div class="rune">✦</div>
-          <p class="eyebrow">A CINEMATIC DARK-FANTASY CAMPAIGN</p>
+          <p class="eyebrow">VEILFORGED · A CINEMATIC DARK-FANTASY CAMPAIGN</p>
           <h2>EMBERFALL</h2>
-          <p class="tagline">Lead a hero-and-companion party through a three-hour dark-fantasy campaign. Read enemy telegraphs, dodge lethal attacks, exploit elemental weaknesses, use the battlefield itself, hunt rare weapon affixes, and survive multi-phase bosses across villages, ruins, temples, frozen roads, and the burning Crown Core.</p>
+          <p class="tagline">Lead a hero-and-companion party through a three-hour dark-fantasy campaign. Choose a World Tier, hunt Nemesis enemies and runestones, master perfect parries and cinematic executions, deepen companion bonds, shape persistent battlefield surfaces, and survive multi-phase bosses across villages, ruins, temples, frozen roads, and the burning Crown Core.</p>
+          <div class="difficulty-picker" aria-label="Choose world tier">
+            <button class="difficulty-card" data-difficulty="explorer" type="button"><small>TIER I</small><strong>EXPLORER</strong><span>Story-forward · softer enemies · standard loot</span></button>
+            <button class="difficulty-card selected" data-difficulty="adventurer" type="button"><small>TIER II</small><strong>ADVENTURER</strong><span>Balanced campaign · intended first run</span></button>
+            <button class="difficulty-card" data-difficulty="veteran" type="button"><small>TIER III</small><strong>VETERAN</strong><span>Harder enemies · more elites · better rewards</span></button>
+            <button class="difficulty-card nightmare" data-difficulty="nightmare" type="button"><small>TIER IV</small><strong>NIGHTMARE</strong><span>Nemesis-heavy · lethal bosses · richest loot</span></button>
+          </div>
           <button id="startBtn" class="pixel-button primary" type="button">NEW ADVENTURE</button>
           <button id="continueBtn" class="pixel-button" type="button">CONTINUE</button>
           <p class="controls-note desktop-note">Arrow keys / WASD · Space/Enter interact · G gear · C character sheet · M mute</p>
@@ -142,11 +157,13 @@
             </div>
             <div class="battle-center">
               <div id="enemyIntent" class="enemy-intent">INTENT: WATCHING...</div>
+              <div id="eliteBadge" class="elite-badge hidden">ELITE · UNKNOWN</div>
               <div id="initiativeTrack" class="initiative-track" aria-label="Initiative order"></div>
               <div class="versus-rune">✦</div>
               <div class="tabletop-combat-hud"><div id="battleD20" class="d20-token"><span>20</span></div><div class="roll-readout"><small id="rollLabel">INITIATIVE</small><strong id="rollText">—</strong></div><div class="armor-readout"><small>ARMOR CLASS</small><strong id="armorClassText">10</strong></div></div>
-              <div class="combat-rules-row"><span id="battlePhaseText" class="phase-badge">PHASE I</span><span id="enemyAffinityText" class="affinity-chip">AFFINITY · UNKNOWN</span></div>
+              <div class="combat-rules-row"><span id="battlePhaseText" class="phase-badge">PHASE I</span><span id="enemyAffinityText" class="affinity-chip">AFFINITY · UNKNOWN</span><span id="difficultyBattleText" class="tier-chip">TIER II</span></div>
               <div id="environmentCard" class="environment-card"><small>BATTLEFIELD</small><strong>READING TERRAIN...</strong><span>Interactive terrain can change a fight.</span></div>
+              <div id="surfaceChip" class="surface-chip dormant"><small>SURFACE</small><strong>STABLE GROUND</strong><span>No persistent field effect.</span></div>
               <div id="companionBattleChip" class="companion-battle-chip">SOLO ADVENTURER</div>
               <div class="battle-readouts"><div><span>CHAIN</span><strong id="comboText">x0</strong></div><div><span>MOMENTUM</span><strong id="momentumText">0%</strong></div></div>
               <div class="momentum-meter"><i id="momentumBar"></i></div><div id="stanceText" class="stance-chip">STANCE · BALANCED</div>
@@ -171,18 +188,21 @@
               <button class="pixel-button primary" data-action="attack" type="button">TIMED ATTACK</button>
               <button id="skill1Btn" class="pixel-button" data-action="skill1" type="button">SKILL I</button>
               <button id="skill2Btn" class="pixel-button" data-action="skill2" type="button">SKILL II</button>
+              <button id="weaponTechniqueBtn" class="pixel-button technique-button" data-action="weaponTechnique" type="button">WEAPON TECHNIQUE</button>
               <button class="pixel-button" data-action="guard" type="button">GUARD</button>
               <button id="dodgeBtn" class="pixel-button dodge-button" data-action="dodge" type="button">DODGE · 35 STA</button>
+              <button id="parryBtn" class="pixel-button parry-button" data-action="parry" type="button">PARRY · 22 STA</button>
               <button class="pixel-button" data-action="potion" type="button">POTION</button>
               <button class="pixel-button" data-action="bomb" type="button">BOMB</button>
               <button id="burstBtn" class="pixel-button burst-button" data-action="burst" type="button" disabled>ROADBURST</button>
+              <button id="executeBtn" class="pixel-button execute-button" data-action="execute" type="button" disabled>EXECUTION · 60 MOM</button>
               <button id="tacticBtn" class="pixel-button tactic-button" data-action="tactic" type="button">TACTIC</button>
               <button id="inspireBtn" class="pixel-button inspire-button" data-action="inspire" type="button">INSPIRATION</button>
               <button id="companionAssistBtn" class="pixel-button companion-assist-button" data-action="companion" type="button">COMPANION</button>
               <button id="reactionBtn" class="pixel-button reaction-button" data-action="reaction" type="button">CLASS REACTION</button>
               <button id="positionBtn" class="pixel-button position-button" data-action="position" type="button">POSITION · MID</button>
               <button id="environmentBtn" class="pixel-button environment-button" data-action="environment" type="button">USE ENVIRONMENT</button>
-            </div><p class="battle-tip">1 Attack · 2/3 Skills · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · 8 Tactic · 9 Inspiration · Dodge, Environment, Companion, Reaction, and Position are tactical actions</p>
+            </div><p class="battle-tip">1 Attack · 2/3 Skills · Q Weapon Technique · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · 8 Tactic · 9 Inspiration · 0 Dodge · P Parry · X Execute · E Environment · read intent, manage range, break stagger, then finish decisively</p>
           </div>
         </section>
 
@@ -197,6 +217,7 @@
               <section>
                 <h3>ARMOR</h3><div id="armorGrid" class="armor-grid"></div>
                 <h3>RELICS</h3><div id="relicGrid" class="relic-grid"></div>
+                <h3>RUNESTONES</h3><div id="runestoneGrid" class="runestone-grid"></div>
                 <h3>JOB SKILLS</h3>
                 <div id="jobDetails" class="record-card"></div>
                 <h3>GUILD BOUNTIES</h3>
@@ -217,11 +238,21 @@
         </section>
 
 
-        <section id="sheetScreen" class="overlay menu-overlay hidden" aria-label="Character sheet"><div class="menu-window wide parchment-window character-sheet"><div class="menu-header"><div><p class="eyebrow">ADVENTURER RECORD</p><h2>ROWAN'S CHARACTER SHEET</h2></div><button id="sheetCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="sheet-grid"><section><div class="sheet-summary"><span id="sheetJob">WAYFARER</span><strong id="sheetLevel">LEVEL 1</strong><small id="sheetCompanion">No companion</small></div><h3>ABILITY SCORES</h3><div id="abilityGrid" class="ability-grid"></div><div class="derived-grid"><div><span>ARMOR CLASS</span><strong id="sheetAC">10</strong></div><div><span>ATTACK BONUS</span><strong id="sheetAttackBonus">+0</strong></div><div><span>INSPIRATION</span><strong id="sheetInspiration">1</strong></div><div><span>CHECKS WON</span><strong id="sheetChecks">0</strong></div><div><span>ARMOR</span><strong id="sheetArmor">Road Leathers</strong></div><div><span>RELIC</span><strong id="sheetRelic">None</strong></div><div><span>RENOWN</span><strong id="sheetRenown">0</strong></div><div><span>RATIONS</span><strong id="sheetRations">3</strong></div></div></section><section><h3>COMPANION</h3><div id="companionDetails" class="record-card companion-details"></div><h3>TABLETOP COMBAT</h3><div class="record-card rules-card"><strong>Balanced</strong> has no modifier.<br><strong>Bold</strong> deals more damage but lowers AC.<br><strong>Warded</strong> raises AC but lowers damage.<br><strong>Cunning</strong> improves critical chance.<br><br>Natural 20s are critical hits. Natural 1s miss. Timed strikes still improve damage and stagger.</div><h3>CLASS FEATURE</h3><div id="featureDetails" class="record-card feature-card"></div><h3>WEAPON AFFIXES</h3><div id="affixDetails" class="record-card affix-details">Rare victories can awaken modifiers on your equipped weapon.</div><h3>CAMPAIGN BATTLE RECORD</h3><div id="combatRecord" class="record-card combat-record"></div></section></div></div></section>
+        <section id="sheetScreen" class="overlay menu-overlay hidden" aria-label="Character sheet"><div class="menu-window wide parchment-window character-sheet"><div class="menu-header"><div><p class="eyebrow">ADVENTURER RECORD</p><h2>ROWAN'S CHARACTER SHEET</h2></div><button id="sheetCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="sheet-grid"><section><div class="sheet-summary"><span id="sheetJob">WAYFARER</span><strong id="sheetLevel">LEVEL 1</strong><small id="sheetCompanion">No companion</small></div><h3>ABILITY SCORES</h3><div id="abilityGrid" class="ability-grid"></div><div class="derived-grid"><div><span>ARMOR CLASS</span><strong id="sheetAC">10</strong></div><div><span>ATTACK BONUS</span><strong id="sheetAttackBonus">+0</strong></div><div><span>INSPIRATION</span><strong id="sheetInspiration">1</strong></div><div><span>CHECKS WON</span><strong id="sheetChecks">0</strong></div><div><span>ARMOR</span><strong id="sheetArmor">Road Leathers</strong></div><div><span>RELIC</span><strong id="sheetRelic">None</strong></div><div><span>RENOWN</span><strong id="sheetRenown">0</strong></div><div><span>RATIONS</span><strong id="sheetRations">3</strong></div><div><span>WORLD TIER</span><strong id="sheetTier">II</strong></div><div><span>RUNESTONE</span><strong id="sheetRune">Ember Rune</strong></div><div><span>COMPANION BOND</span><strong id="sheetBond">0 · STRANGER</strong></div></div></section><section><h3>COMPANION</h3><div id="companionDetails" class="record-card companion-details"></div><h3>TABLETOP COMBAT</h3><div class="record-card rules-card"><strong>Balanced</strong> has no modifier.<br><strong>Bold</strong> deals more damage but lowers AC.<br><strong>Warded</strong> raises AC but lowers damage.<br><strong>Cunning</strong> improves critical chance.<br><br>Natural 20s are critical hits. Natural 1s miss. Timed strikes still improve damage and stagger.</div><h3>CLASS FEATURE</h3><div id="featureDetails" class="record-card feature-card"></div><h3>WEAPON AFFIXES</h3><div id="affixDetails" class="record-card affix-details">Rare victories can awaken modifiers on your equipped weapon.</div><h3>CAMPAIGN BATTLE RECORD</h3><div id="combatRecord" class="record-card combat-record"></div></section></div></div></section>
+
+        <section id="buildScreen" class="overlay menu-overlay hidden" aria-label="Veil constellation build screen">
+          <div class="menu-window wide ascendant-window">
+            <div class="menu-header"><div><p class="eyebrow">VEILFORGED ASCENDANT</p><h2>ROAD CONSTELLATION</h2></div><button id="buildCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div>
+            <p class="menu-copy">Earn a constellation point every second level. Choose permanent passives that shape damage, survival, stamina, magic, terrain control, and loot hunting.</p>
+            <div class="constellation-summary"><span>UNSPENT POINTS <strong id="talentPointsText">0</strong></span><span>PATH POWER <strong id="talentPowerText">0 / 20</strong></span><span>WEAPON ART <strong id="techniquePreviewText">Traveler Technique</strong></span></div>
+            <div id="talentGrid" class="talent-grid"></div>
+            <div class="ascendant-footer"><div class="ascendant-legend"><span><i class="node-dot unlocked"></i> Available</span><span><i class="node-dot purchased"></i> Learned</span><span><i class="node-dot locked"></i> Requires level</span></div><button id="talentResetBtn" class="pixel-button compact" type="button">RETRAIN · 150 GOLD</button></div>
+          </div>
+        </section>
         <section id="eventScreen" class="overlay menu-overlay hidden event-overlay" aria-label="Adventure ability check"><div class="menu-window parchment-window event-window"><p class="eyebrow">ROAD ENCOUNTER · CHOOSE YOUR APPROACH</p><h2 id="eventTitle">A QUESTION OF FATE</h2><p id="eventText" class="event-copy"></p><div id="eventChoices" class="event-choice-grid"></div><div class="event-check-row"><div id="eventD20" class="d20-token large"><span>20</span></div><div><span id="eventAbility">SELECT AN APPROACH</span><strong id="eventRoll">—</strong></div></div><p id="eventResult" class="event-result"></p><div class="event-actions"><button id="eventAttemptBtn" class="pixel-button primary" type="button" disabled>ROLL THE DIE</button><button id="eventInspireBtn" class="pixel-button hidden" type="button">USE INSPIRATION</button><button id="eventLeaveBtn" class="pixel-button" type="button">WALK AWAY</button></div></div></section>
 
 
-        <section id="campScreen" class="overlay menu-overlay hidden camp-overlay" aria-label="Camp and rest"><div class="menu-window wide parchment-window camp-window"><div class="menu-header"><div><p class="eyebrow">MAKE CAMP</p><h2>THE NIGHT WATCH</h2></div><button id="campCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="camp-scene"><div class="campfire" aria-hidden="true"><i></i><b></b><span></span></div><div><strong id="campLocation">THE ROAD</strong><p id="campStatus">Choose how the party spends this rest.</p><small>One camp activity may be taken each time you enter an area.</small></div></div><div class="camp-actions-grid"><button class="camp-choice" data-camp="rest" type="button"><strong>SHORT REST</strong><span>Spend 1 ration. Recover HP and MP.</span></button><button class="camp-choice" data-camp="prepare" type="button"><strong>PREPARE</strong><span>Spend 1 ration. Restore MP and empower the next skill.</span></button><button class="camp-choice" data-camp="scout" type="button"><strong>SCOUT AHEAD</strong><span>Spend 1 ration. Gain advantage on the next road check.</span></button><button class="camp-choice" data-camp="forage" type="button"><strong>FORAGE</strong><span>Make a WIS check to find 2 rations. Failure costs HP.</span></button></div><div class="camp-ledger"><span>RATIONS <strong id="campRations">3</strong></span><span>INSPIRATION <strong id="campInspiration">1</strong></span><span>SCOUTED <strong id="campScouted">NO</strong></span><span>PREPARED <strong id="campPrepared">NO</strong></span></div></div></section>
+        <section id="campScreen" class="overlay menu-overlay hidden camp-overlay" aria-label="Camp and rest"><div class="menu-window wide parchment-window camp-window"><div class="menu-header"><div><p class="eyebrow">MAKE CAMP</p><h2>THE NIGHT WATCH</h2></div><button id="campCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="camp-scene"><div class="campfire" aria-hidden="true"><i></i><b></b><span></span></div><div><strong id="campLocation">THE ROAD</strong><p id="campStatus">Choose how the party spends this rest.</p><small>One camp activity may be taken each time you enter an area.</small></div></div><div class="camp-actions-grid"><button class="camp-choice" data-camp="rest" type="button"><strong>SHORT REST</strong><span>Spend 1 ration. Recover HP and MP.</span></button><button class="camp-choice" data-camp="prepare" type="button"><strong>PREPARE</strong><span>Spend 1 ration. Restore MP and empower the next skill.</span></button><button class="camp-choice" data-camp="scout" type="button"><strong>SCOUT AHEAD</strong><span>Spend 1 ration. Gain advantage on the next road check.</span></button><button class="camp-choice" data-camp="forage" type="button"><strong>FORAGE</strong><span>Make a WIS check to find 2 rations. Failure costs HP.</span></button><button class="camp-choice bond-choice" data-camp="bond" type="button"><strong>FIRESIDE TALK</strong><span>No ration. Deepen your companion bond once per area.</span></button></div><div class="camp-ledger"><span>RATIONS <strong id="campRations">3</strong></span><span>INSPIRATION <strong id="campInspiration">1</strong></span><span>SCOUTED <strong id="campScouted">NO</strong></span><span>PREPARED <strong id="campPrepared">NO</strong></span><span>BOND <strong id="campBond">0</strong></span></div></div></section>
         <section id="endingScreen" class="overlay ending-screen hidden" aria-label="Ending screen">
           <div class="rune">✦</div>
           <p class="eyebrow">THE SEVEN ROADS BURN BRIGHT</p>
@@ -256,6 +287,7 @@
       <div class="mobile-utility-row" aria-label="Mobile shortcuts">
         <button id="mobileGearBtn" class="utility-key" type="button">GEAR</button>
         <button id="mobileSheetBtn" class="utility-key" type="button">SHEET</button>
+        <button id="mobileBuildBtn" class="utility-key" type="button">BUILD</button>
         <button id="mobileCampBtn" class="utility-key" type="button">CAMP</button>
         <button id="mobileSaveBtn" class="utility-key" type="button">SAVE</button>
         <button id="mobileSoundBtn" class="utility-key" type="button">SOUND</button>
@@ -276,7 +308,7 @@
     </section>
 
     <footer>
-      <span>18 maps · 7 jobs · 4 companions · active dodge · interactive battlefields · weapon affixes · initiative · reactions · affinities · boss phases · rare loot · 29 weapons.</span>
+      <span>18 maps · 7 jobs · 4 companions · elite enemies · battlefield surfaces · weapon techniques · passive constellation · active dodge · affixed loot · boss phases · 29 weapons.</span>
       <span>Play time: <strong id="playTimeText">00:00</strong> · Progress saves locally.</span>
     </footer>
   </main>

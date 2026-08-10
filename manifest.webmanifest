@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Eclipse Roads Edition",
+  "name": "Emberfall: Veilforged Edition",
   "short_name": "Emberfall",
-  "description": "An original cinematic dark-fantasy mobile RPG with tactical party combat, active dodging, interactive battlefields, weapon affixes, d20-style checks, multi-phase bosses, companions, and offline play.",
+  "description": "An original cinematic dark-fantasy party RPG with world tiers, Nemesis enemies, tactical parries, executions, runestones, companions, loot and a long campaign.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -12,8 +12,8 @@
     "minimal-ui"
   ],
   "orientation": "any",
-  "background_color": "#070b13",
-  "theme_color": "#17110e",
+  "background_color": "#050609",
+  "theme_color": "#08090d",
   "categories": [
     "games",
     "entertainment"
