@@ -1,0 +1,71 @@
+name: Apply Nightfall Covenant Upgrade
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.nightfall/**'
+      - '.github/workflows/nightfall-upgrade.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reassemble and apply Nightfall patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .nightfall/nightfall-*.b64 > /tmp/nightfall.patch.gz.b64
+          base64 -d /tmp/nightfall.patch.gz.b64 > /tmp/nightfall.patch.gz
+          gzip -dc /tmp/nightfall.patch.gz > /tmp/nightfall.patch
+          git apply --check /tmp/nightfall.patch
+          git apply /tmp/nightfall.patch
+
+      - name: Validate browser game
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check game.js
+          node --check mobile.js
+          node --check service-worker.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          html = Path('index.html').read_text(encoding='utf-8')
+          js = Path('game.js').read_text(encoding='utf-8')
+          json.loads(Path('manifest.webmanifest').read_text(encoding='utf-8'))
+          required = ['intentTimeline','wardBar','skillSigilGrid','companionDoctrineGrid','lootReveal','nightfall.css']
+          missing = [x for x in required if x not in html and x not in js]
+          if missing:
+              raise SystemExit('Missing Nightfall hooks: ' + ', '.join(missing))
+          blocked = {'.exe','.dll','.msi','.msix','.bat','.cmd','.ps1','.vbs','.com','.scr'}
+          bad = [str(p) for p in Path('.').rglob('*') if p.is_file() and p.suffix.lower() in blocked and '.git' not in p.parts]
+          if bad:
+              raise SystemExit('Blocked executable/script files: ' + ', '.join(bad))
+          print('Nightfall validation OK')
+          PY
+
+      - name: Remove staging files and one-time workflow
+        shell: bash
+        run: |
+          rm -rf .nightfall
+          rm -f .github/workflows/nightfall-upgrade.yml
+
+      - name: Commit upgraded game
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Upgrade game to Nightfall Covenant Edition"
+          git push origin main
