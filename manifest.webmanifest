@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Veilforged Edition",
+  "name": "Emberfall: Nightfall Covenant Edition",
   "short_name": "Emberfall",
-  "description": "An original cinematic dark-fantasy party RPG with world tiers, Nemesis enemies, tactical parries, executions, runestones, companions, loot and a long campaign.",
+  "description": "An original cinematic dark-fantasy RPG with enemy intent timelines, Ward barriers, companion doctrines, Skill Sigils, World Tiers, Nemesis enemies, timed parries, executions, buildcraft, tactical party combat, boss phases, and offline play.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -13,7 +13,7 @@
   ],
   "orientation": "any",
   "background_color": "#050609",
-  "theme_color": "#08090d",
+  "theme_color": "#0b0b10",
   "categories": [
     "games",
     "entertainment"

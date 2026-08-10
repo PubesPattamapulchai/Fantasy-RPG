@@ -1,8 +1,9 @@
-const CACHE = 'emberfall-veilforged-v7';
+const CACHE = 'emberfall-nightfall-v8';
 const CORE = [
   './',
   './index.html',
   './styles.css',
+  './nightfall.css',
   './game.js',
   './mobile.js',
   './manifest.webmanifest',

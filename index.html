@@ -9,16 +9,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Emberfall" />
   <meta name="format-detection" content="telephone=no" />
-  <meta name="description" content="Emberfall: Veilforged Edition — an original cinematic dark-fantasy RPG with tactical party combat, world tiers, nemesis enemies, runestone buildcraft, executions, timed parries, companion bonds, weapon techniques, persistent surfaces, rare loot, and a three-hour campaign." />
+  <meta name="description" content="Emberfall: Nightfall Covenant Edition — an original cinematic dark-fantasy RPG with tactical party combat, intent timelines, barriers, companion doctrines, skill sigils, world tiers, nemesis enemies, executions, timed parries, buildcraft, rare loot, and a three-hour campaign." />
   <meta property="og:title" content="Emberfall: Crown of Seven Roads" />
   <meta property="og:description" content="Build a hero and companion party, roll checks, read enemy intent, exploit weaknesses, ready class reactions, survive multi-phase bosses, and uncover rare relics across a long fantasy campaign." />
   <meta property="og:image" content="assets/promo.png" />
-  <title>Emberfall: Veilforged Edition</title>
+  <title>Emberfall: Nightfall Covenant Edition</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icon-192.png" sizes="192x192" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="veilforged.css" />
+  <link rel="stylesheet" href="nightfall.css" />
 </head>
 <body>
   <main class="game-shell" aria-label="Emberfall browser RPG">
@@ -56,6 +57,8 @@
         <div class="meter mana"><i id="mpBar"></i></div>
         <div class="stat-row"><span>STAMINA</span><strong id="staminaText">100 / 100</strong></div>
         <div class="meter stamina"><i id="staminaBar"></i></div>
+        <div class="stat-row ward-stat"><span>WARD</span><strong id="barrierText">0 / 20</strong></div>
+        <div class="meter barrier"><i id="barrierBar"></i></div>
         <div class="stat-row"><span>EXP</span><strong id="expText">0 / 38</strong></div>
         <div class="meter exp"><i id="expBar"></i></div>
 
@@ -106,9 +109,9 @@
 
         <section id="titleScreen" class="overlay title-screen">
           <div class="rune">✦</div>
-          <p class="eyebrow">VEILFORGED · A CINEMATIC DARK-FANTASY CAMPAIGN</p>
+          <p class="eyebrow">NIGHTFALL COVENANT · CINEMATIC DARK-FANTASY CAMPAIGN</p>
           <h2>EMBERFALL</h2>
-          <p class="tagline">Lead a hero-and-companion party through a three-hour dark-fantasy campaign. Choose a World Tier, hunt Nemesis enemies and runestones, master perfect parries and cinematic executions, deepen companion bonds, shape persistent battlefield surfaces, and survive multi-phase bosses across villages, ruins, temples, frozen roads, and the burning Crown Core.</p>
+          <p class="tagline">Lead a hero-and-companion party through a three-hour dark-fantasy campaign. Read a two-step enemy intent timeline, build temporary Ward barriers, command your companion through Assault, Guardian, or Support doctrine, socket rare Skill Sigils, break enemy posture, execute openings, and hunt Nemesis loot across villages, ruins, temples, frozen roads, and the burning Crown Core.</p>
           <div class="difficulty-picker" aria-label="Choose world tier">
             <button class="difficulty-card" data-difficulty="explorer" type="button"><small>TIER I</small><strong>EXPLORER</strong><span>Story-forward · softer enemies · standard loot</span></button>
             <button class="difficulty-card selected" data-difficulty="adventurer" type="button"><small>TIER II</small><strong>ADVENTURER</strong><span>Balanced campaign · intended first run</span></button>
@@ -147,6 +150,8 @@
           <div class="battle-sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
           <div id="battleFlash" class="battle-flash" aria-hidden="true"></div>
           <div id="battleFx" class="battle-fx" aria-hidden="true"></div>
+          <div class="nightfall-lens" aria-hidden="true"></div>
+          <div id="lootReveal" class="loot-reveal hidden" aria-live="polite"><small>VICTORY SPOILS</small><strong id="lootRevealTitle">ROAD CACHE</strong><div id="lootRevealItems"></div></div>
           <div class="battle-scene">
             <div class="fighter-column hero-column">
               <div id="heroStatusText" class="fighter-status"></div>
@@ -157,6 +162,7 @@
             </div>
             <div class="battle-center">
               <div id="enemyIntent" class="enemy-intent">INTENT: WATCHING...</div>
+              <div id="intentTimeline" class="intent-timeline"><span class="intent-now"><small>NOW</small><strong>READING...</strong></span><i>→</i><span class="intent-next"><small>NEXT</small><strong>UNKNOWN</strong></span></div>
               <div id="eliteBadge" class="elite-badge hidden">ELITE · UNKNOWN</div>
               <div id="initiativeTrack" class="initiative-track" aria-label="Initiative order"></div>
               <div class="versus-rune">✦</div>
@@ -199,10 +205,11 @@
               <button id="tacticBtn" class="pixel-button tactic-button" data-action="tactic" type="button">TACTIC</button>
               <button id="inspireBtn" class="pixel-button inspire-button" data-action="inspire" type="button">INSPIRATION</button>
               <button id="companionAssistBtn" class="pixel-button companion-assist-button" data-action="companion" type="button">COMPANION</button>
+              <button id="partyTacticBtn" class="pixel-button party-tactic-button" data-action="partyTactic" type="button">PARTY · ASSAULT</button>
               <button id="reactionBtn" class="pixel-button reaction-button" data-action="reaction" type="button">CLASS REACTION</button>
               <button id="positionBtn" class="pixel-button position-button" data-action="position" type="button">POSITION · MID</button>
               <button id="environmentBtn" class="pixel-button environment-button" data-action="environment" type="button">USE ENVIRONMENT</button>
-            </div><p class="battle-tip">1 Attack · 2/3 Skills · Q Weapon Technique · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · 8 Tactic · 9 Inspiration · 0 Dodge · P Parry · X Execute · E Environment · read intent, manage range, break stagger, then finish decisively</p>
+            </div><p class="battle-tip">1 Attack · 2/3 Skills · Q Weapon Technique · 4 Guard · 5 Potion · 6 Bomb · 7 Burst · 8 Stance · 9 Inspiration · 0 Dodge · P Parry · X Execute · E Environment · cycle PARTY doctrine without spending a turn · read NOW/NEXT intent and break posture before committing</p>
           </div>
         </section>
 
@@ -218,6 +225,7 @@
                 <h3>ARMOR</h3><div id="armorGrid" class="armor-grid"></div>
                 <h3>RELICS</h3><div id="relicGrid" class="relic-grid"></div>
                 <h3>RUNESTONES</h3><div id="runestoneGrid" class="runestone-grid"></div>
+                <h3>SKILL SIGILS</h3><div id="skillSigilGrid" class="skill-sigil-grid"></div>
                 <h3>JOB SKILLS</h3>
                 <div id="jobDetails" class="record-card"></div>
                 <h3>GUILD BOUNTIES</h3>
@@ -238,7 +246,7 @@
         </section>
 
 
-        <section id="sheetScreen" class="overlay menu-overlay hidden" aria-label="Character sheet"><div class="menu-window wide parchment-window character-sheet"><div class="menu-header"><div><p class="eyebrow">ADVENTURER RECORD</p><h2>ROWAN'S CHARACTER SHEET</h2></div><button id="sheetCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="sheet-grid"><section><div class="sheet-summary"><span id="sheetJob">WAYFARER</span><strong id="sheetLevel">LEVEL 1</strong><small id="sheetCompanion">No companion</small></div><h3>ABILITY SCORES</h3><div id="abilityGrid" class="ability-grid"></div><div class="derived-grid"><div><span>ARMOR CLASS</span><strong id="sheetAC">10</strong></div><div><span>ATTACK BONUS</span><strong id="sheetAttackBonus">+0</strong></div><div><span>INSPIRATION</span><strong id="sheetInspiration">1</strong></div><div><span>CHECKS WON</span><strong id="sheetChecks">0</strong></div><div><span>ARMOR</span><strong id="sheetArmor">Road Leathers</strong></div><div><span>RELIC</span><strong id="sheetRelic">None</strong></div><div><span>RENOWN</span><strong id="sheetRenown">0</strong></div><div><span>RATIONS</span><strong id="sheetRations">3</strong></div><div><span>WORLD TIER</span><strong id="sheetTier">II</strong></div><div><span>RUNESTONE</span><strong id="sheetRune">Ember Rune</strong></div><div><span>COMPANION BOND</span><strong id="sheetBond">0 · STRANGER</strong></div></div></section><section><h3>COMPANION</h3><div id="companionDetails" class="record-card companion-details"></div><h3>TABLETOP COMBAT</h3><div class="record-card rules-card"><strong>Balanced</strong> has no modifier.<br><strong>Bold</strong> deals more damage but lowers AC.<br><strong>Warded</strong> raises AC but lowers damage.<br><strong>Cunning</strong> improves critical chance.<br><br>Natural 20s are critical hits. Natural 1s miss. Timed strikes still improve damage and stagger.</div><h3>CLASS FEATURE</h3><div id="featureDetails" class="record-card feature-card"></div><h3>WEAPON AFFIXES</h3><div id="affixDetails" class="record-card affix-details">Rare victories can awaken modifiers on your equipped weapon.</div><h3>CAMPAIGN BATTLE RECORD</h3><div id="combatRecord" class="record-card combat-record"></div></section></div></div></section>
+        <section id="sheetScreen" class="overlay menu-overlay hidden" aria-label="Character sheet"><div class="menu-window wide parchment-window character-sheet"><div class="menu-header"><div><p class="eyebrow">ADVENTURER RECORD</p><h2>ROWAN'S CHARACTER SHEET</h2></div><button id="sheetCloseBtn" class="pixel-button compact" type="button">CLOSE</button></div><div class="sheet-grid"><section><div class="sheet-summary"><span id="sheetJob">WAYFARER</span><strong id="sheetLevel">LEVEL 1</strong><small id="sheetCompanion">No companion</small></div><h3>ABILITY SCORES</h3><div id="abilityGrid" class="ability-grid"></div><div class="derived-grid"><div><span>ARMOR CLASS</span><strong id="sheetAC">10</strong></div><div><span>ATTACK BONUS</span><strong id="sheetAttackBonus">+0</strong></div><div><span>INSPIRATION</span><strong id="sheetInspiration">1</strong></div><div><span>CHECKS WON</span><strong id="sheetChecks">0</strong></div><div><span>ARMOR</span><strong id="sheetArmor">Road Leathers</strong></div><div><span>RELIC</span><strong id="sheetRelic">None</strong></div><div><span>RENOWN</span><strong id="sheetRenown">0</strong></div><div><span>RATIONS</span><strong id="sheetRations">3</strong></div><div><span>WORLD TIER</span><strong id="sheetTier">II</strong></div><div><span>RUNESTONE</span><strong id="sheetRune">Ember Rune</strong></div><div><span>COMPANION BOND</span><strong id="sheetBond">0 · STRANGER</strong></div><div><span>SKILL SIGIL</span><strong id="sheetSigil">Flow Sigil</strong></div><div><span>PARTY DOCTRINE</span><strong id="sheetPartyTactic">ASSAULT</strong></div><div><span>WARD CAP</span><strong id="sheetBarrier">20</strong></div></div></section><section><h3>COMPANION</h3><div id="companionDetails" class="record-card companion-details"></div><h3>TABLETOP COMBAT</h3><div class="record-card rules-card"><strong>Balanced</strong> has no modifier.<br><strong>Bold</strong> deals more damage but lowers AC.<br><strong>Warded</strong> raises AC but lowers damage.<br><strong>Cunning</strong> improves critical chance.<br><br>Natural 20s are critical hits. Natural 1s miss. Timed strikes still improve damage and stagger.</div><h3>CLASS FEATURE</h3><div id="featureDetails" class="record-card feature-card"></div><h3>WEAPON AFFIXES</h3><div id="affixDetails" class="record-card affix-details">Rare victories can awaken modifiers on your equipped weapon.</div><h3>CAMPAIGN BATTLE RECORD</h3><div id="combatRecord" class="record-card combat-record"></div></section></div></div></section>
 
         <section id="buildScreen" class="overlay menu-overlay hidden" aria-label="Veil constellation build screen">
           <div class="menu-window wide ascendant-window">
@@ -308,7 +316,7 @@
     </section>
 
     <footer>
-      <span>18 maps · 7 jobs · 4 companions · elite enemies · battlefield surfaces · weapon techniques · passive constellation · active dodge · affixed loot · boss phases · 29 weapons.</span>
+      <span>18 maps · 7 jobs · 4 companions · World Tiers · intent timeline · Ward barrier · party doctrines · Skill Sigils · active dodge/parry · executions · surfaces · Nemesis loot · 29 weapons.</span>
       <span>Play time: <strong id="playTimeText">00:00</strong> · Progress saves locally.</span>
     </footer>
   </main>
