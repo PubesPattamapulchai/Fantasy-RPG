@@ -606,6 +606,40 @@
   function isNodeVisible(node) { return !node.collected; }
   function menusOpen() { const settings=document.getElementById('settingsScreen'); return !ui.gear.classList.contains('hidden') || !ui.sheet.classList.contains('hidden') || !ui.shop.classList.contains('hidden') || !ui.jobScreen.classList.contains('hidden') || !ui.companionScreen.classList.contains('hidden') || !ui.eventScreen.classList.contains('hidden') || !ui.camp.classList.contains('hidden') || !ui.build.classList.contains('hidden') || !!(settings&&!settings.classList.contains('hidden')); }
 
+
+  // Public read-only presentation bridge used by the optional cinematic WebGL renderer.
+  window.EmberfallBridge = {
+    snapshot: () => {
+      const loc = currentLocation();
+      const enemy = state.battleEnemy;
+      return {
+        started: !!state.started,
+        location: state.location,
+        locationData: {
+          name: loc.name, short: loc.short, subtitle: loc.subtitle, biome: loc.biome,
+          map: [...loc.map],
+          decor: (loc.decor || []).map(d => ({ ...d })),
+          npcs: (loc.npcs || []).map(n => ({ id:n.id, x:n.x, y:n.y, name:n.name, role:n.role, colors:[...(n.colors||[])] })),
+          enemies: (loc.enemies || []).filter(isEnemyVisible).map(e => ({ id:e.id, x:e.x, y:e.y, type:e.type, defeated:!!e.defeated })),
+          exits: (loc.exits || []).map(e => ({ x:e.x, y:e.y, label:e.label, target:e.target })),
+          shrine: loc.shrine ? { ...loc.shrine } : null
+        },
+        heroColors: [...(currentJob().colors || [])],
+        player: { x:state.player.x, y:state.player.y, facing:state.player.facing, hp:state.player.hp, maxHp:state.player.maxHp, mp:state.player.mp, maxMp:state.player.maxMp, stamina:state.player.stamina, maxStamina:state.player.maxStamina, barrier:state.player.barrier, level:state.player.level },
+        inBattle: !!state.inBattle,
+        companion: state.companion,
+        companionBond: state.companionBond || 0,
+        battleRange: state.battleRange,
+        battleStance: state.battleStance,
+        battleMomentum: state.battleMomentum,
+        battleSurface: state.battleSurface ? { ...state.battleSurface } : null,
+        battleEnemy: enemy ? { id:enemy.id, type:enemy.type, name:enemy.name, hp:enemy.hp, maxHp:enemy.maxHp, attack:enemy.attack, boss:!!enemy.boss, sprite:enemy.sprite, stagger:enemy.stagger, stunned:!!enemy.stunned, broken:!!enemy.broken, intent:enemy.intent, nextIntent:enemy.nextIntent, phase:enemy.phase, elite:enemy.elite, elite2:enemy.elite2 } : null,
+        battleLog: ui.battleLog?.textContent || '',
+        questStage: state.questStage
+      };
+    }
+  };
+
   function isBlocked(x, y) {
     if (x < 0 || y < 0 || x >= COLS || y >= ROWS) return true;
     const tile = tileAt(x, y);
@@ -1155,7 +1189,7 @@
 
   function move(dx,dy){
     if(!state.started||!state.player.job||state.inBattle||menusOpen()||!ui.dialogue.classList.contains('hidden')||!ui.ending.classList.contains('hidden'))return;
-    const now=Date.now();if(now-lastMove<80)return;lastMove=now;const nx=state.player.x+dx,ny=state.player.y+dy;state.player.facing=dx<0?'left':dx>0?'right':dy<0?'up':'down';if(isBlocked(nx,ny)){beep(100,.04,'square',.02);return;}state.player.x=nx;state.player.y=ny;beep(150+((nx+ny)%2)*25,.025,'square',.015);checkTile();
+    const now=Date.now();if(now-lastMove<55)return;lastMove=now;const nx=state.player.x+dx,ny=state.player.y+dy;state.player.facing=dx<0?'left':dx>0?'right':dy<0?'up':'down';if(isBlocked(nx,ny)){beep(100,.04,'square',.02);return;}state.player.x=nx;state.player.y=ny;beep(150+((nx+ny)%2)*25,.025,'square',.015);checkTile();
   }
   function checkTile(){
     const loc=currentLocation();const enemy=loc.enemies.find(e=>isEnemyVisible(e)&&e.x===state.player.x&&e.y===state.player.y);if(enemy){startBattle(enemy);return;}
@@ -1410,7 +1444,7 @@
     const heroRoll=rollD20(),heroInit=heroRoll+abilityMod('dex'),enemyRoll=rollD20(),enemyInit=enemyRoll+state.battleEnemy.initiative,c=companion(),compRoll=rollD20(),compMod=state.companion==='pip'?3:state.companion==='brann'?0:1,compInit=compRoll+compMod;
     state.initiativeOrder=[{id:'hero',label:'ROWAN',roll:heroInit},{id:'companion',label:c?c.name.split(' ')[0].toUpperCase():'ALLY',roll:compInit},{id:'enemy',label:base.name.split(',')[0].toUpperCase(),roll:enemyInit}].sort((a,b)=>b.roll-a.roll);state.battleActiveActor=enemyInit>heroInit?'enemy':'hero';
     showBattleRoll('Initiative',heroRoll,abilityMod('dex'),heroInit);ui.battleLog.textContent=`${base.intro} World Tier ${diff.tier} · ${diff.name}. Hunt Chain x${state.huntStreak||0}. Initiative: you ${heroInit}, ${c?c.name.split(' ')[0]:'ally'} ${compInit}, ${base.name} ${enemyInit}.`;updateBattleUi();setTimeout(()=>spawnFx('word',state.battleEnemy.elite2?'NEMESIS':base.boss?'BOSS BATTLE':state.battleEnemy.elite?'ELITE':'ENGAGE!'),100);chord(base.boss?[164,147,131,98]:state.battleEnemy.elite2?[174,130,98,73]:[196,185,174]);
-    if(enemyInit>heroInit){state.battleLocked=true;setBattleButtons(true);ui.battleLog.textContent+=` ${base.name} moves first!`;setTimeout(enemyTurn,1050);}else{state.battleLocked=false;setBattleButtons(false);ui.battleLog.textContent+=' You move first.';}
+    if(enemyInit>heroInit){state.battleLocked=true;setBattleButtons(true);ui.battleLog.textContent+=` ${base.name} moves first!`;setTimeout(enemyTurn,820);}else{state.battleLocked=false;setBattleButtons(false);ui.battleLog.textContent+=' You move first.';}
   }
 
 
@@ -1449,14 +1483,22 @@
   }
 
   function rollEnemyIntent(enemy){
-    const roll=Math.random(),low=enemy.hp/enemy.maxHp<.35;
-    if(low&&roll<.12)return'mend';
-    if(enemy.boss&&enemy.phase>=2&&roll<.36)return'ultimate';
-    if(enemy.boss&&roll<.25)return'ultimate';
-    if(roll<.42)return'heavy';
-    if(roll<.56)return'sweep';
-    if(roll<.66)return'hex';
-    if(roll<.76)return'drain';
+    const roll=Math.random(),hp=enemy.hp/enemy.maxHp,p=state.player,heroHp=p.hp/p.maxHp,range=state.battleRange;
+    // Enemies now react to player state instead of choosing from a flat random table.
+    if(hp<.27&&roll<.18)return'mend';
+    if(enemy.boss&&enemy.phase>=2&&state.battleMomentum>=70&&roll<.46)return'ultimate';
+    if(enemy.boss&&heroHp<.35&&roll<.40)return'ultimate';
+    if((p.barrier||0)>0&&roll<.22)return'drain';
+    if(state.guarding&&roll<.25)return'hex';
+    if(state.parryPrimed&&roll<.24)return'brace';
+    if(range==='close'&&roll<.35)return'sweep';
+    if(range==='far'&&roll<.30)return'heavy';
+    if(heroHp<.32&&roll<.34)return'heavy';
+    if(enemy.boss&&roll<.24)return'ultimate';
+    if(roll<.40)return'heavy';
+    if(roll<.54)return'sweep';
+    if(roll<.65)return'hex';
+    if(roll<.75)return'drain';
     if(roll<.84)return'brace';
     return'attack';
   }
@@ -1483,6 +1525,7 @@
   function animateClass(element,className,duration=460){element.classList.remove(className);void element.offsetWidth;element.classList.add(className);setTimeout(()=>element.classList.remove(className),duration);}
   function flashBattle(red=false){ui.battleFlash.className=`battle-flash${red?' red':''}`;void ui.battleFlash.offsetWidth;ui.battleFlash.classList.add('flash');setTimeout(()=>ui.battleFlash.className='battle-flash',320);}
   function spawnFx(kind,text='',target='enemy'){
+    window.dispatchEvent(new CustomEvent('emberfall:fx',{detail:{kind,text,target}}));
     const fx=document.createElement('span');
     if(kind==='slash')fx.className='fx-slash';else if(kind==='burst')fx.className='fx-burst';else if(kind==='word'){fx.className='fx-word';fx.textContent=text;}else{fx.className=`fx-number${kind==='heal'?' heal':''}${target==='hero'&&kind!=='heal'?' hero-damage':''}`;fx.textContent=text;fx.style.left=target==='hero'?'22%':'72%';fx.style.top=target==='hero'?'37%':'29%';}
     ui.battleFx.appendChild(fx);setTimeout(()=>fx.remove(),950);
@@ -1528,7 +1571,7 @@
   }
 
   function startTimingAttack(){
-    if(state.timingActive)return;state.timingActive=true;state.battleLocked=true;state.timingStartedAt=performance.now();state.timingDuration=1050;
+    if(state.timingActive)return;state.timingActive=true;state.battleLocked=true;state.timingStartedAt=performance.now();state.timingDuration=900;
     ui.timingPanel.classList.remove('hidden');ui.battleLog.textContent='Watch the moving blade. Strike near the center of the golden zone!';setBattleButtons(true);
     const loop=now=>{if(!state.timingActive)return;const elapsed=now-state.timingStartedAt;const progress=Math.min(1,elapsed/state.timingDuration);const ping=progress<=.5?progress*2:(1-progress)*2;state.timingPosition=ping;ui.timingCursor.style.left=`calc(${Math.max(0,Math.min(1,ping))*100}% - 4px)`;if(elapsed>=state.timingDuration){confirmTimingAttack(true);return;}state.timingFrame=requestAnimationFrame(loop);};
     state.timingFrame=requestAnimationFrame(loop);
@@ -1623,10 +1666,11 @@
 
   function finishPlayerTurn(){
     const enemy=state.battleEnemy;state.battleTurns+=1;updateBattleUi();if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,560);return;}
-    state.battleLocked=true;setBattleButtons(true);setTimeout(enemyTurn,760);
+    state.battleLocked=true;setBattleButtons(true);setTimeout(enemyTurn,560);
   }
 
   function battleAction(action){
+    window.dispatchEvent(new CustomEvent('emberfall:action',{detail:{action}}));
     if(!state.inBattle||!state.battleEnemy||state.battleLocked||state.timingActive)return;const p=state.player;let acted=false;rewardTacticalRead(action);state.guarding=false;state.battleActiveActor='hero';
     if(action==='attack'){startTimingAttack();return;}
     if(action==='skill1'){acted=useJobSkill(1);if(acted)advanceCombo('skill1',8);}
@@ -1656,7 +1700,7 @@
     const traits=enemyTraits(enemy),regen=traits.reduce((sum,t)=>sum+(t.regen||0),0);if(regen){const heal=Math.max(3,Math.floor(enemy.maxHp*regen));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);spawnFx('heal',`+${heal}`,'enemy');}
     if(enemy.dotTurns>0){enemy.hp-=enemy.dotDamage;enemy.dotTurns-=1;ui.battleLog.textContent=`${enemy.dotName} deals ${enemy.dotDamage} damage to ${enemy.name}.`;spawnFx('number',`-${enemy.dotDamage}`,'enemy');updateBattleUi();if(enemy.hp<=0){setTimeout(victory,520);return;}}
     if(enemy.stunned){enemy.stunned=false;ui.battleLog.textContent=`${enemy.name} is staggered and loses the turn!`;spawnFx('word','OPENING!');chooseEnemyIntent();state.battleActiveActor='hero';state.battleRound+=1;p.stamina=Math.min(p.maxStamina,p.stamina+18+(hasTalent('ironPulse')?6:0));state.battleLocked=false;setBattleButtons(false);updateBattleUi();return;}
-    const intent=enemy.intent||'attack';
+    const intent=enemy.intent||'attack';window.dispatchEvent(new CustomEvent('emberfall:enemyaction',{detail:{intent,name:enemy.name}}));
     if(intent==='mend'){const heal=Math.max(8,Math.floor(enemy.maxHp*.14));enemy.hp=Math.min(enemy.maxHp,enemy.hp+heal);ui.battleLog.textContent=`${enemy.name} gathers dark energy and restores ${heal} HP.`;spawnFx('heal',`+${heal}`,'enemy');animateClass(ui.enemySprite,'skill-anim');}
     else if(intent==='brace'){enemy.ward=.5;ui.battleLog.textContent=`${enemy.name} raises an Iron Ward. Its next damage taken is reduced.`;spawnFx('word','WARD');}
     else {

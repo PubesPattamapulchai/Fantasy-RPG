@@ -1,10 +1,12 @@
-const CACHE = 'emberfall-blackstar-v9';
+const CACHE = 'emberfall-ascendant-3d-v10';
 const CORE = [
   './',
   './index.html',
   './styles.css',
   './nightfall.css',
   './reforged.css',
+  './modern3d.css',
+  './modern3d.js',
   './reforged-ui.js',
   './game.js',
   './mobile.js',

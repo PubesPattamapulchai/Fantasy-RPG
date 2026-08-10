@@ -9,11 +9,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Emberfall" />
   <meta name="format-detection" content="telephone=no" />
-  <meta name="description" content="Emberfall: Blackstar Reforged Edition — an original cinematic dark-fantasy RPG with tactical party combat, intent timelines, barriers, companion doctrines, skill sigils, world tiers, nemesis enemies, executions, timed parries, buildcraft, rare loot, and a three-hour campaign." />
+  <meta name="description" content="Emberfall: Blackstar Ascendant 3D Edition — an original cinematic dark-fantasy RPG with tactical party combat, intent timelines, barriers, companion doctrines, skill sigils, world tiers, nemesis enemies, executions, timed parries, buildcraft, rare loot, and a three-hour campaign." />
   <meta property="og:title" content="Emberfall: Crown of Seven Roads" />
   <meta property="og:description" content="Build a hero and companion party, roll checks, read enemy intent, exploit weaknesses, ready class reactions, survive multi-phase bosses, and uncover rare relics across a long fantasy campaign." />
   <meta property="og:image" content="assets/promo.png" />
-  <title>Emberfall: Blackstar Reforged Edition</title>
+  <title>Emberfall: Blackstar Ascendant 3D Edition</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" href="assets/icon-192.png" sizes="192x192" />
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="veilforged.css" />
   <link rel="stylesheet" href="nightfall.css" />
   <link rel="stylesheet" href="reforged.css" />
+  <link rel="stylesheet" href="modern3d.css" />
 </head>
 <body>
   <main class="game-shell" aria-label="Emberfall browser RPG">
@@ -110,7 +111,7 @@
 
         <section id="titleScreen" class="overlay title-screen">
           <div class="rune">✦</div>
-          <p class="eyebrow">BLACKSTAR REFORGED · CINEMATIC DARK-FANTASY CAMPAIGN</p>
+          <p class="eyebrow">BLACKSTAR ASCENDANT 3D · CINEMATIC ACTION-RPG CAMPAIGN</p>
           <h2>EMBERFALL</h2>
           <p class="tagline">Lead a hero-and-companion party through a three-hour dark-fantasy campaign. Read a two-step enemy intent timeline, build temporary Ward barriers, command your companion through Assault, Guardian, or Support doctrine, socket rare Skill Sigils, break enemy posture, execute openings, and hunt Nemesis loot across villages, ruins, temples, frozen roads, and the burning Crown Core.</p>
           <div class="difficulty-picker" aria-label="Choose world tier">
@@ -317,7 +318,7 @@
     </section>
 
     <footer>
-      <span>18 maps · 7 jobs · 4 companions · Hunt Chains · smart tactical guidance · Covenant Surges · World Tiers · Ward · doctrines · Skill Sigils · parry/dodge · executions · Nemesis loot · 29 weapons.</span>
+      <span>18 maps · cinematic WebGL 3D · dynamic lighting/shadows · smooth camera · reactive enemies · particle combat · 7 jobs · 4 companions · Hunt Chains · Covenant Surges · World Tiers · deep loot · 29 weapons.</span>
       <span>Play time: <strong id="playTimeText">00:00</strong> · Progress saves locally.</span>
     </footer>
   </main>
@@ -325,5 +326,7 @@
   <script src="reforged-ui.js"></script>
   <script src="game.js"></script>
   <script src="mobile.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" crossorigin="anonymous"></script>
+  <script src="modern3d.js"></script>
 </body>
 </html>
