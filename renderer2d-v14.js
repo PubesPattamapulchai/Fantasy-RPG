@@ -160,5 +160,5 @@
   }
 
   window.Emberfall2D={canvas,ready:()=>!state.error,snapshot:()=>state.lastSnapshot,camera:()=>({x:state.camX,y:state.camY,shake:state.shake}),screenToTile:(clientX,clientY)=>{const s=window.EmberfallBridge?.snapshot?.();if(!s?.started||s.inBattle)return null;const r=canvas.getBoundingClientRect(),m=metrics(s),x=(clientX-r.left)*(state.w/r.width)+state.camX,y=(clientY-r.top)*(state.h/r.height)+state.camY;return{x:Math.floor(x/m.tile),y:Math.floor(y/m.tile)};},tileToScreen:(tileX,tileY)=>{const s=window.EmberfallBridge?.snapshot?.();if(!s?.started)return null;const m=metrics(s);return{x:(tileX+.5)*m.tile-state.camX,y:(tileY+.5)*m.tile-state.camY,tile:m.tile};},spawnFx:(target,type,color)=>burst(target,color||'#efb873',type==='ultimate'||type==='execute'?40:20),shake:n=>{state.shake=Math.max(state.shake,n||6);}};
-  document.body.classList.add('modern2d-active','blackstar-v15');requestAnimationFrame(frame);
+  document.body.classList.add('modern2d-active','blackstar-v14','blackstar-v15');requestAnimationFrame(frame);
 })();

@@ -48,3 +48,9 @@ This pass follows a bug-first approach: repair root causes and regressions befor
 ## Still intentionally preserved
 
 The existing campaign, 18 maps, seven jobs, companions, quests, loot, inventory/equipment, save migration, tactical intent system, battle surfaces, reactions, boss phases, mobile controls and PWA/offline support are preserved.
+
+## v15.1 regression review
+
+- Restored the `blackstar-v14` compatibility class alongside `blackstar-v15` so the existing cinematic stylesheet remains active while the codebase transitions versions.
+- Reset now clears both the primary and backup campaign save, so an intentionally erased campaign cannot reappear through recovery.
+- Forced boss phase Ultimates now queue Brace as the recovery action, and intent selection also checks the previous action to prevent a pre-queued Ultimate/Mend from bypassing the recovery rule.

@@ -710,7 +710,7 @@
     if(p.job==='spellblade'){raw*=Math.max(.38,.55-rBonus);const counter=Math.max(1,Math.floor(effectiveAttack()*.32+p.level)),dealt=applyPassiveDamage(counter,'','arcane');note+=` bends the force aside and returns ${dealt} arcane damage.`;}
     spawnFx('word','REACTION!');return{raw,evaded,note};
   }
-  function checkBossPhase(enemy){if(!enemy?.boss||enemy.hp<=0)return;const ratio=enemy.hp/enemy.maxHp;const next=ratio<=.33?3:ratio<=.66?2:1;if(next<=enemy.phase)return;const jumps=next-enemy.phase;enemy.phase=next;state.battlePhase=next;enemy.attack+=2*jumps;enemy.armor+=jumps;enemy.intent='ultimate';state.battleMomentum=Math.min(100,state.battleMomentum+12);ui.battle.classList.remove('phase-1','phase-2','phase-3');ui.battle.classList.add(`phase-${next}`);spawnFx('word',`BOSS PHASE ${next}`);shakeBattle(11);flashBattle(true);chord([110,98,82,73]);ui.battleLog.textContent+=` ${enemy.name} enters PHASE ${next}: its attack pattern changes!`; }
+  function checkBossPhase(enemy){if(!enemy?.boss||enemy.hp<=0)return;const ratio=enemy.hp/enemy.maxHp;const next=ratio<=.33?3:ratio<=.66?2:1;if(next<=enemy.phase)return;const jumps=next-enemy.phase;enemy.phase=next;state.battlePhase=next;enemy.attack+=2*jumps;enemy.armor+=jumps;enemy.intent='ultimate';enemy.nextIntent='brace';state.battleMomentum=Math.min(100,state.battleMomentum+12);ui.battle.classList.remove('phase-1','phase-2','phase-3');ui.battle.classList.add(`phase-${next}`);spawnFx('word',`BOSS PHASE ${next}`);shakeBattle(11);flashBattle(true);chord([110,98,82,73]);ui.battleLog.textContent+=` ${enemy.name} enters PHASE ${next}: its attack pattern changes!`; }
   function initiativeHtml(){const order=state.initiativeOrder||[];return order.map(x=>`<span class="initiative-chip ${x.id===state.battleActiveActor?'active':''} ${x.id}"><b>${x.label}</b><small>${x.roll}</small></span>`).join('');}
 
   function showToast(message, duration = 1900) {
@@ -1234,7 +1234,7 @@
     for(const [kind,raw] of candidates){if(!raw)continue;try{const save=JSON.parse(raw);applyLoadedSave(save);if(kind==='backup'){try{localStorage.setItem(SAVE_KEY,raw);}catch(_){}showToast('RECOVERED BACKUP SAVE');}return;}catch(err){lastError=err;resetWorld();state=initialState();}}
     console.warn('Emberfall save recovery failed',lastError);showToast('SAVE COULD NOT BE RECOVERED');
   }
-  function resetGame(){if(!confirm('Erase your local Emberfall save and restart the campaign?'))return;localStorage.removeItem(SAVE_KEY);resetWorld();state=initialState();sessionStartedAt=Date.now();ui.title.classList.remove('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');renderLog();updateHud();}
+  function resetGame(){if(!confirm('Erase your local Emberfall save and restart the campaign?'))return;localStorage.removeItem(SAVE_KEY);localStorage.removeItem(SAVE_BACKUP_KEY);resetWorld();state=initialState();sessionStartedAt=Date.now();ui.title.classList.remove('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');renderLog();updateHud();}
 
   function move(dx,dy){
     if(!state.started||!state.player.job||state.inBattle||menusOpen()||!ui.dialogue.classList.contains('hidden')||!ui.ending.classList.contains('hidden'))return;
@@ -1551,8 +1551,11 @@
     if(range==='close'&&roll<.35)return'sweep';if(range==='far'&&roll<.30)return'heavy';if(heroHp<.32&&roll<.34)return'heavy';if(enemy.boss&&roll<.24)return'ultimate';if(roll<.40)return'heavy';if(roll<.54)return'sweep';if(roll<.65)return'hex';if(roll<.75)return'drain';if(roll<.84)return'brace';return'attack';
   }
   function chooseEnemyIntent(){
-    const enemy=state.battleEnemy;if(!enemy)return;enemy.intent=enemy.nextIntent||rollEnemyIntent(enemy);let next=rollEnemyIntent(enemy);
-    // Boss ultimates and heals always expose a readable recovery window rather than chaining unfairly.
+    const enemy=state.battleEnemy;if(!enemy)return;const previous=enemy.intent;let current=enemy.nextIntent||rollEnemyIntent(enemy);
+    // Protect the recovery window even when an Ultimate/Mend was already queued before a forced phase action.
+    if(previous==='ultimate'&&current==='ultimate')current='brace';
+    if(previous==='mend'&&current==='mend')current='attack';
+    enemy.intent=current;let next=rollEnemyIntent(enemy);
     if(enemy.intent==='ultimate'&&next==='ultimate')next=enemy.hp/enemy.maxHp<.40?'brace':'attack';
     if(enemy.intent==='mend'&&next==='mend')next='attack';
     enemy.nextIntent=next;
