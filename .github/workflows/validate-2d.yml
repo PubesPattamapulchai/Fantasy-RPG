@@ -33,34 +33,57 @@ jobs:
           node --check renderer2d-v14.js
           node --check combat-fx2d.js
           node --check actionrpg2d.js
-          node --check cinematic2d-v13.js
           node --check service-worker.js
 
-      - name: Manifest and 2D wiring
+      - name: Manifest and 2D runtime audit
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
           html=Path('index.html').read_text().lower()
           sw=Path('service-worker.js').read_text().lower()
-          renderer=Path('renderer2d-v14.js').read_text().lower()
+          renderer=Path('renderer2d-v14.js').read_text()
           game=Path('game.js').read_text()
+          action=Path('actionrpg2d.js').read_text()
+          fx=Path('combat-fx2d.js').read_text()
           json.loads(Path('manifest.webmanifest').read_text())
-          required=['modern2d.css','cinematic2d-v14.css','renderer2d-v14.js','combat-fx2d.js','actionrpg2d.js','cinematic2d-v13.js']
+
+          required=['modern2d.css','cinematic2d-v14.css','renderer2d-v14.js','combat-fx2d.js','actionrpg2d.js']
           for token in required:
               assert token in html, f'missing {token} from index.html'
-          for token in ['renderer2d-v14.js','cinematic2d-v14.css','combat-fx2d.js','actionrpg2d.js','cinematic2d-v13.js']:
+          for token in ['renderer2d-v14.js','cinematic2d-v14.css','combat-fx2d.js','actionrpg2d.js']:
               assert token in sw, f'missing {token} from service worker'
+
+          assert 'cinematic2d-v13.js' not in html, 'redundant v13 cinematic JS returned to runtime'
+          assert 'cinematic2d-v13.js' not in sw, 'redundant v13 cinematic JS returned to cache'
+          assert 'emberfall-blackstar-2d-v15' in sw
+
           forbidden=['three@','three.min.js','modern3d.js','modern3d.css','actionrpg-plus.js','actionrpg-plus.css','cinematic3dcanvas','webglrenderer','emberfall3d']
-          runtime=html+'\n'+sw+'\n'+renderer
+          runtime=html+'\n'+sw+'\n'+renderer.lower()
           for token in forbidden:
               assert token not in runtime, f'3D runtime reference returned: {token}'
-          assert 'emberfall-blackstar-2d-v14' in sw
-          assert 'INTERRUPTED!' in game
-          assert 'counter-opening' in game
-          assert 'setTimeout(enemyTurn,390)' in game
-          assert 'legacy.style.opacity' in renderer
-          print('Blackstar 2D v14 runtime validation OK')
+
+          checks={
+            'v14 interrupt retained':'INTERRUPTED!' in game,
+            'v14 evade opening retained':'counter-opening' in game,
+            'responsive turn handoff':'setTimeout(enemyTurn,390)' in game,
+            'safe backup saves':'SAVE_BACKUP_KEY' in game and 'version:11' in game,
+            'bridge lock state':'battleLocked: !!state.battleLocked' in game and 'timingActive: !!state.timingActive' in game,
+            'legacy renderer throttled':'lastLegacyMapFrame' in game,
+            'hidden menu work removed':"if(!ui.gear.classList.contains('hidden'))renderGear()" in game,
+            'accepted action events':'const commitAction=' in game,
+            'enemy archetypes':"['mage','wraith'].includes(archetype)" in game,
+            'boss recovery':"enemy.intent==='ultimate'&&next==='ultimate'" in game,
+            'exact click projection':'tileToScreen:' in renderer and 'tileToScreen' in action,
+            'temporary-only buffering':'s.battleLocked||s.timingActive' in action,
+            'real particle delta':'function drawBattle(s,dt,time)' in renderer and 'drawParticles(.016)' not in renderer,
+            'particle cap':'MAX_PARTICLES=180' in renderer,
+            'sticky fallback':"document.body.classList.remove('modern2d-active')" in renderer,
+            'event driven combat UI':'flowSurgeChip' in fx and 'reactionBanner2d' in fx and 'requestAnimationFrame(inspect)' not in fx,
+          }
+          for name,ok in checks.items():
+              assert ok,name
+          print('Blackstar 2D v15 runtime validation OK')
           PY
 
       - name: Executable safety scan
