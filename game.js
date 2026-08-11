@@ -624,7 +624,7 @@
           decor: (loc.decor || []).map(d => ({ ...d })),
           npcs: (loc.npcs || []).map(n => ({ id:n.id, x:n.x, y:n.y, name:n.name, role:n.role, colors:[...(n.colors||[])] })),
           enemies: (loc.enemies || []).filter(isEnemyVisible).map(e => ({ id:e.id, x:e.x, y:e.y, type:e.type, defeated:!!e.defeated })),
-          exits: (loc.exits || []).map(e => ({ x:e.x, y:e.y, label:e.label, target:e.target })),
+          exits: (loc.exits || []).map(e => ({ x:e.x, y:e.y, label:e.label, target:e.target, minStage:e.minStage||0, unlocked:state.questStage>=(e.minStage||0) })),
           chests: (loc.chests || []).filter(c => !c.opened).map(c => ({ id:c.id, x:c.x, y:c.y })),
           nodes: (loc.nodes || []).filter(isNodeVisible).map(n => ({ id:n.id, x:n.x, y:n.y, type:n.type })),
           shrine: loc.shrine ? { ...loc.shrine } : null
@@ -1125,13 +1125,20 @@
     const job=JOBS[jobId];if(!job)return;const p=state.player;p.job=jobId;p.maxHp=job.hp;p.hp=job.hp;p.maxMp=job.mp;p.mp=job.mp;p.baseAttack=job.attack;p.defense=job.defense;p.equippedWeapon=job.starter;p.weapons=[job.starter];ui.jobScreen.classList.add('hidden');ui.companionScreen.classList.remove('hidden');addLog(`Rowan takes the path of the ${job.name}.`,true);renderCompanionSelection();updateHud();chord([330,440]);
   }
 
+  function gearDeltaLabel(delta,unit='POWER'){
+    if(!Number.isFinite(delta)||delta===0)return '<span class="gear-compare equal">SAME '+unit+'</span>';
+    return `<span class="gear-compare ${delta>0?'better':'worse'}">${delta>0?'▲ +':'▼ '}${delta} ${unit}</span>`;
+  }
+  function weaponRangeHint(type){if(['bow','staff'].includes(type))return'FAR RANGE SPECIALIST';if(['dagger','rapier'].includes(type))return'CLOSE RANGE FINESSE';return'CLOSE RANGE POWER';}
+
   function renderGear() {
     if(!state.started||!state.player.job)return;
     renderArmorAndRelics();
     const job=currentJob();
     ui.weaponGrid.innerHTML=state.player.weapons.map(id=>{
       const w=WEAPONS[id],equipped=id===state.player.equippedWeapon,aff=(state.player.weaponAffixes?.[id]||[]).map(a=>WEAPON_AFFIXES[a]).filter(Boolean);
-      return `<div class="weapon-card ${equipped?'equipped':''} ${aff.length?'affixed':''}"><h4>${escapeHtml(w.name)} ${equipped?'· EQUIPPED':''}</h4><p>${escapeHtml(w.type.toUpperCase())} · +${w.power} power${aff.length?` · ${aff.length} affix${aff.length>1?'es':''}`:''}<br>${escapeHtml(w.desc)}${aff.length?`<br><em>${aff.map(a=>escapeHtml(a.name)).join(' · ')}</em>`:''}</p><button class="pixel-button compact" data-equip="${id}" type="button" ${equipped?'disabled':''}>${equipped?'EQUIPPED':'EQUIP'}</button></div>`;
+      const delta=w.power-equippedWeapon().power,compare=equipped?'<span class="gear-compare equipped-label">CURRENT</span>':gearDeltaLabel(delta,'POWER');
+      return `<div class="weapon-card ${equipped?'equipped':''} ${aff.length?'affixed':''}"><div class="gear-card-head"><h4>${escapeHtml(w.name)} ${equipped?'· EQUIPPED':''}</h4>${compare}</div><p><strong>${escapeHtml(w.type.toUpperCase())} · +${w.power} POWER</strong> · ${weaponRangeHint(w.type)}${aff.length?` · ${aff.length} AFFIX${aff.length>1?'ES':''}`:''}<br>${escapeHtml(w.desc)}${aff.length?`<br><em>${aff.map(a=>escapeHtml(a.name)).join(' · ')}</em>`:''}</p><button class="pixel-button compact" data-equip="${id}" type="button" ${equipped?'disabled':''}>${equipped?'EQUIPPED':'EQUIP'}</button></div>`;
     }).join('');
     ui.weaponGrid.querySelectorAll('[data-equip]').forEach(button=>button.addEventListener('click',()=>equipWeapon(button.dataset.equip)));
     if(ui.runestoneGrid){
@@ -1158,11 +1165,11 @@
     state.player.equippedRunestone=id;
     showToast(`${RUNESTONES[id].name.toUpperCase()} ATTUNED`);
     addLog(`${RUNESTONES[id].name} attuned to Rowan's gear.`,true);
-    renderGear();renderSheet();updateHud();saveGame(true);
+    renderGear();updateHud();saveGame(true);
   }
   function equipSkillSigil(id){
     if(!SKILL_SIGILS[id]||!(state.player.skillSigils||[]).includes(id))return;
-    state.player.equippedSkillSigil=id;showToast(`${SKILL_SIGILS[id].name.toUpperCase()} SOCKETED`);addLog(`${SKILL_SIGILS[id].name} socketed into Rowan's skill lattice.`,true);renderGear();renderSheet();updateHud();saveGame(true);
+    state.player.equippedSkillSigil=id;showToast(`${SKILL_SIGILS[id].name.toUpperCase()} SOCKETED`);addLog(`${SKILL_SIGILS[id].name} socketed into Rowan's skill lattice.`,true);renderGear();updateHud();saveGame(true);
   }
 
   function equipWeapon(id) {
@@ -1171,7 +1178,8 @@
 
   function renderArmorAndRelics(){
     if(!ui.armorGrid||!ui.relicGrid||!state.player.job)return;
-    ui.armorGrid.innerHTML=Object.entries(ARMORS).filter(([id,a])=>state.questStage>=a.minStage||state.player.armors.includes(id)).map(([id,a])=>{const owned=state.player.armors.includes(id),equipped=state.player.equippedArmor===id;return`<button class="equipment-card ${equipped?'equipped':''}" data-armor="${id}" type="button"><strong>${escapeHtml(a.name)}</strong><span>AC +${a.bonus} · ${owned?(equipped?'EQUIPPED':'OWNED'):`${a.price}G`}</span><small>${escapeHtml(a.desc)}</small></button>`}).join('');
+    const currentArmor=equippedArmor();
+    ui.armorGrid.innerHTML=Object.entries(ARMORS).filter(([id,a])=>state.questStage>=a.minStage||state.player.armors.includes(id)).map(([id,a])=>{const owned=state.player.armors.includes(id),equipped=state.player.equippedArmor===id,delta=a.bonus-currentArmor.bonus,compare=equipped?'<span class="gear-compare equipped-label">CURRENT</span>':gearDeltaLabel(delta,'AC');return`<button class="equipment-card ${equipped?'equipped':''}" data-armor="${id}" type="button"><span class="gear-card-head"><strong>${escapeHtml(a.name)}</strong>${compare}</span><span>AC +${a.bonus} · ${owned?(equipped?'EQUIPPED':'OWNED'):`${a.price}G`}</span><small>${escapeHtml(a.desc)}</small></button>`}).join('');
     ui.relicGrid.innerHTML=Object.entries(RELICS).filter(([id,r])=>(r.price>0&&state.questStage>=r.minStage)||state.player.relics.includes(id)).map(([id,r])=>{const owned=state.player.relics.includes(id),equipped=state.player.equippedRelic===id;return`<button class="equipment-card relic ${equipped?'equipped':''}" data-relic="${id}" type="button"><strong>${escapeHtml(r.name)}</strong><span>${owned?(equipped?'EQUIPPED':'OWNED'):`${r.price}G`}</span><small>${escapeHtml(r.desc)}</small></button>`}).join('')||'<p class="record-card">Boss relics and rare charms will appear here as you discover them.</p>';
     ui.armorGrid.querySelectorAll('[data-armor]').forEach(b=>b.addEventListener('click',()=>buyOrEquipArmor(b.dataset.armor)));
     ui.relicGrid.querySelectorAll('[data-relic]').forEach(b=>b.addEventListener('click',()=>buyOrEquipRelic(b.dataset.relic)));
@@ -1192,7 +1200,7 @@
     if(!state.activeShop)return;const p=state.player;
     if(state.activeShop.type==='weapon'){
       const ids=(SHOP_CATALOGS[state.activeShop.catalogId]||[]).filter(id=>{const w=WEAPONS[id];return currentJob().weapons.includes(w.type)&&state.questStage>=(w.minStage||0);});
-      ui.shopItems.innerHTML=ids.length?ids.map(id=>{const w=WEAPONS[id],owned=p.weapons.includes(id);return `<div class="shop-item"><div><h4>${escapeHtml(w.name)} · +${w.power} POWER</h4><p>${escapeHtml(w.desc)}<br>${escapeHtml(w.type.toUpperCase())}</p></div><button class="pixel-button compact" data-buy-weapon="${id}" type="button" ${owned?'disabled':''}>${owned?'OWNED':`${w.price} GOLD`}</button></div>`;}).join(''):'<div class="record-card">No compatible new weapons are available yet.</div>';
+      ui.shopItems.innerHTML=ids.length?ids.map(id=>{const w=WEAPONS[id],owned=p.weapons.includes(id),equipped=id===p.equippedWeapon,delta=w.power-equippedWeapon().power,compare=equipped?'<span class="gear-compare equipped-label">CURRENT</span>':gearDeltaLabel(delta,'POWER');return `<div class="shop-item"><div><div class="gear-card-head"><h4>${escapeHtml(w.name)} · +${w.power} POWER</h4>${compare}</div><p>${escapeHtml(w.desc)}<br><strong>${escapeHtml(w.type.toUpperCase())}</strong> · ${weaponRangeHint(w.type)}</p></div><button class="pixel-button compact" data-buy-weapon="${id}" type="button" ${owned?'disabled':''}>${owned?'OWNED':`${w.price} GOLD`}</button></div>`;}).join(''):'<div class="record-card">No compatible new weapons are available yet.</div>';
       ui.shopItems.querySelectorAll('[data-buy-weapon]').forEach(button=>button.addEventListener('click',()=>buyWeapon(button.dataset.buyWeapon)));
     } else {
       const items=[{id:'potion',name:'Healing Potion',price:28,desc:'Restores HP during battle.'},{id:'bomb',name:'Crown Bomb',price:45,desc:'Deals heavy defense-piercing damage.'},{id:'ration',name:'Trail Ration',price:16,desc:'Used for camp activities on long expeditions.'},{id:'rest',name:'Full Rest',price:18,desc:'Restores all HP and MP immediately.'}];
@@ -1291,7 +1299,7 @@
       };
       ui.campStatus.textContent=`Bond +${gain}. ${c.name} is now ${bondRank()}.`;
       addLog(`${lines[state.companion]||'The party shares stories beside the fire.'} Bond ${state.companionBond}.`,true);
-      chord([294,392,494,659]);renderCamp();renderSheet();updateHud();saveGame(true);return;
+      chord([294,392,494,659]);renderCamp();updateHud();saveGame(true);return;
     }
     if(state.campedAt===state.location)return;
     if(['rest','prepare','scout'].includes(kind)&&state.rations<1){ui.campStatus.textContent='No rations remain. Try foraging or visit an inn.';beep(90);return;}

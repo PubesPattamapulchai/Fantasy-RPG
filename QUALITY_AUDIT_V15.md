@@ -54,3 +54,11 @@ The existing campaign, 18 maps, seven jobs, companions, quests, loot, inventory/
 - Restored the `blackstar-v14` compatibility class alongside `blackstar-v15` so the existing cinematic stylesheet remains active while the codebase transitions versions.
 - Reset now clears both the primary and backup campaign save, so an intentionally erased campaign cannot reappear through recovery.
 - Forced boss phase Ultimates now queue Brace as the recovery action, and intent selection also checks the previous action to prevent a pre-queued Ultimate/Mend from bypassing the recovery rule.
+
+## v15.2 world readability and gear UX
+
+- Modern renderer now decodes the existing map vocabulary instead of treating every `W` tile as a rock: outdoor `W` is water, enclosed-map `W` is solid wall terrain, sky `W` is cloud, `H` is plank/bridge terrain, and `L` is lava.
+- Unopened chests, gathering/story nodes, shrines and exits are now visible in the modern 2D renderer. Locked/unlocked exits have distinct telegraph colors.
+- Equipment and shop cards now compare weapon Power and armor AC directly against currently equipped gear with text + icon labels, so comparison does not rely only on color.
+- Weapon cards explicitly communicate their existing range identity (close power, close finesse, or far specialist) without inventing unsupported stats.
+- Removed additional hidden Character Sheet rebuilds from Gear/Camp-only actions.
