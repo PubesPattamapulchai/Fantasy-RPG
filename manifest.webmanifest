@@ -1,7 +1,7 @@
 {
-  "name": "Emberfall: Blackstar 2D Ascendant v14",
+  "name": "Emberfall: Blackstar 2D Ascendant v15",
   "short_name": "Emberfall",
-  "description": "A painterly cinematic 2D dark-fantasy action RPG with responsive movement, Flow Surges, elemental reactions, tactical interrupts, reactive enemy intent, boss phases, party systems, deep loot, accessibility options, and offline play.",
+  "description": "A stabilized, painterly cinematic 2D dark-fantasy action RPG with responsive movement, tactical enemy archetypes, fair boss recovery windows, Flow Surges, elemental reactions, safer save recovery, optimized layered rendering, deep loot, party systems, and offline play.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

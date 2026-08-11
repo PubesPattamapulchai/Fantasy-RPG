@@ -8,7 +8,9 @@
   const TILE = 40;
   const COLS = 16;
   const ROWS = 12;
+  // Keep the historic key so existing players are not stranded by a storage-key rename.
   const SAVE_KEY = 'emberfall-save-v3';
+  const SAVE_BACKUP_KEY = 'emberfall-save-backup-v15';
   const FINAL_STAGE = 39;
 
   const ui = {
@@ -547,6 +549,7 @@
   let lastMove = 0;
   let sessionStartedAt = Date.now();
   let lastClockSecond = -1;
+  let lastLegacyMapFrame = 0;
   let pendingDifficulty = 'adventurer';
 
   function currentLocation() { return locations[state.location]; }
@@ -607,7 +610,7 @@
   function menusOpen() { const settings=document.getElementById('settingsScreen'); return !ui.gear.classList.contains('hidden') || !ui.sheet.classList.contains('hidden') || !ui.shop.classList.contains('hidden') || !ui.jobScreen.classList.contains('hidden') || !ui.companionScreen.classList.contains('hidden') || !ui.eventScreen.classList.contains('hidden') || !ui.camp.classList.contains('hidden') || !ui.build.classList.contains('hidden') || !!(settings&&!settings.classList.contains('hidden')); }
 
 
-  // Public read-only presentation bridge used by the optional cinematic WebGL renderer.
+  // Public read-only presentation bridge used by the modern 2D renderer and input layer.
   window.EmberfallBridge = {
     snapshot: () => {
       const loc = currentLocation();
@@ -622,11 +625,15 @@
           npcs: (loc.npcs || []).map(n => ({ id:n.id, x:n.x, y:n.y, name:n.name, role:n.role, colors:[...(n.colors||[])] })),
           enemies: (loc.enemies || []).filter(isEnemyVisible).map(e => ({ id:e.id, x:e.x, y:e.y, type:e.type, defeated:!!e.defeated })),
           exits: (loc.exits || []).map(e => ({ x:e.x, y:e.y, label:e.label, target:e.target })),
+          chests: (loc.chests || []).filter(c => !c.opened).map(c => ({ id:c.id, x:c.x, y:c.y })),
+          nodes: (loc.nodes || []).filter(isNodeVisible).map(n => ({ id:n.id, x:n.x, y:n.y, type:n.type })),
           shrine: loc.shrine ? { ...loc.shrine } : null
         },
         heroColors: [...(currentJob().colors || [])],
         player: { x:state.player.x, y:state.player.y, facing:state.player.facing, hp:state.player.hp, maxHp:state.player.maxHp, mp:state.player.mp, maxMp:state.player.maxMp, stamina:state.player.stamina, maxStamina:state.player.maxStamina, barrier:state.player.barrier, level:state.player.level },
         inBattle: !!state.inBattle,
+        battleLocked: !!state.battleLocked,
+        timingActive: !!state.timingActive,
         companion: state.companion,
         companionBond: state.companionBond || 0,
         battleRange: state.battleRange,
@@ -655,10 +662,11 @@
     if (!state.soundOn) return;
     try {
       audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type; osc.frequency.value = freq; gain.gain.value = volume;
-      osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+      if(audioCtx.state==='suspended')audioCtx.resume().catch(()=>{});
+      const osc=audioCtx.createOscillator(),gain=audioCtx.createGain(),now=audioCtx.currentTime,end=now+Math.max(.025,duration);
+      osc.type=type;osc.frequency.setValueAtTime(freq,now);
+      gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(Math.max(.0002,volume),Math.min(end,now+.008));gain.gain.exponentialRampToValueAtTime(.0001,end);
+      osc.connect(gain);gain.connect(audioCtx.destination);osc.onended=()=>{try{osc.disconnect();gain.disconnect();}catch(_){}};osc.start(now);osc.stop(end+.01);
     } catch (_) {}
   }
   function chord(notes) { notes.forEach((note, i) => setTimeout(() => beep(note, .08, 'square', .028), i * 70)); }
@@ -825,11 +833,14 @@
     const progress = Math.min(100, Math.round(state.questStage / FINAL_STAGE * 100));
     document.getElementById('campaignBar').style.width = `${progress}%`;
     document.getElementById('progressText').textContent = `Story ${progress}%`;
-    ui.continueBtn.disabled = !localStorage.getItem(SAVE_KEY); ui.continueBtn.style.opacity = ui.continueBtn.disabled ? '.45' : '1';
+    ui.continueBtn.disabled = !localStorage.getItem(SAVE_KEY) && !localStorage.getItem(SAVE_BACKUP_KEY); ui.continueBtn.style.opacity = ui.continueBtn.disabled ? '.45' : '1';
     const loc = currentLocation(); ui.locationBadge.textContent = loc.short; ui.locationText.textContent = loc.name; ui.locationSubtext.textContent = loc.subtitle;
     ui.playTime.textContent = formatTime(currentPlaySeconds());
     ui.skill1.textContent = job.skills[0].name; ui.skill2.textContent = job.skills[1].name;
-    ui.loreText.textContent = `${state.counters.lore} / ${TOTAL_LORE}`;if(ui.armorClassText)ui.armorClassText.textContent=heroAC();if(ui.inspireBtn)ui.inspireBtn.textContent=`INSPIRATION ${state.inspiration}`;renderGear();renderSheet();
+    ui.loreText.textContent = `${state.counters.lore} / ${TOTAL_LORE}`;if(ui.armorClassText)ui.armorClassText.textContent=heroAC();if(ui.inspireBtn)ui.inspireBtn.textContent=`INSPIRATION ${state.inspiration}`;
+    // Hidden menus used to be rebuilt on every HUD refresh. Render them only while visible.
+    if(!ui.gear.classList.contains('hidden'))renderGear();
+    if(!ui.sheet.classList.contains('hidden'))renderSheet();
   }
 
   function cValue(name) { return Number(state.counters[name] || 0); }
@@ -1030,7 +1041,15 @@
 
   function drawLocationLabel(){ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle='rgba(6,10,18,.76)';ctx.fillRect(215,448,210,22);ctx.fillStyle='#f6c453';ctx.fillText(currentLocation().short,320,463);}
   function updateMiniMap(){if(!ui.miniMap||!state.started)return;const m=ui.miniMap.getContext('2d');m.imageSmoothingEnabled=false;m.clearRect(0,0,ui.miniMap.width,ui.miniMap.height);m.drawImage(canvas,0,0,ui.miniMap.width,ui.miniMap.height);m.strokeStyle='rgba(244,196,92,.95)';m.lineWidth=2;m.strokeRect(state.player.x*10-2,state.player.y*10-2,6,6);if(ui.miniMapLabel)ui.miniMapLabel.textContent=currentLocation().short;}
-  function animate(){if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden')){drawWorld();updateMiniMap();}const sec=currentPlaySeconds();if(sec!==lastClockSecond){lastClockSecond=sec;ui.playTime.textContent=formatTime(sec);}requestAnimationFrame(animate);}
+  function animate(now=performance.now()){
+    if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden')){
+      const modernReady=!!(window.Emberfall2D?.ready?.()&&document.body.classList.contains('modern2d-active'));
+      // The legacy canvas remains a real fallback/minimap source, but no longer burns a full
+      // render pass every frame while the modern 2D renderer is healthy.
+      if(!modernReady||now-lastLegacyMapFrame>=250){drawWorld();updateMiniMap();lastLegacyMapFrame=now;}
+    }
+    const sec=currentPlaySeconds();if(sec!==lastClockSecond){lastClockSecond=sec;ui.playTime.textContent=formatTime(sec);}requestAnimationFrame(animate);
+  }
 
   function queueDialogue(speaker, lines) {
     state.dialogueQueue = lines.map(line => typeof line === 'string' ? { speaker, text: line } : line);
@@ -1187,8 +1206,34 @@
 
   function worldSnapshot(){const result={};Object.entries(locations).forEach(([id,loc])=>{result[id]={enemies:Object.fromEntries(loc.enemies.map(e=>[e.id,!!e.defeated])),chests:Object.fromEntries(loc.chests.map(c=>[c.id,!!c.opened])),nodes:Object.fromEntries(loc.nodes.map(n=>[n.id,!!n.collected]))};});return result;}
   function restoreWorld(snapshot={}){Object.entries(locations).forEach(([id,loc])=>{loc.enemies.forEach(e=>{e.defeated=!!snapshot[id]?.enemies?.[e.id];});loc.chests.forEach(c=>{c.opened=!!snapshot[id]?.chests?.[c.id];});loc.nodes.forEach(n=>{n.collected=!!snapshot[id]?.nodes?.[n.id];});});}
-  function saveGame(silent=false){if(!state.started||!state.player.job)return;const elapsed=currentPlaySeconds();const saveState={...state,playSeconds:elapsed,dialogueQueue:[],inBattle:false,battleEnemy:null,battleLocked:false,activeEnemyId:null,activeShop:null,activeRoadEvent:null,eventFailed:false,timingActive:false,timingStartedAt:0,timingFrame:0,battleCombo:0,battleMaxCombo:0,battleMomentum:0,battleLastAction:'',battleFlow:0,battleFlowReady:false,battleLastDamageType:'',battleReactionCount:0,battlePerfects:0,battleDamageTaken:0,battleTurns:0,companionCooldown:0,reactionUsed:false,reactionReadied:false,battleRound:1,battlePhase:1,battleEnvironment:null,environmentUsed:false,dodgePrimed:false,parryPrimed:false,parryCooldown:0,weaponTechniqueCooldown:0,battleSurface:null,initiativeOrder:[],battleActiveActor:'hero',disadvantageNext:false};localStorage.setItem(SAVE_KEY,JSON.stringify({version:10,state:saveState,world:worldSnapshot()}));updateHud();if(!silent){showToast('ADVENTURE SAVED');beep(660);}}
-  function loadGame(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return;try{const save=JSON.parse(raw);if(![3,4,5,6,7,8,9,10].includes(save.version))throw new Error('old save');resetWorld();restoreWorld(save.world);const fresh=initialState();state={...fresh,...save.state,player:{...fresh.player,...(save.state?.player||{}),talents:{...fresh.player.talents,...(save.state?.player?.talents||{})},runestones:[...new Set([...(fresh.player.runestones||[]),...(save.state?.player?.runestones||[])])],skillSigils:[...new Set([...(fresh.player.skillSigils||[]),...(save.state?.player?.skillSigils||[])])]},counters:{...fresh.counters,...(save.state?.counters||{})},keyItems:{...fresh.keyItems,...(save.state?.keyItems||{})},sideQuests:{...initialSideQuests(),...(save.state?.sideQuests||{})},started:true,inBattle:false,battleEnemy:null,battleLocked:false,dialogueQueue:[],activeEnemyId:null,activeShop:null};if(!locations[state.location])state.location='moonmere';if(!JOBS[state.player.job])throw new Error('invalid job');if(!COMPANIONS[state.companion])state.companion={vanguard:'brann',arcanist:'lyss',ranger:'pip',paladin:'mara',rogue:'pip',cleric:'mara',spellblade:'lyss'}[state.player.job]||'brann';if(save.version<6){state.player.talentPoints=Math.max(state.player.talentPoints||0,Math.floor(state.player.level/2));state.player.talents={};}sessionStartedAt=Date.now();ui.title.classList.add('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');addLog('Your long road continues.',true);updateHud();drawWorld();chord([440,554,660]);}catch(_){localStorage.removeItem(SAVE_KEY);showToast('SAVE FORMAT WAS OUTDATED');}}
+  function saveGame(silent=false){
+    if(!state.started||!state.player.job)return false;
+    const elapsed=currentPlaySeconds();
+    const saveState={...state,playSeconds:elapsed,dialogueQueue:[],inBattle:false,battleEnemy:null,battleLocked:false,activeEnemyId:null,activeShop:null,activeRoadEvent:null,eventFailed:false,timingActive:false,timingStartedAt:0,timingFrame:0,battleCombo:0,battleMaxCombo:0,battleMomentum:0,battleLastAction:'',battleFlow:0,battleFlowReady:false,battleLastDamageType:'',battleReactionCount:0,battlePerfects:0,battleDamageTaken:0,battleTurns:0,companionCooldown:0,reactionUsed:false,reactionReadied:false,battleRound:1,battlePhase:1,battleEnvironment:null,environmentUsed:false,dodgePrimed:false,parryPrimed:false,parryCooldown:0,weaponTechniqueCooldown:0,battleSurface:null,initiativeOrder:[],battleActiveActor:'hero',disadvantageNext:false};
+    const payload=JSON.stringify({version:11,state:saveState,world:worldSnapshot()});
+    try{
+      const previous=localStorage.getItem(SAVE_KEY);
+      if(previous){try{const parsed=JSON.parse(previous);if(parsed&&parsed.state&&parsed.world)localStorage.setItem(SAVE_BACKUP_KEY,previous);}catch(_){}}
+      localStorage.setItem(SAVE_KEY,payload);
+    }catch(err){console.warn('Emberfall save failed',err);if(!silent)showToast('SAVE FAILED · STORAGE UNAVAILABLE');return false;}
+    updateHud();if(!silent){showToast('ADVENTURE SAVED');beep(660);}return true;
+  }
+
+  function applyLoadedSave(save){
+    if(!save||![3,4,5,6,7,8,9,10,11].includes(save.version)||!save.state?.player?.job||!JOBS[save.state.player.job])throw new Error('unsupported or incomplete save');
+    resetWorld();restoreWorld(save.world||{});const fresh=initialState();
+    state={...fresh,...save.state,player:{...fresh.player,...(save.state?.player||{}),talents:{...fresh.player.talents,...(save.state?.player?.talents||{})},runestones:[...new Set([...(fresh.player.runestones||[]),...(save.state?.player?.runestones||[])])],skillSigils:[...new Set([...(fresh.player.skillSigils||[]),...(save.state?.player?.skillSigils||[])])]},counters:{...fresh.counters,...(save.state?.counters||{})},keyItems:{...fresh.keyItems,...(save.state?.keyItems||{})},sideQuests:{...initialSideQuests(),...(save.state?.sideQuests||{})},started:true,inBattle:false,battleEnemy:null,battleLocked:false,dialogueQueue:[],activeEnemyId:null,activeShop:null};
+    if(!locations[state.location])state.location='moonmere';
+    if(!COMPANIONS[state.companion])state.companion={vanguard:'brann',arcanist:'lyss',ranger:'pip',paladin:'mara',rogue:'pip',cleric:'mara',spellblade:'lyss'}[state.player.job]||'brann';
+    if(save.version<6){state.player.talentPoints=Math.max(state.player.talentPoints||0,Math.floor(state.player.level/2));state.player.talents={};}
+    sessionStartedAt=Date.now();ui.title.classList.add('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');addLog('Your long road continues.',true);updateHud();drawWorld();chord([440,554,660]);
+  }
+
+  function loadGame(){
+    const candidates=[['primary',localStorage.getItem(SAVE_KEY)],['backup',localStorage.getItem(SAVE_BACKUP_KEY)]];let lastError=null;
+    for(const [kind,raw] of candidates){if(!raw)continue;try{const save=JSON.parse(raw);applyLoadedSave(save);if(kind==='backup'){try{localStorage.setItem(SAVE_KEY,raw);}catch(_){}showToast('RECOVERED BACKUP SAVE');}return;}catch(err){lastError=err;resetWorld();state=initialState();}}
+    console.warn('Emberfall save recovery failed',lastError);showToast('SAVE COULD NOT BE RECOVERED');
+  }
   function resetGame(){if(!confirm('Erase your local Emberfall save and restart the campaign?'))return;localStorage.removeItem(SAVE_KEY);resetWorld();state=initialState();sessionStartedAt=Date.now();ui.title.classList.remove('hidden');ui.jobScreen.classList.add('hidden');ui.dialogue.classList.add('hidden');ui.battle.classList.add('hidden');ui.gear.classList.add('hidden');ui.sheet.classList.add('hidden');ui.camp.classList.add('hidden');ui.build.classList.add('hidden');ui.companionScreen.classList.add('hidden');ui.eventScreen.classList.add('hidden');ui.shop.classList.add('hidden');ui.ending.classList.add('hidden');renderLog();updateHud();}
 
   function move(dx,dy){
@@ -1446,6 +1491,7 @@
         state.battleEnemy.gold=state.battleEnemy.gold.map(v=>Math.floor(v*eliteReward));
       }
     }
+    window.dispatchEvent(new CustomEvent('emberfall:battlestart',{detail:{enemy:state.battleEnemy.name,boss:state.battleEnemy.boss}}));
     setBattleTheme();ui.battle.classList.remove('phase-1','phase-2','phase-3','nemesis-battle');ui.battle.classList.add('phase-1');if(state.battleEnemy.elite2)ui.battle.classList.add('nemesis-battle');chooseEnemyIntent();ui.battle.classList.remove('hidden');ui.timingPanel.classList.add('hidden');
     const heroRoll=rollD20(),heroInit=heroRoll+abilityMod('dex'),enemyRoll=rollD20(),enemyInit=enemyRoll+state.battleEnemy.initiative,c=companion(),compRoll=rollD20(),compMod=state.companion==='pip'?3:state.companion==='brann'?0:1,compInit=compRoll+compMod;
     state.initiativeOrder=[{id:'hero',label:'ROWAN',roll:heroInit},{id:'companion',label:c?c.name.split(' ')[0].toUpperCase():'ALLY',roll:compInit},{id:'enemy',label:base.name.split(',')[0].toUpperCase(),roll:enemyInit}].sort((a,b)=>b.roll-a.roll);state.battleActiveActor=enemyInit>heroInit?'enemy':'hero';
@@ -1489,28 +1535,27 @@
   }
 
   function rollEnemyIntent(enemy){
-    const roll=Math.random(),hp=enemy.hp/enemy.maxHp,p=state.player,heroHp=p.hp/p.maxHp,range=state.battleRange;
-    // Enemies now react to player state instead of choosing from a flat random table.
+    const roll=Math.random(),hp=enemy.hp/enemy.maxHp,p=state.player,heroHp=p.hp/p.maxHp,range=state.battleRange,archetype=String(enemy.sprite||'').split(' ')[0];
+    // Shared reactive rules: wounded enemies, boss pressure, and player defenses matter first.
     if(hp<.27&&roll<.18)return'mend';
     if(enemy.boss&&enemy.phase>=2&&state.battleMomentum>=70&&roll<.46)return'ultimate';
     if(enemy.boss&&heroHp<.35&&roll<.40)return'ultimate';
     if((p.barrier||0)>0&&roll<.22)return'drain';
     if(state.guarding&&roll<.25)return'hex';
     if(state.parryPrimed&&roll<.24)return'brace';
-    if(range==='close'&&roll<.35)return'sweep';
-    if(range==='far'&&roll<.30)return'heavy';
-    if(heroHp<.32&&roll<.34)return'heavy';
-    if(enemy.boss&&roll<.24)return'ultimate';
-    if(roll<.40)return'heavy';
-    if(roll<.54)return'sweep';
-    if(roll<.65)return'hex';
-    if(roll<.75)return'drain';
-    if(roll<.84)return'brace';
-    return'attack';
+    // Archetype profiles keep enemy families from feeling like the same random table.
+    if(['mage','wraith'].includes(archetype)){if(range==='close'&&roll<.28)return'brace';if(roll<.50)return'hex';if(roll<.68)return'drain';if(roll<.80)return'heavy';return'attack';}
+    if(['golem','knight','guard'].includes(archetype)){if(roll<.24)return'brace';if(roll<.58)return'heavy';if(range==='close'&&roll<.75)return'sweep';return'attack';}
+    if(archetype==='bird'){if(range==='close'&&roll<.44)return'sweep';if(roll<.62)return'heavy';if(roll<.72)return'brace';return'attack';}
+    if(['beast','wolf','rat','slime'].includes(archetype)){if(range==='close'&&roll<.48)return'sweep';if(roll<.68)return'heavy';if(heroHp<.35&&roll<.78)return'attack';return roll<.84?'hex':'attack';}
+    if(range==='close'&&roll<.35)return'sweep';if(range==='far'&&roll<.30)return'heavy';if(heroHp<.32&&roll<.34)return'heavy';if(enemy.boss&&roll<.24)return'ultimate';if(roll<.40)return'heavy';if(roll<.54)return'sweep';if(roll<.65)return'hex';if(roll<.75)return'drain';if(roll<.84)return'brace';return'attack';
   }
   function chooseEnemyIntent(){
-    const enemy=state.battleEnemy;if(!enemy)return;
-    enemy.intent=enemy.nextIntent||rollEnemyIntent(enemy);enemy.nextIntent=rollEnemyIntent(enemy);
+    const enemy=state.battleEnemy;if(!enemy)return;enemy.intent=enemy.nextIntent||rollEnemyIntent(enemy);let next=rollEnemyIntent(enemy);
+    // Boss ultimates and heals always expose a readable recovery window rather than chaining unfairly.
+    if(enemy.intent==='ultimate'&&next==='ultimate')next=enemy.hp/enemy.maxHp<.40?'brace':'attack';
+    if(enemy.intent==='mend'&&next==='mend')next='attack';
+    enemy.nextIntent=next;
   }
 
   function updateBattleUi(){
@@ -1701,9 +1746,11 @@
   }
 
   function battleAction(action){
-    window.dispatchEvent(new CustomEvent('emberfall:action',{detail:{action}}));
-    if(!state.inBattle||!state.battleEnemy||state.battleLocked||state.timingActive)return;const p=state.player;let acted=false;rewardTacticalRead(action);state.guarding=false;state.battleActiveActor='hero';
-    if(action==='attack'){startTimingAttack();return;}
+    if(!state.inBattle||!state.battleEnemy||state.battleLocked||state.timingActive)return;
+    const p=state.player;let acted=false;
+    const commitAction=()=>{rewardTacticalRead(action);window.dispatchEvent(new CustomEvent('emberfall:action',{detail:{action}}));};
+    state.guarding=false;state.battleActiveActor='hero';
+    if(action==='attack'){commitAction();startTimingAttack();return;}
     if(action==='skill1'){acted=useJobSkill(1);if(acted)advanceCombo('skill1',8);}
     if(action==='skill2'){acted=useJobSkill(2);if(acted)advanceCombo('skill2',12);}
     if(action==='weaponTechnique'){acted=useWeaponTechnique();}
@@ -1715,13 +1762,13 @@
     if(action==='potion'){if(p.potions<1){ui.battleLog.textContent='Your potion pouch is empty.';beep(90);return;}if(p.hp>=p.maxHp){ui.battleLog.textContent='Your HP is already full.';beep(90);return;}p.potions-=1;const healed=Math.min(Math.floor((30+p.level*3)*(1+(runestone().healing||0))),p.maxHp-p.hp);p.hp+=healed;advanceCombo('potion',2);ui.battleLog.textContent=`You recover ${healed} HP.`;spawnFx('heal',`+${healed}`,'hero');chord([523,659]);acted=true;}
     if(action==='bomb'){if(p.bombs<1){ui.battleLog.textContent='You have no Crown Bombs.';beep(90);return;}p.bombs-=1;advanceCombo('bomb',15);const damage=34+p.level*5+randomBetween(0,10);applyEnemyDamage(damage,'The Crown Bomb explodes for {damage} piercing damage!',{stagger:32,flash:true,slash:false,type:'fire'});spawnFx('burst');chord([110,165,82]);acted=true;}
     if(action==='burst')acted=useBurst();
-    if(action==='companion'){useCompanionAssist();return;}
-    if(action==='partyTactic'){cyclePartyTactic();return;}
-    if(action==='reaction'){readyReaction();return;}
-    if(action==='position'){const order=['close','mid','far'];state.battleRange=order[(order.indexOf(state.battleRange)+1)%order.length];ui.battleLog.textContent=`You reposition to ${state.battleRange.toUpperCase()} range. Weapon damage modifier: ${Math.round(rangeDamageMultiplier()*100)}%.`;spawnFx('word',state.battleRange.toUpperCase());updateBattleUi();return;}
-    if(action==='tactic'){const order=['balanced','bold','warded','cunning'];state.battleStance=order[(order.indexOf(state.battleStance)+1)%order.length];ui.battleLog.textContent=`You shift into ${state.battleStance.toUpperCase()} stance. AC ${heroAC()}.`;spawnFx('word',state.battleStance.toUpperCase());updateBattleUi();return;}
-    if(action==='inspire'){if(state.inspiration<1){ui.battleLog.textContent='You have no Inspiration available.';beep(90);return;}state.inspiration-=1;state.advantageNext=true;state.battleMomentum=Math.min(100,state.battleMomentum+18);ui.battleLog.textContent='You spend Inspiration. Your next weapon attack rolls with advantage.';spawnFx('word','INSPIRED!');updateBattleUi();return;}
-    if(acted)finishPlayerTurn();
+    if(action==='companion'){if(useCompanionAssist())commitAction();return;}
+    if(action==='partyTactic'){if(cyclePartyTactic())commitAction();return;}
+    if(action==='reaction'){if(readyReaction())commitAction();return;}
+    if(action==='position'){const order=['close','mid','far'];state.battleRange=order[(order.indexOf(state.battleRange)+1)%order.length];ui.battleLog.textContent=`You reposition to ${state.battleRange.toUpperCase()} range. Weapon damage modifier: ${Math.round(rangeDamageMultiplier()*100)}%.`;spawnFx('word',state.battleRange.toUpperCase());updateBattleUi();commitAction();return;}
+    if(action==='tactic'){const order=['balanced','bold','warded','cunning'];state.battleStance=order[(order.indexOf(state.battleStance)+1)%order.length];ui.battleLog.textContent=`You shift into ${state.battleStance.toUpperCase()} stance. AC ${heroAC()}.`;spawnFx('word',state.battleStance.toUpperCase());updateBattleUi();commitAction();return;}
+    if(action==='inspire'){if(state.inspiration<1){ui.battleLog.textContent='You have no Inspiration available.';beep(90);return;}state.inspiration-=1;state.advantageNext=true;state.battleMomentum=Math.min(100,state.battleMomentum+18);ui.battleLog.textContent='You spend Inspiration. Your next weapon attack rolls with advantage.';spawnFx('word','INSPIRED!');updateBattleUi();commitAction();return;}
+    if(acted){commitAction();finishPlayerTurn();}
   }
 
   function enemyTurn(){
@@ -1826,7 +1873,7 @@
   }
 
   function defeat(){const p=state.player;p.hp=p.maxHp;p.mp=p.maxMp;const lostHunt=state.huntStreak||0;state.huntStreak=0;const loss=Math.min(p.gold,Math.max(10,Math.floor(p.gold*.1)));p.gold-=loss;const loc=currentLocation(),respawn=loc.shrine||loc.start;p.x=respawn.x;p.y=respawn.y;ui.battleLog.textContent=`The Seven Roads pull you back from defeat. You lose ${loss} gold${lostHunt?` and Hunt x${lostHunt}`:''}.`;addLog(`You awaken in ${loc.name}. ${loss} gold was lost.${lostHunt?` Hunt Chain x${lostHunt} ended.`:''}`);setTimeout(endBattle,1000);}
-  function endBattle(){cancelAnimationFrame(state.timingFrame);state.timingActive=false;state.inBattle=false;state.battleEnemy=null;state.activeEnemyId=null;state.battleLocked=false;state.guarding=false;state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battleFlow=0;state.battleFlowReady=false;state.battleLastDamageType='';state.battleReactionCount=0;state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.battleStance='balanced';state.battleRange='mid';state.battleCompanionUsed=false;state.companionCooldown=0;state.reactionUsed=false;state.reactionReadied=false;state.parryPrimed=false;state.parryCooldown=0;state.battleRound=1;state.battlePhase=1;state.battleEnvironment=null;state.environmentUsed=false;state.dodgePrimed=false;state.weaponTechniqueCooldown=0;state.battleSurface=null;state.battleTacticalReads=0;state.battleReadRound=0;state.player.stamina=state.player.maxStamina||100;state.player.barrier=0;state.initiativeOrder=[];state.battleActiveActor='hero';state.advantageNext=false;state.disadvantageNext=false;state.player.attackBuffTurns=0;state.player.evasionTurns=0;ui.timingPanel.classList.add('hidden');ui.battleFx.innerHTML='';ui.battle.classList.remove('elite-battle','nemesis-battle','execution-cinematic');ui.battle.classList.add('hidden');setBattleButtons(false);updateHud();saveGame(true);}
+  function endBattle(){cancelAnimationFrame(state.timingFrame);state.timingActive=false;window.dispatchEvent(new CustomEvent('emberfall:battleend'));state.inBattle=false;state.battleEnemy=null;state.activeEnemyId=null;state.battleLocked=false;state.guarding=false;state.battleCombo=0;state.battleMaxCombo=0;state.battleMomentum=0;state.battleLastAction='';state.battleFlow=0;state.battleFlowReady=false;state.battleLastDamageType='';state.battleReactionCount=0;state.battlePerfects=0;state.battleDamageTaken=0;state.battleTurns=0;state.battleStance='balanced';state.battleRange='mid';state.battleCompanionUsed=false;state.companionCooldown=0;state.reactionUsed=false;state.reactionReadied=false;state.parryPrimed=false;state.parryCooldown=0;state.battleRound=1;state.battlePhase=1;state.battleEnvironment=null;state.environmentUsed=false;state.dodgePrimed=false;state.weaponTechniqueCooldown=0;state.battleSurface=null;state.battleTacticalReads=0;state.battleReadRound=0;state.player.stamina=state.player.maxStamina||100;state.player.barrier=0;state.initiativeOrder=[];state.battleActiveActor='hero';state.advantageNext=false;state.disadvantageNext=false;state.player.attackBuffTurns=0;state.player.evasionTurns=0;ui.timingPanel.classList.add('hidden');ui.battleFx.innerHTML='';ui.battle.classList.remove('elite-battle','nemesis-battle','execution-cinematic');ui.battle.classList.add('hidden');setBattleButtons(false);updateHud();saveGame(true);}
 
   function gainExp(amount){const p=state.player;p.exp+=amount;while(p.exp>=p.nextExp){p.exp-=p.nextExp;p.level+=1;p.nextExp=Math.floor(p.nextExp*1.29);p.maxHp+=currentJob().hp>=45?8:6;p.hp=p.maxHp;p.maxMp+=currentJob().mp>=22?4:3;p.mp=p.maxMp;p.baseAttack+=1;if(p.level%3===0)p.defense+=1;if(p.level%2===0){p.talentPoints=(p.talentPoints||0)+1;addLog(`The Road Constellation grants 1 Ascendant point.`,true);}addLog(`Level up! Rowan reached level ${p.level}.`,true);showToast(`LEVEL ${p.level}!`);chord([523,659,784,1047]);}updateHud();}
 

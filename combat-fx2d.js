@@ -5,9 +5,9 @@
   let prefs={blood:true,flash:true,shake:true,text:true};
   try{prefs={...prefs,...JSON.parse(localStorage.getItem(prefsKey)||'{}')}}catch(_){ }
 
-  const overlay=document.createElement('div');overlay.id='combatFx2dOverlay';overlay.className='combat-fx2d-overlay';overlay.innerHTML='<div class="combat-fx2d-flash"></div><div class="combat-fx2d-text-layer"></div><div class="boss-cinematic-banner hidden"><small>PHASE SHIFT</small><strong></strong></div>';
+  const overlay=document.createElement('div');overlay.id='combatFx2dOverlay';overlay.className='combat-fx2d-overlay';overlay.innerHTML='<div class="combat-fx2d-flash"></div><div class="combat-fx2d-text-layer"></div><div id="flowSurgeChip" class="flow-surge-chip hidden"><small>COMBAT FLOW</small><span><i></i></span><strong>0%</strong></div><div id="reactionBanner2d" class="reaction-banner-2d hidden"><small>ELEMENTAL REACTION</small><strong></strong></div><div class="boss-cinematic-banner hidden"><small>PHASE SHIFT</small><strong></strong></div>';
   document.querySelector('.screen-wrap')?.appendChild(overlay);
-  const flashEl=$('.combat-fx2d-flash',overlay),textLayer=$('.combat-fx2d-text-layer',overlay),bossBanner=$('.boss-cinematic-banner',overlay);
+  const flashEl=$('.combat-fx2d-flash',overlay),textLayer=$('.combat-fx2d-text-layer',overlay),bossBanner=$('.boss-cinematic-banner',overlay),flowChip=$('#flowSurgeChip',overlay),reactionBanner=$('#reactionBanner2d',overlay);
 
   function save(){try{localStorage.setItem(prefsKey,JSON.stringify(prefs))}catch(_){}}
   function pulse(cls='hit',ms=150){if(!prefs.flash||document.body.classList.contains('pref-reduced-motion'))return;flashEl.className=`combat-fx2d-flash ${cls}`;setTimeout(()=>flashEl.className='combat-fx2d-flash',ms);}
@@ -35,25 +35,20 @@
     else if(a==='heavy'||a==='sweep'){pulse('danger-soft',140);}
   });
 
-  window.addEventListener('emberfall:fx',e=>{
-    const text=e.detail?.text||e.detail?.kind||'',meta=classify(text),target=String(text).toLowerCase().includes('heal')?'hero':'enemy';
-    if(meta.kind==='heal'){floatText('RECOVER',target,'heal');pulse('heal',120);}else{pulse(meta.kind==='fire'?'fire':'hit',100);if(String(text).match(/critical|crit/i))floatText('CRITICAL',target,'critical');}
-  });
-
-  let lastEnemyHp=null,lastHeroHp=null,lastBossPhase=null,lastBattle=null;
-  function inspect(){
-    const s=window.EmberfallBridge?.snapshot?.();if(!s?.inBattle){lastEnemyHp=lastHeroHp=lastBossPhase=lastBattle=null;requestAnimationFrame(inspect);return;}
-    const key=s.battleEnemy?.id||s.battleEnemy?.name;
-    if(lastBattle!==key){lastBattle=key;lastEnemyHp=s.battleEnemy?.hp??null;lastHeroHp=s.player?.hp??null;lastBossPhase=s.battleEnemy?.phase??1;}
-    const eh=s.battleEnemy?.hp??0,hh=s.player?.hp??0;
-    // Floating damage numbers are spawned directly by game.js's spawnFx() at the moment
-    // damage is applied (single source of truth) - this loop only adds the blood-particle
-    // reaction and boss-phase banner below, so a hit isn't shown twice with different timing.
-    if(lastEnemyHp!==null&&eh<lastEnemyHp&&prefs.blood)window.Emberfall2D?.spawnFx?.('enemy','blood','#ba3246');
-    if(lastHeroHp!==null&&hh<lastHeroHp&&prefs.blood)window.Emberfall2D?.spawnFx?.('hero','blood','#ba3246');
-    const phase=s.battleEnemy?.phase??1;if(s.battleEnemy?.boss&&phase!==lastBossPhase){lastBossPhase=phase;bossBanner.querySelector('strong').textContent=`${s.battleEnemy.name||'BOSS'} · PHASE ${phase}`;bossBanner.classList.remove('hidden');pulse('boss-phase',400);shake(14);setTimeout(()=>bossBanner.classList.add('hidden'),1550);}
-    lastEnemyHp=eh;lastHeroHp=hh;requestAnimationFrame(inspect);
+  function syncFlow(){
+    const s=window.EmberfallBridge?.snapshot?.();if(!s?.inBattle){flowChip.classList.add('hidden');return;}flowChip.classList.remove('hidden');const flow=Math.max(0,Math.min(100,Number(s.battleFlow||0)));flowChip.querySelector('i').style.width=`${flow}%`;flowChip.querySelector('strong').textContent=s.battleFlowReady?'SURGE READY':`${Math.floor(flow)}%`;flowChip.classList.toggle('ready',!!s.battleFlowReady);
   }
+  function showReaction(name){reactionBanner.querySelector('strong').textContent=name.toUpperCase();reactionBanner.classList.remove('hidden');clearTimeout(showReaction.timer);showReaction.timer=setTimeout(()=>reactionBanner.classList.add('hidden'),900);}
+
+  window.addEventListener('emberfall:fx',e=>{
+    const detail=e.detail||{},text=detail.text||detail.kind||'',meta=classify(text),target=detail.target||((meta.kind==='heal')?'hero':'enemy'),kind=detail.kind||'';
+    if(meta.kind==='heal'){floatText('RECOVER',target,'heal');pulse('heal',120);}else{pulse(meta.kind==='fire'?'fire':'hit',100);if(String(text).match(/critical|crit/i))floatText('CRITICAL',target,'critical');}
+    if(kind==='number'&&String(text).startsWith('-')&&prefs.blood)window.Emberfall2D?.spawnFx?.(target,'blood','#ba3246');
+    const reaction=String(text).match(/COMBUSTION|VEILFLARE|SHATTER|CHAIN REACTION|FLOW SURGE/i);if(reaction)showReaction(reaction[0]);
+    if(String(text).match(/BOSS PHASE/i)){const s=window.EmberfallBridge?.snapshot?.();if(s?.battleEnemy?.boss){bossBanner.querySelector('strong').textContent=`${s.battleEnemy.name||'BOSS'} · PHASE ${s.battleEnemy.phase||1}`;bossBanner.classList.remove('hidden');pulse('boss-phase',400);shake(14);setTimeout(()=>bossBanner.classList.add('hidden'),1550);}}
+    syncFlow();
+  });
+  window.addEventListener('emberfall:action',syncFlow);window.addEventListener('emberfall:enemyaction',syncFlow);window.addEventListener('emberfall:battlestart',syncFlow);window.addEventListener('emberfall:battleend',()=>flowChip.classList.add('hidden'));
 
   function addSettings(){
     const grid=$('.settings-grid');if(!grid||$('#fx2dBloodSetting')){if(!grid)setTimeout(addSettings,250);return;}
@@ -64,5 +59,5 @@
     make('fx2dTextSetting','COMBAT TEXT','Floating damage and critical feedback.','text');
   }
 
-  addSettings();requestAnimationFrame(inspect);
+  addSettings();syncFlow();
 })();

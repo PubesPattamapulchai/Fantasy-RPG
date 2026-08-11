@@ -23,8 +23,11 @@
   function queueAction(action){runtime.queued=action;runtime.queuedAt=performance.now();showQueue(action);}
 
   function flushQueue(){
-    if(!runtime.queued)return;const s=snap();if(!s?.inBattle||performance.now()-runtime.queuedAt>2600){clearQueue();return;}
-    const btn=visibleButton(runtime.queued);if(btn&&!btn.disabled){const action=runtime.queued;clearQueue();btn.click();window.dispatchEvent(new CustomEvent('emberfall:bufferedaction',{detail:{action}}));}
+    if(!runtime.queued)return;const s=snap();if(!s?.inBattle||performance.now()-runtime.queuedAt>2200){clearQueue();return;}
+    const btn=visibleButton(runtime.queued);if(btn&&!btn.disabled){const action=runtime.queued;clearQueue();btn.click();window.dispatchEvent(new CustomEvent('emberfall:bufferedaction',{detail:{action}}));return;}
+    // If the turn is available again but the button is still disabled, the action is genuinely
+    // unavailable (cost/cooldown/etc.) and must not unexpectedly fire later.
+    if(!s.battleLocked&&!s.timingActive)clearQueue();
   }
 
   function overlayOpen(){return !!document.querySelector('.menu-overlay:not(.hidden), .dialogue:not(.hidden), #titleScreen:not(.hidden)');}
@@ -40,16 +43,18 @@
 
   document.addEventListener('keydown',e=>{
     if(!e.isTrusted||e.ctrlKey||e.metaKey||e.altKey)return;const s=snap(),key=e.key.toLowerCase();
-    if(s?.inBattle&&actionKeys[key]){const action=actionKeys[key],btn=visibleButton(action);if(!btn||btn.disabled){queueAction(action);e.preventDefault();e.stopImmediatePropagation();return;}}
+    if(s?.inBattle&&actionKeys[key]){const action=actionKeys[key],btn=visibleButton(action);if((!btn||btn.disabled)&&(s.battleLocked||s.timingActive)){queueAction(action);e.preventDefault();e.stopImmediatePropagation();return;}}
     if(!s?.inBattle&&s?.started&&moveKeys.has(key)&&!e.repeat){runtime.path=[];startHold(e.key);}
   },true);
   document.addEventListener('keyup',e=>stopHold(e.key),true);
   window.addEventListener('blur',stopAll);document.addEventListener('visibilitychange',()=>{if(document.hidden)stopAll();});
-  document.addEventListener('pointerdown',e=>{const btn=e.target?.closest?.('[data-action]');if(!btn||!snap()?.inBattle||!btn.disabled)return;queueAction(btn.dataset.action);e.preventDefault();},true);
+  document.addEventListener('pointerdown',e=>{const btn=e.target?.closest?.('[data-action]'),s=snap();if(!btn||!s?.inBattle||!btn.disabled||(!s.battleLocked&&!s.timingActive))return;queueAction(btn.dataset.action);e.preventDefault();},true);
 
   function passable(s,x,y,goal=null){
-    const map=s?.locationData?.map||[];if(y<0||y>=map.length||x<0||x>=(map[y]?.length||0))return false;if(goal&&goal.x===x&&goal.y===y)return true;
-    if(blockedTiles.has(map[y][x]))return false;
+    const map=s?.locationData?.map||[];if(y<0||y>=map.length||x<0||x>=(map[y]?.length||0))return false;
+    // Terrain validity is checked before the goal exception, so clicking a wall/tree/building
+    // cannot create a path whose final step is impossible.
+    if(blockedTiles.has(map[y][x]))return false;if(goal&&goal.x===x&&goal.y===y)return true;
     const occupied=[...(s.locationData?.npcs||[]),...(s.locationData?.enemies||[]).filter(e=>!e.defeated)].some(o=>o.x===x&&o.y===y);return !occupied;
   }
 
@@ -63,7 +68,7 @@
   }
 
   function actorAt(s,t){
-    const all=[...(s.locationData?.npcs||[]).map(o=>({...o,kind:'npc'})),...(s.locationData?.enemies||[]).filter(e=>!e.defeated).map(o=>({...o,kind:'enemy'})),...(s.locationData?.exits||[]).map(o=>({...o,kind:'exit'}))];
+    const all=[...(s.locationData?.npcs||[]).map(o=>({...o,kind:'npc'})),...(s.locationData?.chests||[]).map(o=>({...o,kind:'chest'})),...(s.locationData?.nodes||[]).map(o=>({...o,kind:'node'})),...(s.locationData?.enemies||[]).filter(e=>!e.defeated).map(o=>({...o,kind:'enemy'})),...(s.locationData?.exits||[]).map(o=>({...o,kind:'exit'}))];
     return all.find(o=>o.x===t.x&&o.y===t.y)||null;
   }
 
@@ -77,16 +82,13 @@
 
   function startPath(tile){
     const s=snap();if(!s?.started||s.inBattle||overlayOpen())return;const actor=actorAt(s,tile);let path,target=tile,interact=false;
-    if(actor){const adj=bestAdjacent(s,actor);if(!adj)return;path=adj.path;target=adj.target;interact=true;}else path=pathfind(s,tile);
+    if(actor&&['npc','chest','node'].includes(actor.kind)){const adj=bestAdjacent(s,actor);if(!adj)return;path=adj.path;target=adj.target;interact=true;}else path=pathfind(s,tile);
     if(!path)return;runtime.path=path;runtime.goal=target;runtime.interact=interact;runtime.timer=0;showPing(tile,actor?'interact':'move');
   }
 
   function showPing(tile,kind){
-    const canvas=window.Emberfall2D?.canvas;if(!canvas)return;const r=canvas.getBoundingClientRect();
-    const s=snap();if(!s?.locationData?.map?.length)return;
-    const rows=s.locationData.map.length,cols=s.locationData.map[0]?.length||12,tileSize=Math.max(56,Math.min(92,Math.min(r.width/Math.min(cols,11.5),r.height/Math.min(rows,8.2))));
-    const cam=window.Emberfall2D.camera?.()||{x:0,y:0};const x=(tile.x+.5)*tileSize-cam.x,y=(tile.y+.5)*tileSize-cam.y;
-    const ping=document.createElement('div');ping.className=`modern2d-ping ${kind}`;ping.style.left=`${x}px`;ping.style.top=`${y}px`;canvas.parentElement?.appendChild(ping);setTimeout(()=>ping.remove(),620);
+    const canvas=window.Emberfall2D?.canvas;if(!canvas)return;const point=window.Emberfall2D?.tileToScreen?.(tile.x,tile.y);if(!point)return;
+    const ping=document.createElement('div');ping.className=`modern2d-ping ${kind}`;ping.style.left=`${point.x}px`;ping.style.top=`${point.y}px`;canvas.parentElement?.appendChild(ping);setTimeout(()=>ping.remove(),620);
   }
 
   function updatePath(dt){
