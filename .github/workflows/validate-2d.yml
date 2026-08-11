@@ -46,6 +46,7 @@ jobs:
           game=Path('game.js').read_text()
           action=Path('actionrpg2d.js').read_text()
           fx=Path('combat-fx2d.js').read_text()
+          mobile=Path('mobile.js').read_text()
           css=Path('cinematic2d-v14.css').read_text()
           json.loads(Path('manifest.webmanifest').read_text())
 
@@ -87,10 +88,16 @@ jobs:
             'visible world objectives':'drawChest2d' in renderer and 'drawNode2d' in renderer and 'drawShrine2d' in renderer and 'drawExit2d' in renderer,
             'gear comparison UX':'gearDeltaLabel' in game and 'weaponRangeHint' in game and 'currentArmor=equippedArmor()' in game,
             'gear comparison styling':'v15.2 — comparison-first gear UX' in css,
+            'truthful skill locks':'skill1Locked' in game and 'skill2Locked' in game,
+            'truthful consumable locks':'potionLocked' in game and 'bombLocked' in game and 'inspireLocked' in game,
+            'skill MP labels':"job.skills[0].name} · ${job.skills[0].cost} MP" in game,
+            'pure heal guard':"jobId==='cleric'&&slot===2&&p.hp>=p.maxHp" in game,
+            'mobile build/settings ownership':"visible('buildScreen')" in mobile and "visible('settingsScreen')" in mobile and "'buildScreen', 'settingsScreen'" in mobile,
+            'combat control styling':'v15.3 — truthful combat controls' in css,
           }
           for name,ok in checks.items():
               assert ok,name
-          print('Blackstar 2D v15.2 runtime validation OK')
+          print('Blackstar 2D v15.3 runtime validation OK')
           PY
 
       - name: Executable safety scan
