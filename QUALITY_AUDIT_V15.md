@@ -62,3 +62,10 @@ The existing campaign, 18 maps, seven jobs, companions, quests, loot, inventory/
 - Equipment and shop cards now compare weapon Power and armor AC directly against currently equipped gear with text + icon labels, so comparison does not rely only on color.
 - Weapon cards explicitly communicate their existing range identity (close power, close finesse, or far specialist) without inventing unsupported stats.
 - Removed additional hidden Character Sheet rebuilds from Gear/Camp-only actions.
+
+## v15.3 combat UX and mobile state ownership
+
+- Combat buttons now reflect real availability: MP costs, pure-heal-at-full-HP, potion stock/full HP, bomb stock, Inspiration, Stamina/cooldowns, Momentum, Execution openings, environment use, companion recharge, and reaction use.
+- Job skill buttons show their actual MP cost during play.
+- Cleric Greater Heal can no longer consume MP/turn while HP is already full.
+- Build and Options overlays now enter mobile `menu-active` mode and are observed for state changes, preventing movement controls/world pointer input from remaining active underneath them.

@@ -1,4 +1,4 @@
-const CACHE = 'emberfall-blackstar-2d-v15-2';
+const CACHE = 'emberfall-blackstar-2d-v15-3';
 const CORE = [
   './',
   './index.html',

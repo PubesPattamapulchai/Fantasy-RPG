@@ -836,7 +836,7 @@
     ui.continueBtn.disabled = !localStorage.getItem(SAVE_KEY) && !localStorage.getItem(SAVE_BACKUP_KEY); ui.continueBtn.style.opacity = ui.continueBtn.disabled ? '.45' : '1';
     const loc = currentLocation(); ui.locationBadge.textContent = loc.short; ui.locationText.textContent = loc.name; ui.locationSubtext.textContent = loc.subtitle;
     ui.playTime.textContent = formatTime(currentPlaySeconds());
-    ui.skill1.textContent = job.skills[0].name; ui.skill2.textContent = job.skills[1].name;
+    ui.skill1.textContent = `${job.skills[0].name} · ${job.skills[0].cost} MP`; ui.skill2.textContent = `${job.skills[1].name} · ${job.skills[1].cost} MP`;
     ui.loreText.textContent = `${state.counters.lore} / ${TOTAL_LORE}`;if(ui.armorClassText)ui.armorClassText.textContent=heroAC();if(ui.inspireBtn)ui.inspireBtn.textContent=`INSPIRATION ${state.inspiration}`;
     // Hidden menus used to be rebuilt on every HUD refresh. Render them only while visible.
     if(!ui.gear.classList.contains('hidden'))renderGear();
@@ -1509,18 +1509,26 @@
 
 
   function setBattleButtons(disabled){
+    const p=state.player,job=state.player.job?currentJob():null;
     document.querySelectorAll('[data-action]').forEach(button=>{
       const action=button.dataset.action;
+      const skill1Locked=action==='skill1'&&(!job||p.mp<job.skills[0].cost);
+      const skill2Locked=action==='skill2'&&(!job||p.mp<job.skills[1].cost||(p.job==='cleric'&&p.hp>=p.maxHp));
       const burstLocked=action==='burst'&&state.battleMomentum<100;
-      const dodgeLocked=action==='dodge'&&(state.player.stamina||0)<dodgeCost();
-      const parryLocked=action==='parry'&&((state.player.stamina||0)<parryCost()||state.parryCooldown>0||state.parryPrimed);
+      const dodgeLocked=action==='dodge'&&(p.stamina||0)<dodgeCost();
+      const parryLocked=action==='parry'&&((p.stamina||0)<parryCost()||state.parryCooldown>0||state.parryPrimed);
       const executeLocked=action==='execute'&&!executeReady();
-      const techniqueLocked=action==='weaponTechnique'&&((state.player.stamina||0)<currentTechnique().cost||state.weaponTechniqueCooldown>0);
+      const techniqueLocked=action==='weaponTechnique'&&((p.stamina||0)<currentTechnique().cost||state.weaponTechniqueCooldown>0);
       const environmentLocked=action==='environment'&&state.environmentUsed;
-      const companionLocked=action==='companion'&&state.companionCooldown>0;
+      const companionLocked=action==='companion'&&(state.companionCooldown>0||!state.companion);
       const reactionLocked=action==='reaction'&&state.reactionUsed;
-      const locked=disabled||burstLocked||dodgeLocked||parryLocked||executeLocked||techniqueLocked||environmentLocked||companionLocked||reactionLocked;
-      button.disabled=locked;button.style.opacity=locked?'.55':'1';
+      const potionLocked=action==='potion'&&(p.potions<1||p.hp>=p.maxHp);
+      const bombLocked=action==='bomb'&&p.bombs<1;
+      const inspireLocked=action==='inspire'&&state.inspiration<1;
+      const locked=disabled||skill1Locked||skill2Locked||burstLocked||dodgeLocked||parryLocked||executeLocked||techniqueLocked||environmentLocked||companionLocked||reactionLocked||potionLocked||bombLocked||inspireLocked;
+      let reason='';
+      if(disabled)reason='WAIT FOR TURN';else if(skill1Locked||skill2Locked)reason=(p.job==='cleric'&&action==='skill2'&&p.hp>=p.maxHp)?'HP ALREADY FULL':'NOT ENOUGH MP';else if(potionLocked)reason=p.potions<1?'NO POTIONS':'HP ALREADY FULL';else if(bombLocked)reason='NO BOMBS';else if(inspireLocked)reason='NO INSPIRATION';else if(burstLocked)reason='NEEDS 100 MOMENTUM';else if(dodgeLocked||parryLocked||techniqueLocked)reason='RESOURCE / COOLDOWN';else if(executeLocked)reason='NO EXECUTION OPENING';else if(environmentLocked)reason='ENVIRONMENT SPENT';else if(companionLocked)reason='COMPANION RECHARGING';else if(reactionLocked)reason='REACTION SPENT';
+      button.disabled=locked;button.style.opacity=locked?'.55':'1';if(reason)button.title=reason;else button.removeAttribute('title');
     });
     ui.burstBtn.classList.toggle('ready',state.battleMomentum>=100&&!disabled);
     if(ui.executeBtn)ui.executeBtn.classList.toggle('ready',executeReady()&&!disabled);
@@ -1639,7 +1647,7 @@
     return damage;
   }
 
-  function useJobSkill(slot){const p=state.player,enemy=state.battleEnemy,jobId=p.job,skill=currentJob().skills[slot-1];if(!spendMp(skill.cost))return false;const atk=effectiveAttack();let damage=0;
+  function useJobSkill(slot){const p=state.player,enemy=state.battleEnemy,jobId=p.job,skill=currentJob().skills[slot-1];if(jobId==='cleric'&&slot===2&&p.hp>=p.maxHp){ui.battleLog.textContent='Your HP is already full.';beep(90);return false;}if(!spendMp(skill.cost))return false;const atk=effectiveAttack();let damage=0;
     if(jobId==='vanguard'&&slot===1){damage=applyEnemyDamage(atk*1.65+randomBetween(2,7),'Power Strike crashes for {damage} damage!',{skill:true,stagger:24,flash:true,type:'physical'});}
     if(jobId==='vanguard'&&slot===2){damage=damageEnemy(atk*1.05+randomBetween(3,8),'War Cry hits for {damage}; your Attack rises!','physical');p.attackBuffTurns=3;}
     if(jobId==='arcanist'&&slot===1){damage=damageEnemy(15+p.level*4+equippedWeapon().power*1.2+randomBetween(2,8),'Arc Bolt deals {damage} magic damage!','arcane');}

@@ -45,11 +45,11 @@
     };
     document.body.classList.toggle('front-screen', visible('titleScreen') || visible('jobScreen'));
     document.body.classList.toggle('battle-active', visible('battleScreen'));
-    document.body.classList.toggle('menu-active', visible('gearScreen') || visible('sheetScreen') || visible('campScreen') || visible('shopScreen') || visible('eventScreen') || visible('companionScreen'));
+    document.body.classList.toggle('menu-active', visible('gearScreen') || visible('sheetScreen') || visible('campScreen') || visible('shopScreen') || visible('eventScreen') || visible('companionScreen') || visible('buildScreen') || visible('settingsScreen'));
     document.body.classList.toggle('dialogue-active', visible('dialogueBox'));
     document.body.classList.toggle('ending-active', visible('endingScreen'));
   };
-  ['titleScreen', 'jobScreen', 'companionScreen', 'battleScreen', 'gearScreen', 'sheetScreen', 'campScreen', 'shopScreen', 'eventScreen', 'dialogueBox', 'endingScreen'].forEach(id => {
+  ['titleScreen', 'jobScreen', 'companionScreen', 'battleScreen', 'gearScreen', 'sheetScreen', 'campScreen', 'shopScreen', 'eventScreen', 'buildScreen', 'settingsScreen', 'dialogueBox', 'endingScreen'].forEach(id => {
     const node = $(id);
     if (node) new MutationObserver(syncScreenMode).observe(node, { attributes: true, attributeFilter: ['class'] });
   });
