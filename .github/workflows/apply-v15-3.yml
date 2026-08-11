@@ -1,0 +1,67 @@
+name: Apply Blackstar 2D v15.3
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v15-3.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply v15.3 patch
+        run: python tools/apply-v15-3-ux.py
+
+      - name: Validate JavaScript and UX state rules
+        run: |
+          node --check game.js
+          node --check mobile.js
+          node --check renderer2d-v14.js
+          node --check combat-fx2d.js
+          node --check actionrpg2d.js
+          node --check service-worker.js
+          python - <<'PY'
+          from pathlib import Path
+          g=Path('game.js').read_text(encoding='utf-8')
+          m=Path('mobile.js').read_text(encoding='utf-8')
+          css=Path('cinematic2d-v14.css').read_text(encoding='utf-8')
+          sw=Path('service-worker.js').read_text(encoding='utf-8')
+          checks={
+            'skill MP locks':'skill1Locked' in g and 'skill2Locked' in g,
+            'consumable locks':'potionLocked' in g and 'bombLocked' in g and 'inspireLocked' in g,
+            'skill cost text':"job.skills[0].name} · ${job.skills[0].cost} MP" in g,
+            'cleric full heal guard':"jobId==='cleric'&&slot===2&&p.hp>=p.maxHp" in g,
+            'lock reasons':"button.title=reason" in g,
+            'build mobile modal':"visible('buildScreen')" in m,
+            'settings mobile modal':"visible('settingsScreen')" in m,
+            'modal observers':"'buildScreen', 'settingsScreen'" in m,
+            'control CSS':'v15.3 — truthful combat controls' in css,
+            'cache v15.3':'emberfall-blackstar-2d-v15-3' in sw,
+          }
+          for name,ok in checks.items():
+              print(name, 'OK' if ok else 'FAIL')
+              assert ok,name
+          print('Blackstar v15.3 UX/mobile validation OK')
+          PY
+
+      - name: Executable safety scan
+        run: |
+          bad=$(find . -type f \( -iname '*.exe' -o -iname '*.dll' -o -iname '*.msi' -o -iname '*.bat' -o -iname '*.cmd' -o -iname '*.ps1' \) -print)
+          test -z "$bad" || { echo "$bad"; exit 1; }
+
+      - name: Commit v15.3 game files
+        run: |
+          rm -f tools/apply-v15-3-ux.py
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add game.js mobile.js cinematic2d-v14.css service-worker.js QUALITY_AUDIT_V15.md tools/apply-v15-3-ux.py
+          git commit -m 'Fix Emberfall combat availability UX and mobile modal input'
+          git push
