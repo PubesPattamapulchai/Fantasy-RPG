@@ -46,6 +46,7 @@ jobs:
           game=Path('game.js').read_text()
           action=Path('actionrpg2d.js').read_text()
           fx=Path('combat-fx2d.js').read_text()
+          css=Path('cinematic2d-v14.css').read_text()
           json.loads(Path('manifest.webmanifest').read_text())
 
           required=['modern2d.css','cinematic2d-v14.css','renderer2d-v14.js','combat-fx2d.js','actionrpg2d.js']
@@ -67,23 +68,29 @@ jobs:
             'v14 interrupt retained':'INTERRUPTED!' in game,
             'v14 evade opening retained':'counter-opening' in game,
             'responsive turn handoff':'setTimeout(enemyTurn,390)' in game,
-            'safe backup saves':'SAVE_BACKUP_KEY' in game and 'version:11' in game,
+            'safe backup saves':'SAVE_BACKUP_KEY' in game and 'version:11' in game and 'localStorage.removeItem(SAVE_BACKUP_KEY)' in game,
             'bridge lock state':'battleLocked: !!state.battleLocked' in game and 'timingActive: !!state.timingActive' in game,
+            'bridge world interactables':'chests:' in game and 'nodes:' in game and 'unlocked:state.questStage>=(e.minStage||0)' in game,
             'legacy renderer throttled':'lastLegacyMapFrame' in game,
             'hidden menu work removed':"if(!ui.gear.classList.contains('hidden'))renderGear()" in game,
             'accepted action events':'const commitAction=' in game,
             'enemy archetypes':"['mage','wraith'].includes(archetype)" in game,
-            'boss recovery':"enemy.intent==='ultimate'&&next==='ultimate'" in game,
+            'boss recovery':"previous==='ultimate'&&current==='ultimate'" in game and "enemy.intent='ultimate';enemy.nextIntent='brace'" in game,
             'exact click projection':'tileToScreen:' in renderer and 'tileToScreen' in action,
             'temporary-only buffering':'s.battleLocked||s.timingActive' in action,
             'real particle delta':'function drawBattle(s,dt,time)' in renderer and 'drawParticles(.016)' not in renderer,
             'particle cap':'MAX_PARTICLES=180' in renderer,
             'sticky fallback':"document.body.classList.remove('modern2d-active')" in renderer,
+            'css version compatibility':"'blackstar-v14','blackstar-v15'" in renderer,
             'event driven combat UI':'flowSurgeChip' in fx and 'reactionBanner2d' in fx and 'requestAnimationFrame(inspect)' not in fx,
+            'map vocabulary':'solidWallBiome' in renderer and "ch==='H'" in renderer and "ch==='L'" in renderer,
+            'visible world objectives':'drawChest2d' in renderer and 'drawNode2d' in renderer and 'drawShrine2d' in renderer and 'drawExit2d' in renderer,
+            'gear comparison UX':'gearDeltaLabel' in game and 'weaponRangeHint' in game and 'currentArmor=equippedArmor()' in game,
+            'gear comparison styling':'v15.2 — comparison-first gear UX' in css,
           }
           for name,ok in checks.items():
               assert ok,name
-          print('Blackstar 2D v15 runtime validation OK')
+          print('Blackstar 2D v15.2 runtime validation OK')
           PY
 
       - name: Executable safety scan
