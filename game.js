@@ -1042,13 +1042,21 @@
   function drawLocationLabel(){ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle='rgba(6,10,18,.76)';ctx.fillRect(215,448,210,22);ctx.fillStyle='#f6c453';ctx.fillText(currentLocation().short,320,463);}
   function updateMiniMap(){if(!ui.miniMap||!state.started)return;const m=ui.miniMap.getContext('2d');m.imageSmoothingEnabled=false;m.clearRect(0,0,ui.miniMap.width,ui.miniMap.height);m.drawImage(canvas,0,0,ui.miniMap.width,ui.miniMap.height);m.strokeStyle='rgba(244,196,92,.95)';m.lineWidth=2;m.strokeRect(state.player.x*10-2,state.player.y*10-2,6,6);if(ui.miniMapLabel)ui.miniMapLabel.textContent=currentLocation().short;}
   function animate(now=performance.now()){
-    if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden')){
-      const modernReady=!!(window.Emberfall2D?.ready?.()&&document.body.classList.contains('modern2d-active'));
-      // The legacy canvas remains a real fallback/minimap source, but no longer burns a full
-      // render pass every frame while the modern 2D renderer is healthy.
-      if(!modernReady||now-lastLegacyMapFrame>=250){drawWorld();updateMiniMap();lastLegacyMapFrame=now;}
+    try{
+      if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden')){
+        const modernReady=!!(window.Emberfall2D?.ready?.()&&document.body.classList.contains('modern2d-active'));
+        // The legacy canvas remains a real fallback/minimap source, but no longer burns a full
+        // render pass every frame while the modern 2D renderer is healthy.
+        if(!modernReady||now-lastLegacyMapFrame>=250){drawWorld();updateMiniMap();lastLegacyMapFrame=now;}
+      }
+      const sec=currentPlaySeconds();if(sec!==lastClockSecond){lastClockSecond=sec;ui.playTime.textContent=formatTime(sec);}
+    }catch(err){
+      // A single bad frame (e.g. transient null map/state during a transition) must not
+      // permanently stop the loop: the modern renderer's own frame() has the same guard,
+      // and this legacy path is its fallback/minimap source, so it must keep retrying.
+      console.error('Emberfall legacy render loop',err);
     }
-    const sec=currentPlaySeconds();if(sec!==lastClockSecond){lastClockSecond=sec;ui.playTime.textContent=formatTime(sec);}requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
   }
 
   function queueDialogue(speaker, lines) {
