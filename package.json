@@ -1,0 +1,74 @@
+{
+  "name": "emberfall-blackstar-2d-ascendant",
+  "productName": "Emberfall",
+  "version": "15.3.0",
+  "description": "Emberfall: Blackstar 2D Ascendant - a cinematic dark-fantasy action RPG, packaged as a standalone Windows desktop game.",
+  "private": true,
+  "main": "electron/main.js",
+  "author": "Shibaman",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win",
+    "pack": "electron-builder --dir"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.shibaman.emberfall",
+    "productName": "Emberfall",
+    "copyright": "MIT license - see LICENSE",
+    "files": [
+      "index.html",
+      "manifest.webmanifest",
+      "game.js",
+      "mobile.js",
+      "renderer2d-v14.js",
+      "combat-fx2d.js",
+      "actionrpg2d.js",
+      "reforged-ui.js",
+      "service-worker.js",
+      "styles.css",
+      "veilforged.css",
+      "nightfall.css",
+      "reforged.css",
+      "modern2d.css",
+      "cinematic2d-v13.css",
+      "cinematic2d-v14.css",
+      "assets/**/*",
+      "electron/main.js",
+      "electron/preload.js"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "electron/build"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon-512.png",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Emberfall"
+    }
+  }
+}
