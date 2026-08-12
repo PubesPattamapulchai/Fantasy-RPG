@@ -29,6 +29,7 @@
       "combat-fx2d.js",
       "actionrpg2d.js",
       "reforged-ui.js",
+      "keybinds.js",
       "service-worker.js",
       "styles.css",
       "veilforged.css",

@@ -1,7 +1,17 @@
-// Intentionally empty. The game (index.html/game.js/...) is a plain web
-// page that only needs standard browser APIs (localStorage, Canvas2D,
-// WebAudio) — it has no need to reach into Node.js or Electron APIs, so
-// nothing is exposed here. Keeping contextIsolation on and nodeIntegration
-// off with an empty preload is the safest default for wrapping an existing
-// web app that doesn't require it.
+// Emberfall desktop shell — preload bridge.
+//
+// The game (index.html/game.js/...) is a plain web page that only needs standard browser APIs
+// (localStorage, Canvas2D, WebAudio) for everything except the PC-only window controls added in
+// the Options screen (window mode, resolution presets). Those need the main process, so this
+// preload exposes a narrow, read-only-shaped bridge via contextBridge instead of turning on
+// nodeIntegration — contextIsolation stays on and the renderer still can't reach Node/Electron
+// APIs directly.
 'use strict';
+
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('emberfallDesktop', {
+  isElectron: true,
+  setWindowMode: (mode) => ipcRenderer.invoke('emberfall:set-window-mode', mode),
+  setResolution: (width, height) => ipcRenderer.invoke('emberfall:set-resolution', width, height),
+});

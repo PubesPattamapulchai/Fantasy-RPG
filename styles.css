@@ -755,7 +755,14 @@ body.mobile-device .mobile-controls {
 .battle-menu{background-image:linear-gradient(rgba(18,17,16,.97),rgba(9,12,15,.98)),repeating-linear-gradient(90deg,rgba(219,182,103,.035) 0 1px,transparent 1px 9px)}
 .battle-menu:before{content:'COMBAT LEDGER';position:absolute;right:10px;top:6px;color:rgba(211,174,101,.34);font-size:6px;letter-spacing:.14em}
 .screen-wrap:before{content:'✦';position:absolute;z-index:21;left:8px;top:8px;width:25px;height:25px;display:grid;place-items:center;border:1px solid rgba(215,179,105,.42);border-radius:50%;color:rgba(239,204,128,.55);font-size:10px;pointer-events:none;box-shadow:inset 0 0 0 2px rgba(12,10,8,.55)}
-@media(max-width:760px){.battle-center{min-width:0}.initiative-track{max-width:230px}.initiative-chip{padding:3px 4px;font-size:5.5px}.initiative-chip small{width:16px;height:16px}.phase-badge,.affinity-chip{font-size:5.5px}.battle-scene:after{display:none}.fighter-column{padding:6px 3px 10px}}
+@media(max-width:760px),(max-height:900px){.battle-center{min-width:0}.initiative-track{max-width:230px}.initiative-chip{padding:3px 4px;font-size:5.5px}.initiative-chip small{width:16px;height:16px}.phase-badge,.affinity-chip{font-size:5.5px}.battle-scene:after{display:none}.fighter-column{padding:6px 3px 10px}}
+/* Short-viewport battle layout: .screen-wrap's height clamp (see the aspect-ratio/max-height
+   rule above) shrinks the whole game box on short windows, which starves .battle-scene of
+   width even though the browser viewport itself may be plenty wide. Without this, the
+   environment/battlefield card (.environment-card) can overlap the hero name label instead of
+   sitting in its own column. Reuses the existing narrow-width compaction above via an OR'd
+   max-height condition instead of duplicating it. */
+@media(max-height:900px){.battle .battle-scene{min-height:0;align-items:center}.environment-card{max-width:220px;padding:5px 7px}.environment-card span{display:none}}
 @media(max-width:430px){.combat-rules-row{gap:3px}.affinity-chip{max-width:140px;white-space:normal;text-align:center}.initiative-chip.companion{display:none}.reaction-button{grid-column:span 1}}
 
 

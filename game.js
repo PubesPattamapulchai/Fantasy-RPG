@@ -1041,7 +1041,9 @@
 
   function drawLocationLabel(){ctx.font='bold 10px monospace';ctx.textAlign='center';ctx.fillStyle='rgba(6,10,18,.76)';ctx.fillRect(215,448,210,22);ctx.fillStyle='#f6c453';ctx.fillText(currentLocation().short,320,463);}
   function updateMiniMap(){if(!ui.miniMap||!state.started)return;const m=ui.miniMap.getContext('2d');m.imageSmoothingEnabled=false;m.clearRect(0,0,ui.miniMap.width,ui.miniMap.height);m.drawImage(canvas,0,0,ui.miniMap.width,ui.miniMap.height);m.strokeStyle='rgba(244,196,92,.95)';m.lineWidth=2;m.strokeRect(state.player.x*10-2,state.player.y*10-2,6,6);if(ui.miniMapLabel)ui.miniMapLabel.textContent=currentLocation().short;}
+  const fpsLimiter=window.EmberfallPrefs?.makeFrameLimiter?.()||(()=>true); // optional frame-rate cap (Options > Display & Performance)
   function animate(now=performance.now()){
+    if(!fpsLimiter(now)){requestAnimationFrame(animate);return;}
     try{
       if(state.started&&!state.inBattle&&!menusOpen()&&ui.ending.classList.contains('hidden')){
         const modernReady=!!(window.Emberfall2D?.ready?.()&&document.body.classList.contains('modern2d-active'));
@@ -1765,7 +1767,7 @@
     shakeBattle(7);return true;
   }
   function useDodge(){const p=state.player,cost=dodgeCost();if((p.stamina||0)<cost)return false;p.stamina-=cost;state.dodgePrimed=true;state.battleRange=state.battleRange==='close'?'mid':'far';advanceCombo('dodge',10);ui.battleLog.textContent=`You break away to ${state.battleRange.toUpperCase()} range and prepare to evade the next attack.`;spawnFx('word','DODGE READY');animateClass(ui.battleHero,'dodge-anim',520);return true;}
-  function shakeBattle(power=5){window.Emberfall2D?.shake?.(power);if(!ui.battle)return;ui.battle.style.setProperty('--shake',`${power}px`);ui.battle.classList.remove('camera-shake');void ui.battle.offsetWidth;ui.battle.classList.add('camera-shake');setTimeout(()=>ui.battle.classList.remove('camera-shake'),420);}
+  function shakeBattle(power=5){power*=(window.EmberfallPrefs?.get('shakeIntensity')??100)/100;window.Emberfall2D?.shake?.(power);if(!ui.battle)return;ui.battle.style.setProperty('--shake',`${power}px`);ui.battle.classList.remove('camera-shake');void ui.battle.offsetWidth;ui.battle.classList.add('camera-shake');setTimeout(()=>ui.battle.classList.remove('camera-shake'),420);}
 
   function finishPlayerTurn(){
     const enemy=state.battleEnemy;state.battleTurns+=1;updateBattleUi();if(enemy.hp<=0){state.battleLocked=true;setBattleButtons(true);setTimeout(victory,430);return;}
@@ -1908,7 +1910,36 @@
 
   function toggleSound(){state.soundOn=!state.soundOn;ui.sound.textContent=state.soundOn?'♪ SOUND':'× MUTED';ui.sound.setAttribute('aria-pressed',String(state.soundOn));if(state.soundOn)beep(660);}
 
-  document.addEventListener('keydown',event=>{const key=event.key.toLowerCase();const handled=['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d',' ','enter','m','g','escape','1','2','3','4','5','6','7','8','9','0','e','c','r','b','q','p','x','t'].includes(key);if(handled)event.preventDefault();if(state.timingActive&&(key===' '||key==='enter')){confirmTimingAttack(false);return;}if(state.inBattle&&!state.battleLocked){const battleKeys={'1':'attack','2':'skill1','3':'skill2','4':'guard','5':'potion','6':'bomb','7':'burst','8':'tactic','9':'inspire','0':'dodge','e':'environment','q':'weaponTechnique','p':'parry','x':'execute','t':'partyTactic',' ':'attack','enter':'attack'};if(battleKeys[key]){battleAction(battleKeys[key]);return;}}if(key==='escape'){if(!ui.shop.classList.contains('hidden'))closeShop();else if(!ui.gear.classList.contains('hidden'))closeGear();else if(!ui.sheet.classList.contains('hidden'))closeSheet();else if(!ui.camp.classList.contains('hidden'))closeCamp();else if(!ui.build.classList.contains('hidden'))closeBuild();return;}if(key==='g'){if(ui.gear.classList.contains('hidden'))openGear();else closeGear();return;}if(key==='c'){if(ui.sheet.classList.contains('hidden'))openSheet();else closeSheet();return;}if(key==='b'){if(ui.build.classList.contains('hidden'))openBuild();else closeBuild();return;}if(key==='r'){if(ui.camp.classList.contains('hidden'))openCamp();else closeCamp();return;}if(key==='arrowup'||key==='w')move(0,-1);if(key==='arrowdown'||key==='s')move(0,1);if(key==='arrowleft'||key==='a')move(-1,0);if(key==='arrowright'||key==='d')move(1,0);if(key===' '||key==='enter')interact();if(key==='m')toggleSound();});
+  // Only used if keybinds.js failed to load for some reason — mirrors its DEFAULTS+aliases so
+  // the game degrades to the original hardcoded scheme instead of losing input entirely.
+  const LEGACY_KEYMAP={arrowup:'moveUp',w:'moveUp',arrowdown:'moveDown',s:'moveDown',arrowleft:'moveLeft',a:'moveLeft',arrowright:'moveRight',d:'moveRight',' ':'interact',enter:'interact',m:'toggleSound',g:'openGear',c:'openSheet',b:'openBuild',r:'openCamp','1':'battleAttack','2':'battleSkill1','3':'battleSkill2','4':'battleGuard','5':'battlePotion','6':'battleBomb','7':'battleBurst','8':'battleTactic','9':'battleInspire','0':'battleDodge',e:'battleEnvironment',q:'battleWeaponTechnique',p:'battleParry',x:'battleExecute',t:'battlePartyTactic'};
+
+  document.addEventListener('keydown',event=>{
+    const key=event.key.toLowerCase();
+    // Actions are resolved through the rebindable keymap (keybinds.js) instead of matching
+    // literal key strings, so a player rebind takes effect here with no further changes. If
+    // keybinds.js failed to load for some reason, fall back to the original hardcoded scheme
+    // so the game never becomes unplayable.
+    const action=window.EmberfallKeybinds?window.EmberfallKeybinds.resolve(key):LEGACY_KEYMAP[key];
+    const handled=!!action||key==='escape';
+    if(handled)event.preventDefault();
+    if(state.timingActive&&action==='interact'){confirmTimingAttack(false);return;}
+    if(state.inBattle&&!state.battleLocked){
+      const battleActionOf={battleAttack:'attack',battleSkill1:'skill1',battleSkill2:'skill2',battleGuard:'guard',battlePotion:'potion',battleBomb:'bomb',battleBurst:'burst',battleTactic:'tactic',battleInspire:'inspire',battleDodge:'dodge',battleEnvironment:'environment',battleWeaponTechnique:'weaponTechnique',battleParry:'parry',battleExecute:'execute',battlePartyTactic:'partyTactic',interact:'attack'};
+      if(battleActionOf[action]){battleAction(battleActionOf[action]);return;}
+    }
+    if(key==='escape'){if(!ui.shop.classList.contains('hidden'))closeShop();else if(!ui.gear.classList.contains('hidden'))closeGear();else if(!ui.sheet.classList.contains('hidden'))closeSheet();else if(!ui.camp.classList.contains('hidden'))closeCamp();else if(!ui.build.classList.contains('hidden'))closeBuild();return;}
+    if(action==='openGear'){if(ui.gear.classList.contains('hidden'))openGear();else closeGear();return;}
+    if(action==='openSheet'){if(ui.sheet.classList.contains('hidden'))openSheet();else closeSheet();return;}
+    if(action==='openBuild'){if(ui.build.classList.contains('hidden'))openBuild();else closeBuild();return;}
+    if(action==='openCamp'){if(ui.camp.classList.contains('hidden'))openCamp();else closeCamp();return;}
+    if(action==='moveUp')move(0,-1);
+    if(action==='moveDown')move(0,1);
+    if(action==='moveLeft')move(-1,0);
+    if(action==='moveRight')move(1,0);
+    if(action==='interact')interact();
+    if(action==='toggleSound')toggleSound();
+  });
   document.querySelectorAll('[data-difficulty]').forEach(button=>button.addEventListener('click',()=>{pendingDifficulty=button.dataset.difficulty||'adventurer';document.querySelectorAll('[data-difficulty]').forEach(card=>card.classList.toggle('selected',card===button));beep(420,.05,'square',.02);showToast(`WORLD TIER ${DIFFICULTIES[pendingDifficulty].tier} · ${DIFFICULTIES[pendingDifficulty].name}`);}));
   document.querySelectorAll('[data-move]').forEach(button=>button.addEventListener('pointerdown',()=>{if(document.body.classList.contains('mobile-device'))return;const directions={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};move(...directions[button.dataset.move]);}));
   document.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>battleAction(button.dataset.action)));

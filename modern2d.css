@@ -36,6 +36,15 @@ body{background:radial-gradient(circle at 18% 0%,rgba(76,87,116,.20),transparent
 
 .battle{background:transparent!important;pointer-events:none}
 .battle>*{pointer-events:auto}
+/* .battle>* re-enables pointer-events for every direct child, but four of those children are
+   purely decorative full-screen overlays (aria-hidden="true" in index.html: sky, flash, fx,
+   nightfall lens) stacked ABOVE .battle-menu/.battle-scene/#timingPanel via z-index even though
+   those are the ones with the actual buttons. Left as-is, an empty decorative div with no click
+   handler sits on top of and swallows every click meant for the battle action buttons — a real
+   mouse can never attack, guard, dodge, etc. Restoring pointer-events:none here (same
+   specificity as the rule above, later in source order so it wins) fixes that without touching
+   pointer-events on anything actually interactive. */
+.battle-sky,.battle-flash,.battle-fx,.nightfall-lens{pointer-events:none}
 .battle-scene{min-height:58%;padding-top:18px!important;background:transparent!important}
 .modern2d-active .battle-hero,.modern2d-active .enemy-sprite{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
 .battle-menu{border-radius:18px 18px 0 0!important;background:linear-gradient(180deg,rgba(11,13,19,.78),rgba(7,8,12,.96))!important;backdrop-filter:blur(21px) saturate(1.15);border-color:rgba(236,199,129,.20)!important}

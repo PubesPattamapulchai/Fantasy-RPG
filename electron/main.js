@@ -6,7 +6,7 @@
 // a minimal game-appropriate menu, and basic navigation hardening.
 'use strict';
 
-const { app, BrowserWindow, Menu, shell, screen } = require('electron');
+const { app, BrowserWindow, Menu, shell, screen, ipcMain } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -121,6 +121,35 @@ function createWindow() {
 
   return win;
 }
+
+// PC settings screen (Options > Display & Performance): window mode + resolution presets.
+// Renderer-side calls come through preload.js's narrow `emberfallDesktop` bridge, never raw
+// nodeIntegration, and everything here is re-validated regardless of what the renderer sent.
+const WINDOW_MODES = ['windowed', 'borderless', 'fullscreen'];
+function applyWindowMode(win, mode) {
+  if (!win || win.isDestroyed() || !WINDOW_MODES.includes(mode)) return { ok: false };
+  if (mode === 'fullscreen') { win.setSimpleFullScreen(false); win.setFullScreen(true); }
+  else if (mode === 'borderless') { win.setFullScreen(false); win.setSimpleFullScreen(true); }
+  else { win.setFullScreen(false); win.setSimpleFullScreen(false); }
+  return { ok: true, mode };
+}
+const MIN_W = 640, MIN_H = 480, MAX_W = 7680, MAX_H = 4320; // sane bounds regardless of what the renderer requests
+function applyResolution(win, width, height) {
+  if (!win || win.isDestroyed()) return { ok: false };
+  width = Math.round(Number(width)); height = Math.round(Number(height));
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return { ok: false };
+  width = Math.min(MAX_W, Math.max(MIN_W, width));
+  height = Math.min(MAX_H, Math.max(MIN_H, height));
+  // A resolution preset only makes sense windowed — leaving fullscreen/borderless first avoids
+  // Electron silently ignoring setSize() while one of those modes is active.
+  if (win.isFullScreen()) win.setFullScreen(false);
+  if (win.isSimpleFullScreen && win.isSimpleFullScreen()) win.setSimpleFullScreen(false);
+  win.setSize(width, height);
+  win.center();
+  return { ok: true, width, height };
+}
+ipcMain.handle('emberfall:set-window-mode', (event, mode) => applyWindowMode(BrowserWindow.fromWebContents(event.sender), mode));
+ipcMain.handle('emberfall:set-resolution', (event, width, height) => applyResolution(BrowserWindow.fromWebContents(event.sender), width, height));
 
 // Prevent two copies of the game from running at once and fighting over the
 // same localStorage-backed save data.

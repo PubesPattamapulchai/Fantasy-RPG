@@ -13,4 +13,26 @@ body{background:radial-gradient(circle at 50% -20%,rgba(122,77,40,.20),transpare
 .dialogue{backdrop-filter:blur(7px)}.dialogue p{line-height:1.55}.event-choice,.job-card,.companion-card,.equipment-card,.talent-node{transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}.event-choice:hover,.job-card:hover,.companion-card:hover,.equipment-card:hover,.talent-node.available:hover{transform:translateY(-2px);box-shadow:0 10px 22px rgba(0,0,0,.22)}.toast{border-radius:7px!important;box-shadow:0 12px 30px rgba(0,0,0,.36)}
 .pref-large-text{font-size:112%}.pref-large-text .dialogue p,.pref-large-text .menu-copy,.pref-large-text .battle-menu{font-size:1.08em}.pref-high-contrast .panel,.pref-high-contrast .menu-window,.pref-high-contrast .battle-menu{border-color:rgba(255,224,151,.6)!important}.pref-high-contrast .enemy-intent.danger{background:#4f1515!important;color:#fff!important;border-color:#ff7a70!important}.pref-high-contrast .pixel-button{border-color:rgba(255,255,255,.35)}.pref-compact-hud .material-grid,.pref-compact-hud .mini-map-card,.pref-compact-hud .legend{display:none!important}.pref-reduced-motion *,.pref-reduced-motion *:before,.pref-reduced-motion *:after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}.pref-reduced-motion .scanlines,.pref-reduced-motion .nightfall-lens{display:none!important}.pref-guide-off .recommended{box-shadow:none!important;border-color:inherit!important;transform:none!important}
 :focus-visible{outline:2px solid var(--rf-gold)!important;outline-offset:2px!important}.pixel-button:focus-visible,.setting-card:focus-visible{box-shadow:0 0 0 3px rgba(243,200,107,.22)!important}
-@media(max-width:900px){.masthead{position:relative}.header-actions{justify-content:center}.quick-status-card{grid-template-columns:repeat(3,1fr)}.combat-coach{margin:5px 0;padding:8px 9px}.combat-coach span{font-size:9px}.action-inspector{display:none}.battle-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}.battle-actions .pixel-button{min-height:50px;font-size:9px}.settings-grid{grid-template-columns:1fr}.settings-window{max-height:88vh;overflow:auto}}@media(max-width:520px){.header-actions .pixel-button{font-size:8px;padding:7px}.battle-actions .recommended:not(:disabled):after{font-size:5px}.settings-window{width:95vw}}
+@media(max-width:900px){.masthead{position:relative}.header-actions{justify-content:center}.quick-status-card{grid-template-columns:repeat(3,1fr)}.combat-coach{margin:5px 0;padding:8px 9px}.combat-coach span{font-size:9px}.action-inspector{display:none}.battle-actions{grid-template-columns:repeat(2,minmax(0,1fr))!important}.battle-actions .pixel-button{min-height:50px;font-size:9px}.settings-grid{grid-template-columns:1fr}}@media(max-width:520px){.header-actions .pixel-button{font-size:8px;padding:7px}.battle-actions .recommended:not(:disabled):after{font-size:5px}.settings-window{width:95vw}}
+
+/* Options screen additions: Display & Performance sliders/selects, and the CONTROLS rebind
+   list (Phase 2 of the PC polish pass). The settings window now holds a lot more content than
+   the original 5-toggle accessibility grid, so it always scrolls internally instead of only at
+   narrow widths — the same short-viewport class of bug fixed for the battle screen (see
+   PC_POLISH_ROADMAP.md) would otherwise resurface here on a short window. */
+.settings-window{max-height:min(88vh,calc(100vh - 60px));overflow-y:auto;overflow-x:hidden}
+.settings-subhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 4px;padding-bottom:4px;border-bottom:1px solid rgba(225,190,120,.16);color:var(--rf-gold);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.settings-subhead:first-of-type{margin-top:2px}
+.setting-slider{cursor:default}
+.setting-slider input[type=range]{flex:1 1 auto;min-width:70px;height:3px;margin:0 10px;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.14);border-radius:999px;outline:none}
+.setting-slider input[type=range]::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--rf-gold);border:2px solid #1a1408;box-shadow:0 2px 5px rgba(0,0,0,.4);cursor:pointer}
+.setting-slider input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--rf-gold);border:2px solid #1a1408;box-shadow:0 2px 5px rgba(0,0,0,.4);cursor:pointer}
+.setting-select{cursor:default}
+.setting-select select{background:rgba(5,7,11,.9);color:#ece8df;border:1px solid rgba(114,184,218,.28);border-radius:6px;padding:6px 8px;font:inherit;font-size:9px;letter-spacing:.04em;cursor:pointer}
+.setting-select select:hover,.setting-select select:focus-visible{border-color:rgba(243,200,107,.5);outline:none}
+.rebind-list{margin-top:6px;display:flex;flex-direction:column;gap:12px}
+.rebind-group h4{margin:0 0 6px;font-size:9px;letter-spacing:.12em;color:#9ea8b8;text-transform:uppercase}
+.rebind-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:7px 10px;border:1px solid rgba(114,184,218,.14);border-radius:7px;background:rgba(8,11,17,.6)}
+.rebind-row+.rebind-row{margin-top:5px}
+.rebind-row>span{font-size:10px;color:#ece8df}
+.rebind-key{min-width:64px;text-align:center;color:var(--rf-gold);border:1px solid rgba(243,200,107,.3);border-radius:999px;padding:5px 9px;font-size:9px;letter-spacing:.04em;background:rgba(89,61,30,.14)}
